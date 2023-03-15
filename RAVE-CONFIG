@@ -1,0 +1,67 @@
+Package: rave-pipelines
+Type: rave-pipeline-collection
+Title: A Collection of 'RAVE' Builtin Pipelines
+Version: 0.0.1
+Language: en-US
+Encoding: UTF-8
+License: GPL-3
+Authors@R: c(
+    person("Zhengjia", "Wang", email = "dipterix.wang@gmail.com", role = c("aut", "cre"))
+    )
+Description: Builtin 'RAVE' (R Analysis and Visualization of 'iEEG')
+    pipeline files, including importing neurophysiology data,
+    preprocessing, analyzing and visualizing the data within the 'RAVE'
+    framework
+BugReports: https://github.com/dipterix/rave-pipelines/issues
+URL: https://github.com/beauchamplab/rave-pipelines
+Depends: R (>= 4.1.0)
+Imports:
+    graphics,
+    grDevices,
+    utils,
+    dipsaus,
+    DT,
+    filearray,
+    future,
+    jsonlite,
+    raveio,
+    ravetools,
+    ravedash,
+    rpymat,
+    shidashi,
+    shiny,
+    shinyvalidate,
+    shinyWidgets,
+    stringr,
+    targets,
+    threeBrain,
+    checkmate,
+    yaml,
+Suggests:
+    rstudioapi,
+    knitr,
+    rlang
+InheritPipelines:
+SubPipelines:
+    modules/import_lfp_native,
+    modules/notch_filter,
+    modules/wavelet_module,
+    modules/reference_module,
+    modules/surface_reconstruction,
+    modules/custom_3d_viewer,
+    modules/block_explorer,
+    modules/import_bids
+InteractiveModules:
+    modules/import_lfp_native,
+    modules/notch_filter,
+    modules/wavelet_module,
+    modules/jupyterlab,
+    modules/epoch_generator,
+    modules/reference_module,
+    modules/surface_reconstruction,
+    modules/electrode_localization,
+    modules/compatibility_rave1,
+    modules/standalone_viewer,
+    modules/custom_3d_viewer
+    modules/block_explorer,
+    modules/import_bids

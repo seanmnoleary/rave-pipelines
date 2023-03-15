@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+shared/
+grant
+backup
+adhoc
+_rs_job.R
+Rplots.pdf
+log
+.Rhistory*
+node_modules
+modules_\[backup_*\].yaml
+modules/*/main.html
