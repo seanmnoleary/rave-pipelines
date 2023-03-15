@@ -1,12 +1,16 @@
 # rave-pipelines
 
-RAVE 2.0 Interactive Modules and Analysis Pipelines
+RAVE 2.0 interactive modules and data pipelines for reproducible analysis and visualization of intracranial electroencephalography. This repository consists of built-in RAVE (https://rave.wiki/) modules and pipelines; currently contain the entire preprocessing pipelines. All presented as interactive modules. 
 
-## What is this
+## How to use
+
+Check the [installation guide](https://openwetware.org/wiki/RAVE:Install) to install `RAVE`. The pipeline will be downloaded automatically during installation/upgrade.
 
 ## How to contribute
 
-## Gallery
+Please fork this project and edit on your own before creating pull-requests. Join our [slack channel](slack@rave.wiki) to request for supports.
+
+## Selected Screenshots
 
 | Notch Filter | Wavelet | Epoch Generator |
 |:------------:|:-------:|:---------------:|
