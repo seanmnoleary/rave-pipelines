@@ -1,0 +1,9 @@
+nonlinear_morphing: yes
+path_ct: '{subject$freesurfer_path}/../coregistration/CT_RAW.nii.gz'
+subject_code: YAH
+path_mri: '{subject$freesurfer_path}/../coregistration/MRI_reference.nii.gz'
+project_name: devel
+path_transform: '{subject$freesurfer_path}/../coregistration/CT_IJK_to_MR_RAS.txt'
+transform_space: ijk2ras
+localization_list: ${EXTDATA-SETTINGS|localization_list|json}
+localization_plan: ${EXTDATA-SETTINGS|localization_plan|json}

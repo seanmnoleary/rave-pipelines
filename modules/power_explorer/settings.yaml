@@ -1,0 +1,62 @@
+analysis_electrodes__category: freesurferlabel
+analysis_settings:
+  '1':
+    label: A-onset BHA
+    event: Trial Onset
+    time:
+    - 0
+    - 0.5
+    frequency:
+    - 70
+    - 126
+baseline_settings:
+  window:
+  - - -1.0
+    - -0.5
+  scope: Per frequency, trial, and electrode
+  unit_of_analysis: '% Change Power'
+electrode_groupings:
+  enabled: no
+  groups:
+    '1':
+      label: STG/S
+      electrodes: 13-14
+    '2':
+      label: Other
+      electrodes: 15-25
+electrodes_list: 13-16,24
+epoch_choice: auditory_onset
+epoch_choice__trial_ends: 2.0
+epoch_choice__trial_starts: -1.0
+first_condition_groupings:
+  '1':
+    label: All Conditions
+    conditions:
+    - AdriveVlast
+    - AknownVmeant
+    - AlastVknown
+    - AmeantVdrive
+    - drive_a
+    - drive_av
+    - drive_v
+    - known_a
+    - known_av
+    - known_v
+    - last_a
+    - last_av
+    - last_v
+    - meant_a
+    - meant_av
+    - meant_v
+    - press_AV
+project_name: demo
+reference_name: default
+selected_electrodes: '13 '
+subject_name: DemoSubject
+tensor_collapse_method: mean
+time_censor:
+  enabled: no
+  window:
+  - 0
+  - 1
+trial_outliers_list: ~

@@ -1,0 +1,11 @@
+Package: electrode_localization
+Type: rave-pipeline
+Title: Interactive 'RAVE' Module to Localize Electrode
+Version: 0.0.1
+Language: en-US
+Encoding: UTF-8
+Authors@R: c(
+    person("Zhengjia", "Wang", email = "dipterix.wang@gmail.com", role = c("aut", "cre"))
+    )
+License: MIT
+BugReports: https://github.com/dipterix/rave-pipelines/issues

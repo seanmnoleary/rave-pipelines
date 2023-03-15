@@ -1,0 +1,22 @@
+analysis_block: block006
+analysis_electrodes: 1-116
+analysis_time:
+- 222.1877056
+- 229.8033456
+block: block006
+filter_bandpass:
+  enabled: no
+filter_notch:
+  enabled: no
+hide_electrodes: ''
+highlight_electrodes: ''
+loaded_electrodes: 1-116
+project_name: devel
+pwelch_frequency_limit:
+- 0
+- 300
+pwelch_params:
+  window_size: 4000
+  noverlap: 2000.0
+subject_code: PAV006
+vertical_spacing: ~

@@ -1,0 +1,12 @@
+changes:
+- group_name: Nolabel
+  electrodes: 13-16,24
+  reference_type: Common Average Reference
+  reference_signal: ref_13,16,24
+electrode_group:
+  '1':
+    name: Nolabel
+    electrodes: 14,13,15-16,24
+project_name: devel
+reference_name: _unsaved
+subject_code: DemoSubject

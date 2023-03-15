@@ -1,0 +1,20 @@
+background: '#ffffff'
+diagnostic_plot_params:
+  path: /var/folders/bs/n0q8wqv931g89ppshhgp2m2m0000gn/T//RtmpPoysNZ/file29594ccf28a7.pdf
+  window_length: 4000
+  max_frequency: 300
+  histogram_bins: 60
+  background: '#ffffff'
+  foreground: '#212529'
+  font_size: 2.0
+  quiet: no
+notch_filter_lowerbound:
+- 59.0
+- 118.0
+- 178.0
+notch_filter_upperbound:
+- 61.0
+- 122.0
+- 182.0
+project_name: devel
+subject_code: DemoSubject
