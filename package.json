@@ -21,7 +21,8 @@
   "description": "Pipeline Template for 'RAVE' Modules",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npx webpack",
+    "test": "Rscript -e 'ravedash::debug_modules(\".\")'"
   },
   "repository": {
     "type": "git",
