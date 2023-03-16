@@ -8,7 +8,7 @@ Check the [installation guide](https://openwetware.org/wiki/RAVE:Install) to ins
 
 ## How to contribute
 
-Please fork this project and edit on your own before creating pull-requests. Join our [slack channel](mailto:slack@rave.wiki) to request for supports.
+This repository forbids directly push. All changes must be made via pull-requests. Please fork this project and edit on your own before creating pull-requests. "At" our team members or join our [slack channel](mailto:slack@rave.wiki) to request for supports.
 
 ## Selected Screenshots
 
