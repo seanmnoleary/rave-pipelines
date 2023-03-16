@@ -68,6 +68,17 @@ $code-color-comment: #098;
 $code-color-keyword: #900;
 $code-color-identifier: rgb(0, 0, 0);
 $code-color-string: #d14;
+
+$code-dark-background: #151d15;
+$code-dark-color-operator: rgb(204, 218, 235);
+$code-dark-color-parenthesis: rgb(142, 138, 121);
+$code-dark-color-literal: #ffc58f;
+$code-dark-color-number: #ffc58f;
+$code-dark-color-comment: #7285b7;
+$code-dark-color-keyword: #bbdaff;
+$code-dark-color-identifier: #99ffff;
+$code-dark-color-string: #d1f1a9;
+
 $code-font-family: "'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace";
 $color-error: #dc3545;
 
@@ -477,12 +488,17 @@ pre {
 
   & .operator { color: $code-color-operator; }
   & .paren { color: $code-color-parenthesis; }
-  & .literal { color: $code-color-literal; }
-  & .number { color: $code-color-number; }
-  & .comment { color: $code-color-comment; font-style: italic; }
-  & .keyword { color: $code-color-keyword; font-weight: bold; }
+  & .literal,
+  & .hljs-literal { color: $code-color-literal; }
+  & .number,
+  & .hljs-number { color: $code-color-number; }
+  & .comment,
+  & .hljs-comment { color: $code-color-comment; font-style: italic; }
+  & .keyword,
+  & .hljs-keyword { color: $code-color-keyword; font-weight: bold; }
   & .identifier { color: $code-color-identifier; }
-  & .string { color: $code-color-string; }
+  & .string,
+  & .hljs-string { color: $code-color-string; }
 
   &.pre-compact {
     white-space: normal;
@@ -498,6 +514,28 @@ pre {
   }
 
 }
+
+.dark-mode pre {
+  color: $white;
+
+  background-color: $code-dark-background;
+
+  & .operator { color: $code-dark-color-operator; }
+  & .paren { color: $code-dark-color-parenthesis; }
+  & .literal,
+  & .hljs-literal { color: $code-dark-color-literal; }
+  & .number,
+  & .hljs-number { color: $code-dark-color-number; }
+  & .comment,
+  & .hljs-comment { color: $code-dark-color-comment; font-style: italic; }
+  & .keyword,
+  & .hljs-keyword { color: $code-dark-color-keyword; font-weight: bold; }
+  & .identifier { color: $code-dark-color-identifier; }
+  & .string,
+  & .hljs-string { color: $code-dark-color-string; }
+
+}
+
 tt, code, .code {
   @include code-font-family;
 }
