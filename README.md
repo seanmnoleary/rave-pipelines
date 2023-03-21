@@ -106,7 +106,7 @@ pipeline$read(c("subject", "filter_settings"))
 #> [1] 1
 ```
 
-### How does RAVE pipeline work
+### 2. How does RAVE pipeline work
 
 Most data analysis scripts contain the following componets:
 
@@ -141,7 +141,7 @@ In the previous example script,
 
 4. `raveio::pipeline_visualize(pipeline$pipeline_path)` displays the dependency graph. Each node stands for an input in `settings.yaml` (e.g. `project_name`) or a code block in `main.Rmd` (e.g. `apply_notch`). 
 
-### Write your own pipeline
+### 3. Write your own pipeline
 
 _*(This sub-section might be ambiguous. Please ask the RAVE team to schedule a walk-through.)_
 
