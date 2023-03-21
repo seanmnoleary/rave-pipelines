@@ -222,7 +222,7 @@ RAVE will compile and translate the script into `module/my_module_id/make-electr
 1. Each code block generates only one variable. RAVE pipeline will drop all the other temporary variables when exiting current block. Therefore, all the undefined variables must come from previous targets or pipline inputs only
 2. A code block does not need to end with the target variable. However, the target variable must be declared within the block.
 
-Take a look at the following example, suppose `project_name` and `subject_code` are defined in `settings.yaml`:
+Take a look at the following case (containing 3 blocks). Suppose `project_name` and `subject_code` are defined in `settings.yaml`. Two of three contain errors.
 
 ````r
 ```{rave load_subject, language = "R", export = "subject", format = "rave-subject", cue = "always"}
