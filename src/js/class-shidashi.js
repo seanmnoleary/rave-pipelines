@@ -478,7 +478,7 @@ class Shidashi {
     header_a.className = "nav-link";
     header_a.setAttribute("href", `#${ inputId }-${tabId}`);
     header_a.setAttribute("id", `${ inputId }-${tabId}-tab`);
-    header_a.setAttribute("data-toggle", "pill");
+    header_a.setAttribute("data-toggle", "tab");
     header_a.setAttribute("role", "tab");
     header_a.setAttribute("aria-controls", `${ inputId }-${tabId}`);
     header_a.setAttribute("aria-selected", "false");
@@ -497,7 +497,7 @@ class Shidashi {
     body_el.className = "tab-pane fade";
     body_el.setAttribute("id", `${ inputId }-${tabId}`);
     body_el.setAttribute("role", "tabpanel");
-    body_el.setAttribute("tab-index", tabId);
+    // body_el.setAttribute("tab-index", tabId);
     body_el.setAttribute("aria-labelledby", `${ inputId }-${tabId}-tab`);
     body_el.innerHTML = body;
     elbody.appendChild(body_el);

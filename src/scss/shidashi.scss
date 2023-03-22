@@ -1092,18 +1092,34 @@ body.dark-mode #shiny-notification-panel .shiny-notification {
 /* Table, datatable, especially in dark-mode */
 .dark-mode table.dataTable {
 
-  color: $white;
-
-  & thead {
-    background-color: $light-dark;
+  & ,
+  & button.dt-button,
+  & div.dt-button,
+  & a.dt-button,
+  & input.dt-button {
+    color: $white;
   }
 
-  & tbody tr {
-    background-color: $light-dark;
+
+  & thead,
+  & tfoot {
+    &, & th {
+      background-color: $light-dark;
+    }
+  }
+
+  & tbody {
+    &, & tr, & tr.even {
+      &, & td {
+        background-color: $light-dark;
+      }
+    }
   }
 
   &.stripe tbody tr.odd {
-    background-color: $dark;
+    &, & td {
+      background-color: $dark;
+    }
   }
 
   &.cell-border tbody,

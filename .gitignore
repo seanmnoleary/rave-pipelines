@@ -14,3 +14,4 @@ log
 node_modules
 modules_\[backup_*\].yaml
 modules/*/main.html
+README.html
