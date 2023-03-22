@@ -1,53 +1,51 @@
 library(targets)
 library(raveio)
 source("common.R", local = TRUE, chdir = TRUE)
-._._env_._. <- environment()
-lapply(sort(list.files(
-  "R/", ignore.case = TRUE,
-  pattern = "^shared-.*\\.R", 
-  full.names = TRUE
-)), function(f) {
-  source(f, local = ._._env_._., chdir = TRUE)
-})
-rm(._._env_._.)
+targets::tar_source(
+  sort(list.files(
+    "R/", ignore.case = TRUE,
+    pattern = "^shared-.*\\.R",
+    full.names = TRUE
+  ))
+)
 ...targets <- list(`__Check_settings_file` = targets::tar_target_raw("settings_path", 
     "settings.yaml", format = "file"), `__Load_settings` = targets::tar_target_raw("settings", 
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_subject_code = targets::tar_target_raw("subject_code", 
+    input_skip_coregistration = targets::tar_target_raw("skip_coregistration", 
         quote({
-            settings[["subject_code"]]
-        }), deps = "settings"), input_fsl_path = targets::tar_target_raw("fsl_path", 
-        quote({
-            settings[["fsl_path"]]
-        }), deps = "settings"), input_freesurfer_path = targets::tar_target_raw("freesurfer_path", 
-        quote({
-            settings[["freesurfer_path"]]
-        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
-        quote({
-            settings[["project_name"]]
-        }), deps = "settings"), input_path_mri = targets::tar_target_raw("path_mri", 
-        quote({
-            settings[["path_mri"]]
-        }), deps = "settings"), input_skip_recon = targets::tar_target_raw("skip_recon", 
-        quote({
-            settings[["skip_recon"]]
-        }), deps = "settings"), input_afni_path = targets::tar_target_raw("afni_path", 
-        quote({
-            settings[["afni_path"]]
-        }), deps = "settings"), input_params = targets::tar_target_raw("params", 
-        quote({
-            settings[["params"]]
-        }), deps = "settings"), input_dcm2niix_path = targets::tar_target_raw("dcm2niix_path", 
-        quote({
-            settings[["dcm2niix_path"]]
+            settings[["skip_coregistration"]]
         }), deps = "settings"), input_path_ct = targets::tar_target_raw("path_ct", 
         quote({
             settings[["path_ct"]]
-        }), deps = "settings"), input_skip_coregistration = targets::tar_target_raw("skip_coregistration", 
+        }), deps = "settings"), input_dcm2niix_path = targets::tar_target_raw("dcm2niix_path", 
         quote({
-            settings[["skip_coregistration"]]
+            settings[["dcm2niix_path"]]
+        }), deps = "settings"), input_params = targets::tar_target_raw("params", 
+        quote({
+            settings[["params"]]
+        }), deps = "settings"), input_afni_path = targets::tar_target_raw("afni_path", 
+        quote({
+            settings[["afni_path"]]
+        }), deps = "settings"), input_skip_recon = targets::tar_target_raw("skip_recon", 
+        quote({
+            settings[["skip_recon"]]
+        }), deps = "settings"), input_path_mri = targets::tar_target_raw("path_mri", 
+        quote({
+            settings[["path_mri"]]
+        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
+        quote({
+            settings[["project_name"]]
+        }), deps = "settings"), input_freesurfer_path = targets::tar_target_raw("freesurfer_path", 
+        quote({
+            settings[["freesurfer_path"]]
+        }), deps = "settings"), input_fsl_path = targets::tar_target_raw("fsl_path", 
+        quote({
+            settings[["fsl_path"]]
+        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
+        quote({
+            settings[["subject_code"]]
         }), deps = "settings"), check_commandline_tools = targets::tar_target_raw(name = "cmd_tools", 
         command = quote({
             .__target_expr__. <- quote({
