@@ -5598,6 +5598,30 @@ class Shidashi {
     jquery__WEBPACK_IMPORTED_MODULE_0___default()(selector).DirectChat("toggle");
   }
 
+  accordion(args) {
+    // method: expand, collapse, toggle
+    let $accordionItem;
+    if( args.inputId && args.title ){
+      $accordionItem = jquery__WEBPACK_IMPORTED_MODULE_0___default()(`.card-accordion#${ args.inputId } .card-accordion-header[data-title='${args.title}']`);
+    } else if (args.selector) {
+      console.log(`.card-accordion${args.selector}`);
+      $accordionItem = jquery__WEBPACK_IMPORTED_MODULE_0___default()(`.card-accordion${args.selector}`);
+    }
+    if(!$accordionItem || !$accordionItem.length){ return; }
+
+    if( args.method === "expand" ) {
+      if( $accordionItem.hasClass("collapsed") ) {
+        $accordionItem.click();
+      }
+    } else if ( args.method === "collapse" ) {
+      if( !$accordionItem.hasClass("collapsed") ) {
+        $accordionItem.click();
+      }
+    } else {
+      $accordionItem.click();
+    }
+  }
+
   flipBox(inputId){
     let el = document.getElementById(inputId);
     if(el && el.classList.contains("flip-box")) {
@@ -6164,6 +6188,9 @@ class Shidashi {
     });
     this.shinyHandler("card2widget", (params) => {
       this.toggleCard2(params.selector);
+    });
+    this.shinyHandler("accordion", (params) => {
+      this.accordion(params);
     });
 
     this.shinyHandler("add_class", (params) => {
