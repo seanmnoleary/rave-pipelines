@@ -1,10 +1,10 @@
-divider:
-  Preprocess:
-    order: 0
-  Built-ins:
-    order: 10
-  Settings:
-    order: 10000
+groups:
+  Import Signals:
+    order: 1
+    open: no
+  Surface & Electrodes:
+    order: 7
+    open: no
 modules:
   import_lfp_native:
     label: Native Structure
@@ -60,10 +60,12 @@ modules:
     order: 10001
   stimulation_explorer:
     label: Stimulation Explorer
-groups:
-  Import Signals:
-    order: 1
-    open: no
-  Surface & Electrodes:
-    order: 7
-    open: no
+  phase_explorer:
+    label: Phase Explorer
+divider:
+  Preprocess:
+    order: 0
+  Built-ins:
+    order: 10
+  Settings:
+    order: 10000
