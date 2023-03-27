@@ -629,7 +629,7 @@ heat_map_axes <- function(x, y, xlab, ylab, xax=TRUE, yax=TRUE, yntick=6) {
 easy_layout <- function(K, nrows = 1, legend,
                         legend_size = lcm(3), legend_side = 4,
                         s_margin = par('mar'), b_margin = par('oma'),
-                        l_margin){
+                        l_margin, parent_env = parent.frame()){
   #TODO RUTABAGA
   if(missing( l_margin )){
     l_margin = local({
@@ -674,8 +674,7 @@ easy_layout <- function(K, nrows = 1, legend,
   par(oma = b_margin)
 
   # draw legend first!
-  parent_env = parent.frame()
-  expr = eval(substitute(substitute(legend)), parent_env)
+  expr = eval(substitute(legend), parent_env)
 
   par(mar = l_margin)
   eval(expr, envir = new.env(parent = parent_env))
@@ -939,17 +938,7 @@ get_color <- function(ii) {
 
 # ----- Added by Zhengjia ------------
 
-plot_clean <- function(
-    xlim, ylim, x = 1, y = 1, type = "n", xlab="", ylab="",
-    cex.main=rave_cex.main, cex.axis=rave_cex.axis, cex.lab=rave_cex.lab,...
-) {
-
-  plot(x, y, type = type, axes = F, ylab = ylab, xlab = xlab,
-       xlim = range(xlim), ylim = range(ylim),
-       cex.main=cex.main, cex.axis=cex.axis, cex.lab=cex.lab, ...)
-}
-
-itpc_plot_heatmap <- function(
+plot_ITPC_heatmap <- function(
     x,
     analysis_time = NULL,
     analysis_frequency = NULL,
@@ -969,7 +958,6 @@ itpc_plot_heatmap <- function(
     zmax <- x$itpc_max
   }
   zmax <- max(0.001, zmax)
-
 
   easy_layout(
     x$ngroups,
@@ -1220,3 +1208,4 @@ itpc_erp_time_plot = function(
 
   invisible()
 }
+

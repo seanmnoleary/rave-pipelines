@@ -8,7 +8,7 @@ NULL
 
 library(raveio)
 
-extdata_path <- "data"
+extdata_path <- normalizePath("./data", mustWork = FALSE)
 
 `%within%` <- function(a, b){
   (a >= min(b)) & (a <= max(b))

@@ -19,7 +19,7 @@ condition_groups:
   - drive_v
   - meant_v
 erp_downsample_rate_to: 100.0
-analyze_electrodes: 14-15
+analyze_electrodes: 14-16
 erp_analysiswindow:
 - 0.0
 - 1.0

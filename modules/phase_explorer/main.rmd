@@ -1,9 +1,6 @@
 ---
 title: "RAVE Pipeline - Phase Explorer"
 output:
-  pdf_document:
-    fig_width: 12
-    fig_height: 6
   html_document: 
     code_folding: show
     fig_width: 12
@@ -56,7 +53,8 @@ subject <- RAVESubject$new(
   project_name = project_name, 
   subject_code = subject_code
 )
-print(subject)
+subject_id <- subject$id
+print(subject_id)
 ```
 
 Let's check the inputs from `settings.yaml`:
@@ -228,14 +226,22 @@ plot_data_itpc_plot_heatmap <- generate_plot_data_itpc_plot_heatmap(
 ```
 
 ```{rave plot_ITPC_heatmap, export = "plot_ITPC_heatmap_result", cue = "always"}
-plot_ITPC_heatmap_result <- Sys.time()
-itpc_plot_heatmap(
-  plot_data_itpc_plot_heatmap,
-  analysis_time = analysis_time,
-  analysis_frequency = analysis_frequency,
-  zmax = 0,
-  useRaster = TRUE
-)
+plot_data <- plot_data_itpc_plot_heatmap
+ngroups <- plot_data$ngroups
+tryCatch({
+  plot_ITPC_heatmap_result <- plot_ITPC_heatmap(
+    x = plot_data,
+    analysis_time = analysis_time,
+    analysis_frequency = analysis_frequency,
+    zmax = 0,
+    nrows = (ngroups >= 4) + 1,
+    legend_size = ifelse(ngroups > 1, lcm(3.5), lcm(4.5)),
+    useRaster = TRUE
+  )
+}, error = function(e){
+  traceback(e)
+  stop(e)
+})
 ```
 
 ## Step 4: ERP vs Phase Reset plot
@@ -305,3 +311,9 @@ build_pipeline(make_file = "make-phase_explorer.R")
 
 Once the pipeline script `make-phase_explorer.R` is built, you can visualize and execute the pipeline without the need of re-knit this document. Notice we use `r` block instead of `rave`. (This is because the code blocks are not part of pipeline targets.)
 
+```{r visualize, echo=FALSE}
+Sys.setenv("RAVE_PIPELINE" = normalizePath("."))
+try({
+  raveio::pipeline_visualize()
+}, silent = TRUE)
+```

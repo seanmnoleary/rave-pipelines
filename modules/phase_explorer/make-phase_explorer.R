@@ -1,13 +1,16 @@
 library(targets)
 library(raveio)
 source("common.R", local = TRUE, chdir = TRUE)
-targets::tar_source(
-  sort(list.files(
-    "R/", ignore.case = TRUE,
-    pattern = "^shared-.*\\.R",
-    full.names = TRUE
-  ))
-)
+._._env_._. <- environment()
+lapply(sort(list.files(
+  "R/", ignore.case = TRUE,
+  pattern = "^shared-.*\\.R", 
+  full.names = TRUE
+)), function(f) {
+  source(f, local = ._._env_._., chdir = TRUE)
+})
+targets::tar_option_set(envir = ._._env_._.)
+rm(._._env_._.)
 ...targets <- list(`__Check_settings_file` = targets::tar_target_raw("settings_path", 
     "settings.yaml", format = "file"), `__Load_settings` = targets::tar_target_raw("settings", 
     quote({
@@ -63,7 +66,8 @@ targets::tar_source(
             .__target_expr__. <- quote({
                 subject <- RAVESubject$new(project_name = project_name, 
                   subject_code = subject_code)
-                print(subject)
+                subject_id <- subject$id
+                print(subject_id)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -77,7 +81,8 @@ targets::tar_source(
                 {
                   subject <- RAVESubject$new(project_name = project_name, 
                     subject_code = subject_code)
-                  print(subject)
+                  subject_id <- subject$id
+                  print(subject_id)
                 }
                 subject
             }), target_depends = c("project_name", "subject_code"
@@ -430,10 +435,17 @@ targets::tar_source(
     plot_ITPC_heatmap = targets::tar_target_raw(name = "plot_ITPC_heatmap_result", 
         command = quote({
             .__target_expr__. <- quote({
-                plot_ITPC_heatmap_result <- Sys.time()
-                itpc_plot_heatmap(plot_data_itpc_plot_heatmap, 
-                  analysis_time = analysis_time, analysis_frequency = analysis_frequency, 
-                  zmax = 0, useRaster = TRUE)
+                plot_data <- plot_data_itpc_plot_heatmap
+                ngroups <- plot_data$ngroups
+                tryCatch({
+                  plot_ITPC_heatmap_result <- plot_ITPC_heatmap(x = plot_data, 
+                    analysis_time = analysis_time, analysis_frequency = analysis_frequency, 
+                    zmax = 0, nrows = (ngroups >= 4) + 1, legend_size = ifelse(ngroups > 
+                      1, lcm(3.5), lcm(4.5)), useRaster = TRUE)
+                }, error = function(e) {
+                  traceback(e)
+                  stop(e)
+                })
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -445,10 +457,17 @@ targets::tar_source(
         }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
             target_export = "plot_ITPC_heatmap_result", target_expr = quote({
                 {
-                  plot_ITPC_heatmap_result <- Sys.time()
-                  itpc_plot_heatmap(plot_data_itpc_plot_heatmap, 
-                    analysis_time = analysis_time, analysis_frequency = analysis_frequency, 
-                    zmax = 0, useRaster = TRUE)
+                  plot_data <- plot_data_itpc_plot_heatmap
+                  ngroups <- plot_data$ngroups
+                  tryCatch({
+                    plot_ITPC_heatmap_result <- plot_ITPC_heatmap(x = plot_data, 
+                      analysis_time = analysis_time, analysis_frequency = analysis_frequency, 
+                      zmax = 0, nrows = (ngroups >= 4) + 1, legend_size = ifelse(ngroups > 
+                        1, lcm(3.5), lcm(4.5)), useRaster = TRUE)
+                  }, error = function(e) {
+                    traceback(e)
+                    stop(e)
+                  })
                 }
                 plot_ITPC_heatmap_result
             }), target_depends = c("plot_data_itpc_plot_heatmap", 
