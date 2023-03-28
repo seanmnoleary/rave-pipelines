@@ -3,7 +3,8 @@ import $ from 'jquery';
 // import 'admin-lte/dist/js/adminlte.js';
 import './js/AdminLTE/AdminLTE.js'
 // import "admin-lte/dist/css/adminlte.css";
-import "./css/OverlayScrollbars.css";
+// import "./css/OverlayScrollbars.css";
+import 'overlayscrollbars/overlayscrollbars.css';
 import "./scss/shidashi.scss";
 import { registerProgressOutput } from './js/shiny-progress.js';
 import { registerClipboardOutput } from './js/shiny-clipboard.js';

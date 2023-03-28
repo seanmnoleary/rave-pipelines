@@ -336,6 +336,15 @@ input:checked + .slider::before {
   width: 28px;
 }
 
+.os-theme-dark, .os-theme-light {
+  --os-size: 6px;
+
+  & > .os-scrollbar-corner {
+    height: 28px;
+    width: 28px;
+  }
+}
+
 .overflow-visible-on-hover {
   @include overflow(hidden);
 
@@ -346,6 +355,10 @@ input:checked + .slider::before {
     min-width: 100%;
     z-index: 1061;
   }
+}
+
+.threejs-control {
+  scrollbar-width: thin;
 }
 
 /** General rules: dimensions **/
@@ -417,6 +430,7 @@ input:checked + .slider::before {
   }
 }
 
+
 .no-padding { padding: 0!important; }
 .no-margin { margin: 0!important; }
 
@@ -450,6 +464,19 @@ input:checked + .slider::before {
 
   & .os-content {
     min-height: 100%;
+  }
+
+  & .os-viewport {
+    height: 100%;
+
+    & .tab-content {
+      display: flex;
+      height: 100%;
+
+      & .tab-pane {
+        width: 100%;
+      }
+    }
   }
 }
 
@@ -594,6 +621,16 @@ section.module_main_ui .screen-height {
       &.overflow-#{$d}-#{$type} {
         @include overflow($type, $d);
       }
+    }
+  }
+
+  &.padding-bottom-70 {
+    padding-bottom: unset;
+  }
+  &.row.output-wrapper {
+    & > .col-sm-12:last-child,
+    & > .os-viewport > .col-sm-12:last-child {
+      padding-bottom: 70px;
     }
   }
 }
@@ -1182,7 +1219,7 @@ fieldset,
     right: 8px;
     width: 15px;
     height: 15px;
-    border: 2px solid #333;
+    border: 2px solid $info;
     border-top: none;
     /*padding: 10px; */
     border-radius: 8px;
@@ -1284,3 +1321,5 @@ fieldset,
 .swal-text {
   white-space: break-spaces;
 }
+
+

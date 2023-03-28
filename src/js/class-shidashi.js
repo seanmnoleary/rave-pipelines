@@ -1,8 +1,19 @@
 import $ from 'jquery';
-// import 'overlayscrollbars/js/jquery.overlayScrollbars.js';
-import "./scrollbars.min.js";
+import {
+  OverlayScrollbars,
+  ScrollbarsHidingPlugin,
+  SizeObserverPlugin,
+  ClickScrollPlugin
+} from 'overlayscrollbars';
+
+OverlayScrollbars.plugin([
+  SizeObserverPlugin,
+  ScrollbarsHidingPlugin,
+  ClickScrollPlugin
+]);
 
 const default_scroll_opt = {
+  /*
   autoUpdate           : null,
   autoUpdateInterval   : 330,
   sizeAutoCapable      : true,
@@ -18,7 +29,24 @@ const default_scroll_opt = {
     dynWidth       : false,
     dynHeight      : true,
     inheritedAttrs : ["style", "class"]
-  }
+  }*/
+  paddingAbsolute             : true,
+  showNativeOverlaidScrollbars: false,
+  update: {
+    elementEvents     : [['img', 'load']],
+    debounce          : [0, 330],
+    attributes        : null,
+    ignoreMutation    : null,
+  },
+  scrollbars: {
+    theme             : 'os-theme-dark',
+    visibility        : 'auto',
+    autoHide          : 'move',
+    autoHideDelay     : 800,
+    dragScroll        : true,
+    clickScroll       : true,
+    pointers          : ['mouse', 'touch', 'pen'],
+  },
 };
 
 class Shidashi {
@@ -58,15 +86,15 @@ class Shidashi {
     this.scroller = this.makeFancyScroll(
       "body:not(.overflow-hidden)",
       {
-        overflowBehavior : {
+        overflow : {
             x : "hidden",
             y : "scroll"
         },
-        callbacks : {
-          onScroll : () => {
-            this._mainScrollCallback(this.scroller);
-          },
-        },
+      },
+      {
+        scroll: ( instance, event ) => {
+          this._mainScrollCallback( instance );
+        }
       }
     );
   }
@@ -620,7 +648,6 @@ class Shidashi {
     if( args.inputId && args.title ){
       $accordionItem = $(`.card-accordion#${ args.inputId } .card-accordion-header[data-title='${args.title}']`);
     } else if (args.selector) {
-      console.log(`.card-accordion${args.selector}`);
       $accordionItem = $(`.card-accordion${args.selector}`);
     }
     if(!$accordionItem || !$accordionItem.length){ return; }
@@ -711,7 +738,7 @@ class Shidashi {
   }
 
   // scroller
-  makeFancyScroll(selector, options = {}) {
+  makeFancyScroll(selector, options = {}, callbacks = {}) {
     // https://kingsora.github.io/OverlayScrollbars/#!documentation/options
     const dark_mode = this.isDarkMode();
 
@@ -720,16 +747,32 @@ class Shidashi {
     options.className = className;
 
     const elems = document.querySelectorAll(selector);
-    const instance = $(selector)
-      .overlayScrollbars($.extend(default_scroll_opt, options))
-      .overlayScrollbars();
 
-    return(instance);
+    let instances = [];
+
+    const scrollOptions = $.extend(default_scroll_opt, options);
+
+    elems.forEach( el => {
+      const instance = OverlayScrollbars({
+        target: el,
+      }, scrollOptions, callbacks);
+      instances.push( instance );
+    })
+    // const instance = $(selector)
+    //   .overlayScrollbars($.extend(default_scroll_opt, options))
+    //   .overlayScrollbars();
+
+    if( instances.length === 1 ) {
+      instances = instances[0];
+    }
+
+    return(instances);
   }
 
   scrollTop(duration = 200) {
     if(this.scroller){
-      this.scroller.scroll({ y : "0%" }, duration);
+      // FIXME
+      // this.scroller.scroll({ y : "0%" }, duration);
     }
   }
 
@@ -966,49 +1009,73 @@ class Shidashi {
 
     // --------------- Fancy scroll ---------------
     this.makeFancyScroll(".fancy-scroll-y:not(.overflow-hidden,.screen-height), .overflow-y-auto", {
-        overflowBehavior : {
+        overflow : {
             x : "hidden",
             y : "scroll"
         }
       });
 
-    const screenScrollers = this.makeFancyScroll(".screen-height.overflow-y-scroll", {
-      overflowBehavior : {
-          x : "hidden",
-          y : "scroll"
+    this.makeFancyScroll(
+      ".screen-height.overflow-y-scroll",
+      {
+        overflow : {
+            x : "hidden",
+            y : "scroll"
+        }
       },
-      callbacks : {
-        onScroll : () => {
-          this._mainScrollCallback(screenScrollers);
-        },
-      },
-    });
+      {
+        scroll: ( instance, event ) => {
+          this._mainScrollCallback( instance );
+        }
+      }
+    );
 
 
-    this.makeFancyScroll(".resize-vertical", {
+    this.makeFancyScroll(
+      ".resize-vertical",
+      {
         resize: "vertical",
-        overflowBehavior : {
+        overflow : {
             x : "hidden",
             y : "scroll"
         },
-        callbacks : {
-          onHostSizeChanged : () => {
-            this.triggerResize( 200 );
-          }
-        }
-      });
-    this.makeFancyScroll(".fancy-scroll-x", {
-        overflowBehavior : {
+      },
+      {
+        updated: (() => {
+          let sizeChanged = 0;
+          return ( instance, args ) => {
+            if( args && args.updateHints.sizeChanged ) {
+              let sizeChanged_ = sizeChanged + 1;
+              sizeChanged = sizeChanged_;
+              setTimeout(() => {
+                if( sizeChanged === sizeChanged_ ) {
+                  sizeChanged = 0;
+                  this.triggerResize();
+                }
+              }, 300);
+            }
+          };
+        })()
+      }
+    );
+    this.makeFancyScroll(
+      ".fancy-scroll-x",
+      {
+        overflow : {
           x : "scroll",
           y : "hidden"
         }
-      });
-    this.makeFancyScroll(".fancy-scroll, .overflow-auto", {
-        overflowBehavior : {
+      }
+    );
+    this.makeFancyScroll(
+      ".fancy-scroll, .overflow-auto",
+      {
+        overflow : {
           x : "scroll",
           y : "scroll"
         }
-      });
+      }
+    );
 
     // register listener
     window.addEventListener('storage', (evt) => {
@@ -1312,7 +1379,6 @@ class Shidashi {
 
 
     this.shinyOn("shiny:idle", (e) => {
-      console.log(e);
       $(".toast.hide-on-shiny-idle").toast("hide");
     })
 
