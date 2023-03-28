@@ -768,6 +768,22 @@ class Shidashi {
     }
     this._shiny.addCustomMessageHandler("shidashi." + action, callback);
   }
+
+  shinyOn( eventType, callback ) {
+    if(!this._shiny){
+      if( window.Shiny ){
+        this._shiny = window.Shiny;
+      } else {
+        console.error("Cannot find window.Shiny object. Is R-shiny running?");
+        return false;
+      }
+    }
+
+    this.$document.on( eventType, ( event ) => {
+      callback( event );
+    })
+  }
+
   shinySetInput(inputId, value, add_timestamp = true, children = false) {
     this.ensureShiny((shiny) => {
       if( add_timestamp ){
@@ -1294,6 +1310,11 @@ class Shidashi {
 
     });
 
+
+    this.shinyOn("shiny:idle", (e) => {
+      console.log(e);
+      $(".toast.hide-on-shiny-idle").toast("hide");
+    })
 
 
 
