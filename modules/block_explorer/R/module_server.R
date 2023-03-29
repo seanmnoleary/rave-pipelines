@@ -966,20 +966,20 @@ module_server <- function(input, output, session, ...){
             }
 
             // set camera
-            canvas.main_camera.position.set(
+            canvas.mainCamera.position.set(
               {{ position[[1]] }} ,
               {{ position[[2]] }} ,
               {{ position[[3]] }}
             );
-            canvas.main_camera.up.set(
+            canvas.mainCamera.up.set(
               {{ up[[1]] }} ,
               {{ up[[2]] }} ,
               {{ up[[3]] }}
             )
-            canvas.main_camera.updateProjectionMatrix();
+            canvas.mainCamera.updateProjectionMatrix();
 
             // Force render one frame (update the canvas)
-            canvas.start_animation(0);
+            canvas.needsUpdate = true;
             ',
             .open = "{{", .close = "}}"
           )

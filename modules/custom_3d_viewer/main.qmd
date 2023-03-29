@@ -63,7 +63,7 @@ loaded_brain <- load_brain_from_subject_code(
 )
 ```
 
-```{rave render_initial_viewer, language = "R", export = "initial_brain_widget", collapse=TRUE}
+```{rave render_initial_viewer, language = "R", export = "initial_brain_widget", collapse=TRUE, cue = "always"}
 #| code-fold: true
 #| code-summary: "Show a complicated implementation"
 
@@ -112,25 +112,25 @@ initial_brain_widget <- loaded_brain$brain$plot(
     }
     
     // set camera
-    canvas.main_camera.position.set(
+    canvas.mainCamera.position.set(
       {{ position[[1]] }} , 
       {{ position[[2]] }} , 
       {{ position[[3]] }}
     );
-    canvas.main_camera.up.set(
+    canvas.mainCamera.up.set(
       {{ up[[1]] }} , 
       {{ up[[2]] }} , 
       {{ up[[3]] }}
     )
-    canvas.main_camera.updateProjectionMatrix();
+    canvas.mainCamera.updateProjectionMatrix();
 
     // Let shiny know the viewer is ready
-    if( canvas.shiny_mode ) {
-      Shiny.setInputValue("{{ shiny_outputId }}", "{{Sys.time()}}");
+    if( window.Shiny ) {
+      window.Shiny.setInputValue("{{ shiny_outputId }}", "{{Sys.time()}}");
     }
 
     // Force render one frame (update the canvas)
-    canvas.start_animation(0);
+    canvas.needsUpdate = true;
     ',
     .open = "{{", .close = "}}"
   )
@@ -441,21 +441,21 @@ brain_widget <- brain_with_data$brain$plot(
     }
     
     // set camera
-    canvas.main_camera.position.set(
+    canvas.mainCamera.position.set(
       {{ position[[1]] }} , 
       {{ position[[2]] }} , 
       {{ position[[3]] }}
     );
-    canvas.main_camera.up.set(
+    canvas.mainCamera.up.set(
       {{ up[[1]] }} , 
       {{ up[[2]] }} , 
       {{ up[[3]] }}
     )
-    canvas.main_camera.updateProjectionMatrix();
+    canvas.mainCamera.updateProjectionMatrix();
 
     // Let shiny know the viewer is ready
-    if( canvas.shiny_mode ) {
-      Shiny.setInputValue("{{ shiny_outputId }}", "{{Sys.time()}}");
+    if( window.Shiny ) {
+       window.Shiny.setInputValue("{{ shiny_outputId }}", "{{Sys.time()}}");
     }
 
     // Force render one frame (update the canvas)
