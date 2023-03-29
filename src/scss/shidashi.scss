@@ -267,6 +267,13 @@ input:checked + .slider::before {
   overflow: hidden!important;
 }
 
+.visibility-visible {
+  @include visibility(visible, true);
+}
+.visibility-none {
+  @include visibility(hidden, true);
+}
+
 @each $type in block, inline, inline-block, flex, inline-flex, none {
 
   .display-#{$type} {
@@ -664,7 +671,23 @@ body.navbar-iframe-hidden .content-wrapper.iframe-mode {
 }
 
 body.navbar-hidden:not(.iframe-mode-fullscreen) nav.main-header {
-  display: none!important;
+  @include visibility(collapse, true);
+  @include pointer-events(none, false);
+
+  & .push-menu {
+    @include pointer-events(all, false);
+    @include visibility(visible, true);
+
+    width: 35px;
+    height: 30px;
+    background-color: $gray-dark;
+
+    & .nav-link[data-widget="pushmenu"] {
+      padding: 3px 10px;
+      width: 35px;
+      height: 30px;
+    }
+  }
 }
 
 body.scroller-not-top:not(.iframe-mode-fullscreen),
@@ -674,7 +697,7 @@ body.navbar-hidden:not(.iframe-mode-fullscreen) {
   }
 
   & nav.main-header {
-    opacity: 0.3;
+    // opacity: 0.3;
     margin-bottom: -40px;
 
     &:hover {
