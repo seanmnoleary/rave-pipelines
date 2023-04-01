@@ -1,5 +1,5 @@
 uploaded_source: YAH_demo_export-20210525-075830.fst
-use_template: yes
+use_template: no
 surface_types: ~
 subject_code: YAH
 shiny_outputId: custom_3d_viewer-viewer_ready

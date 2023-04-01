@@ -16,42 +16,42 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_uploaded_source = targets::tar_target_raw("uploaded_source", 
+    input_controllers = targets::tar_target_raw("controllers", 
         quote({
-            settings[["uploaded_source"]]
-        }), deps = "settings"), input_use_template = targets::tar_target_raw("use_template", 
-        quote({
-            settings[["use_template"]]
-        }), deps = "settings"), input_surface_types = targets::tar_target_raw("surface_types", 
-        quote({
-            settings[["surface_types"]]
-        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
-        quote({
-            settings[["subject_code"]]
-        }), deps = "settings"), input_shiny_outputId = targets::tar_target_raw("shiny_outputId", 
-        quote({
-            settings[["shiny_outputId"]]
-        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
-        quote({
-            settings[["project_name"]]
-        }), deps = "settings"), input_main_camera = targets::tar_target_raw("main_camera", 
-        quote({
-            settings[["main_camera"]]
-        }), deps = "settings"), input_data_source_project = targets::tar_target_raw("data_source_project", 
-        quote({
-            settings[["data_source_project"]]
-        }), deps = "settings"), input_data_source_pipeline_target = targets::tar_target_raw("data_source_pipeline_target", 
-        quote({
-            settings[["data_source_pipeline_target"]]
-        }), deps = "settings"), input_data_source_pipeline = targets::tar_target_raw("data_source_pipeline", 
-        quote({
-            settings[["data_source_pipeline"]]
+            settings[["controllers"]]
         }), deps = "settings"), input_data_source = targets::tar_target_raw("data_source", 
         quote({
             settings[["data_source"]]
-        }), deps = "settings"), input_controllers = targets::tar_target_raw("controllers", 
+        }), deps = "settings"), input_data_source_pipeline = targets::tar_target_raw("data_source_pipeline", 
         quote({
-            settings[["controllers"]]
+            settings[["data_source_pipeline"]]
+        }), deps = "settings"), input_data_source_pipeline_target = targets::tar_target_raw("data_source_pipeline_target", 
+        quote({
+            settings[["data_source_pipeline_target"]]
+        }), deps = "settings"), input_data_source_project = targets::tar_target_raw("data_source_project", 
+        quote({
+            settings[["data_source_project"]]
+        }), deps = "settings"), input_main_camera = targets::tar_target_raw("main_camera", 
+        quote({
+            settings[["main_camera"]]
+        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
+        quote({
+            settings[["project_name"]]
+        }), deps = "settings"), input_shiny_outputId = targets::tar_target_raw("shiny_outputId", 
+        quote({
+            settings[["shiny_outputId"]]
+        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
+        quote({
+            settings[["subject_code"]]
+        }), deps = "settings"), input_surface_types = targets::tar_target_raw("surface_types", 
+        quote({
+            settings[["surface_types"]]
+        }), deps = "settings"), input_use_template = targets::tar_target_raw("use_template", 
+        quote({
+            settings[["use_template"]]
+        }), deps = "settings"), input_uploaded_source = targets::tar_target_raw("uploaded_source", 
+        quote({
+            settings[["uploaded_source"]]
         }), deps = "settings"), get_valid_project_name = targets::tar_target_raw(name = "loaded_brain", 
         command = quote({
             .__target_expr__. <- quote({

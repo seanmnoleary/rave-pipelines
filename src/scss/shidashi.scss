@@ -1012,6 +1012,7 @@ body.dark-mode .nav-sidebar .nav-header.nav-divider {
 
   & .flip-box-inner {
     position: relative;
+    height: 100%;
     width: 100%;
     margin: 0 !important;
     padding: 0 !important;
@@ -1036,6 +1037,16 @@ body.dark-mode .nav-sidebar .nav-header.nav-divider {
       z-index: 1038;
       transform: rotateY(180deg);
     }
+  }
+
+  &.resize-vertical {
+    min-height: 1px;
+
+    & .flip-box-inner {
+      position: absolute;
+      @include fill-height();
+    }
+
   }
 
   &.fill .flip-box-inner,
