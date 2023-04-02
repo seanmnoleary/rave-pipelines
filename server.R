@@ -214,7 +214,6 @@ server <- function(input, output, session){
             ravedash::safe_observe({
 
               jupyter_conf <- get_jupyter_configuration()
-              rs_available <- dipsaus::rs_avail(child_ok = TRUE, shiny_ok = TRUE)
               jupyter_port <- jupyter_conf$port
               if(!length(jupyter_port)) {
                 jupyter_port <- raveio::raveio_getopt("jupyter_port", default = 17284L)
@@ -229,7 +228,6 @@ server <- function(input, output, session){
               }, silent = TRUE)
 
               # shutdown jupyter UI
-              start_jupyter_ui <- NULL
               if(jupyter_running) {
                 shutdown_jupyter_ui <- shiny::actionButton(
                   inputId = "ravedash_shutdown_jupyter",
@@ -252,12 +250,10 @@ server <- function(input, output, session){
                   label = "Stop RAVE",
                   icon = ravedash::shiny_icons[["power-off"]]
                 )
-                if(rs_available) {
-                  start_jupyter_ui <- shiny::actionButton(
-                    inputId = "ravedash_start_jupyter",
-                    label = "Start Jupyter"
-                  )
-                }
+                start_jupyter_ui <- shiny::actionButton(
+                  inputId = "ravedash_start_jupyter",
+                  label = "Start Jupyter"
+                )
               }
 
 
