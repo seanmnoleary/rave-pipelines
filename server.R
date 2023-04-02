@@ -154,9 +154,6 @@ server <- function(input, output, session){
                 Sys.sleep(0.5)
                 shiny::removeModal()
               })
-              if(!isTRUE(dipsaus::rs_avail(child_ok = TRUE, shiny_ok = TRUE))) {
-                stop("Current RAVE session is not running from RStudio. Please either start RAVE from RStudio, or manually start JupyterLab.")
-              }
               conf <- get_jupyter_configuration()
 
               if(length(conf$confpath) != 1 || is.na(conf$confpath)) {
