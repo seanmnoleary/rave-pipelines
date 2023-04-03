@@ -226,6 +226,7 @@ server <- function(input, output, session){
 
               # shutdown jupyter UI
               if(jupyter_running) {
+                start_jupyter_ui <- NULL
                 shutdown_jupyter_ui <- shiny::actionButton(
                   inputId = "ravedash_shutdown_jupyter",
                   label = "Stop Jupyter"
