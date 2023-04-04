@@ -23,6 +23,6 @@ kernel_table:
   - 19.0
 pre_downsample: 4.0
 precision: float
-project_name: devel
-subject_code: DemoSubject
+project_name: test
+subject_code: PAV006
 target_sample_rate: 100.0
