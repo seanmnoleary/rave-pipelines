@@ -298,11 +298,10 @@ module_server <- function(input, output, session, ...){
               value = target_sample_rate
             )
           }
-          precision <- precision %OF% c("double", "float")
-          shiny::updateSelectInput(
+          shiny::updateCheckboxInput(
             session = session,
             inputId = "precision",
-            selected = precision
+            value = identical(precision, "float")
           )
 
         })
