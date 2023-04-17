@@ -399,6 +399,7 @@ module_server <- function(input, output, session, ...){
         item$Electrode <- NULL
         item$VertexNumber <- NULL
         item$SurfaceType <- NULL
+        item$Radius <- NULL
 
         if(length(item$Hemisphere)) {
           item$Hemisphere <- tolower(item$Hemisphere)
