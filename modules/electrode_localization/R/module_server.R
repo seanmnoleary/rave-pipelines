@@ -381,6 +381,11 @@ module_server <- function(input, output, session, ...){
     group_table <- local_data$plan_list[[group_id]]
     brain_proxy$clear_localization(update_shiny = reset)
 
+    try({
+      # Old threeBrain might not have this method
+      brain_proxy$set_incoming_localization_hemisphere( group_table$Hemisphere[[1]] )
+    })
+
     ii <- 1L
     if(!reset) {
       for(ii in seq_len(nrow(group_table))) {
@@ -389,14 +394,22 @@ module_server <- function(input, output, session, ...){
           break
         }
         # Use OrigCoord_xyz if possible
-        item <- list(
-          Coord_x = row$OrigCoord_x,
-          Coord_y = row$OrigCoord_y,
-          Coord_z = row$OrigCoord_z,
-          Label = row$Label,
-          FSIndex = row$FSIndex,
-          FSLabel = row$FSLabel
-        )
+        item <- as.list(row)
+        # remove read-only attributes
+        item$Electrode <- NULL
+        item$VertexNumber <- NULL
+        item$SurfaceType <- NULL
+
+        if(length(item$Hemisphere)) {
+          item$Hemisphere <- tolower(item$Hemisphere)
+          if( !item$Hemisphere %in% c("left", "right") ) {
+            item$Hemisphere <- NULL
+          }
+        }
+        # If `OrigCoord_xyz` exist, use them, otherwise use `Coord_xyz`
+        item$Coord_x <- row$OrigCoord_x
+        item$Coord_y <- row$OrigCoord_y
+        item$Coord_z <- row$OrigCoord_z
         item$Coord_x %?<-% row$Coord_x
         item$Coord_y %?<-% row$Coord_y
         item$Coord_z %?<-% row$Coord_z

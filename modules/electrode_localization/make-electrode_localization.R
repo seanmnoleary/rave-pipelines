@@ -9,46 +9,47 @@ lapply(sort(list.files(
 )), function(f) {
   source(f, local = ._._env_._., chdir = TRUE)
 })
+targets::tar_option_set(envir = ._._env_._.)
 rm(._._env_._.)
 ...targets <- list(`__Check_settings_file` = targets::tar_target_raw("settings_path", 
     "settings.yaml", format = "file"), `__Load_settings` = targets::tar_target_raw("settings", 
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    `__extern_path_localization_plan` = targets::tar_target_raw("settings_path._localization_plan_", 
-        "./data/localization_plan.json", format = "file"), input_localization_plan = targets::tar_target_raw("localization_plan", 
+    input_nonlinear_morphing = targets::tar_target_raw("nonlinear_morphing", 
         quote({
-            asNamespace("raveio")$pipeline_load_extdata(name = "localization_plan", 
-                format = "json", error_if_missing = FALSE, default_if_missing = structure(list(), 
-                  class = "key_missing"), pipe_dir = ".")
-        }), deps = "settings_path._localization_plan_"), `__extern_path_localization_list` = targets::tar_target_raw("settings_path._localization_list_", 
+            settings[["nonlinear_morphing"]]
+        }), deps = "settings"), input_path_ct = targets::tar_target_raw("path_ct", 
+        quote({
+            settings[["path_ct"]]
+        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
+        quote({
+            settings[["subject_code"]]
+        }), deps = "settings"), input_path_mri = targets::tar_target_raw("path_mri", 
+        quote({
+            settings[["path_mri"]]
+        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
+        quote({
+            settings[["project_name"]]
+        }), deps = "settings"), input_path_transform = targets::tar_target_raw("path_transform", 
+        quote({
+            settings[["path_transform"]]
+        }), deps = "settings"), input_transform_space = targets::tar_target_raw("transform_space", 
+        quote({
+            settings[["transform_space"]]
+        }), deps = "settings"), `__extern_path_localization_list` = targets::tar_target_raw("settings_path._localization_list_", 
         "./data/localization_list.json", format = "file"), input_localization_list = targets::tar_target_raw("localization_list", 
         quote({
             asNamespace("raveio")$pipeline_load_extdata(name = "localization_list", 
                 format = "json", error_if_missing = FALSE, default_if_missing = structure(list(), 
                   class = "key_missing"), pipe_dir = ".")
-        }), deps = "settings_path._localization_list_"), input_transform_space = targets::tar_target_raw("transform_space", 
+        }), deps = "settings_path._localization_list_"), `__extern_path_localization_plan` = targets::tar_target_raw("settings_path._localization_plan_", 
+        "./data/localization_plan.json", format = "file"), input_localization_plan = targets::tar_target_raw("localization_plan", 
         quote({
-            settings[["transform_space"]]
-        }), deps = "settings"), input_path_transform = targets::tar_target_raw("path_transform", 
-        quote({
-            settings[["path_transform"]]
-        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
-        quote({
-            settings[["project_name"]]
-        }), deps = "settings"), input_path_mri = targets::tar_target_raw("path_mri", 
-        quote({
-            settings[["path_mri"]]
-        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
-        quote({
-            settings[["subject_code"]]
-        }), deps = "settings"), input_path_ct = targets::tar_target_raw("path_ct", 
-        quote({
-            settings[["path_ct"]]
-        }), deps = "settings"), input_nonlinear_morphing = targets::tar_target_raw("nonlinear_morphing", 
-        quote({
-            settings[["nonlinear_morphing"]]
-        }), deps = "settings"), load_FreeSurfer_LUT = targets::tar_target_raw(name = "fslut", 
+            asNamespace("raveio")$pipeline_load_extdata(name = "localization_plan", 
+                format = "json", error_if_missing = FALSE, default_if_missing = structure(list(), 
+                  class = "key_missing"), pipe_dir = ".")
+        }), deps = "settings_path._localization_plan_"), load_FreeSurfer_LUT = targets::tar_target_raw(name = "fslut", 
         command = quote({
             .__target_expr__. <- quote({
                 fslut_path <- system.file("palettes", "datacube2", 
@@ -204,7 +205,7 @@ rm(._._env_._.)
                     electrodes <- plan_table$Electrode
                   }
                   if (length(electrodes) != length(plan_table$Electrode)) {
-                    stop(sprintf("The electrode plan table (n=%d) has inconsistent length with registered electrode length (n=%d).", 
+                    stop(sprintf("The electrode planned (n=%d) has inconsistent length with registered channel size (n=%d).", 
                       length(electrodes), length(plan_table$Electrode)))
                   }
                   plan_table$Electrode <- electrodes
@@ -218,11 +219,13 @@ rm(._._env_._.)
                       tname1 <- c("Electrode", "Coord_x", "Coord_y", 
                         "Coord_z")
                       tname2 <- c("Electrode", "Coord_x", "Coord_y", 
-                        "Coord_z", "Radius", "SurfaceType", "FSIndex", 
-                        "FSLabel", "MNI305_x", "MNI305_y", "MNI305_z", 
-                        "OrigCoord_x", "OrigCoord_y", "OrigCoord_z", 
-                        "DistanceShifted", "DistanceToPial", 
-                        "SurfaceElectrode")
+                        "Coord_z", "Radius", "MNI305_x", "MNI305_y", 
+                        "MNI305_z", "FSIndex", "FSLabel", "FSLabel_aparc_a2009s_aseg", 
+                        "FSLabel_aparc_aseg", "FSLabel_aparc_DKTatlas_aseg", 
+                        "FSLabel_aseg", "OrigCoord_x", "OrigCoord_y", 
+                        "OrigCoord_z", "SurfaceElectrode", "DistanceShifted", 
+                        "DistanceToPial", "Sphere_x", "Sphere_y", 
+                        "Sphere_z")
                       if (all(tname1 %in% names(electrode_table))) {
                         tname2 <- tname2[tname2 %in% names(electrode_table)]
                         electrode_table <- electrode_table[, 
@@ -242,7 +245,14 @@ rm(._._env_._.)
                   plan_table$Coord_x %?<-% 0
                   plan_table$Coord_y %?<-% 0
                   plan_table$Coord_z %?<-% 0
-                  plan_table$Radius %?<-% 1
+                  plan_table$Radius %?<-% local({
+                    is_grid <- grepl("^(G$|Grid)", plan_table$LabelPrefix)
+                    is_mini <- grepl("mini$", plan_table$LabelPrefix)
+                    r <- rep(1, nrow(plan_table))
+                    r[is_grid] <- 2
+                    r[is_mini] <- 0.5
+                    r
+                  })
                   plan_table$SurfaceElectrode %?<-% (plan_table$LocationType %in% 
                     c("ECoG"))
                   plan_table$SurfaceType %?<-% "pial"
@@ -324,7 +334,7 @@ rm(._._env_._.)
                       electrodes <- plan_table$Electrode
                     }
                     if (length(electrodes) != length(plan_table$Electrode)) {
-                      stop(sprintf("The electrode plan table (n=%d) has inconsistent length with registered electrode length (n=%d).", 
+                      stop(sprintf("The electrode planned (n=%d) has inconsistent length with registered channel size (n=%d).", 
                         length(electrodes), length(plan_table$Electrode)))
                     }
                     plan_table$Electrode <- electrodes
@@ -338,11 +348,13 @@ rm(._._env_._.)
                         tname1 <- c("Electrode", "Coord_x", "Coord_y", 
                           "Coord_z")
                         tname2 <- c("Electrode", "Coord_x", "Coord_y", 
-                          "Coord_z", "Radius", "SurfaceType", 
-                          "FSIndex", "FSLabel", "MNI305_x", "MNI305_y", 
-                          "MNI305_z", "OrigCoord_x", "OrigCoord_y", 
-                          "OrigCoord_z", "DistanceShifted", "DistanceToPial", 
-                          "SurfaceElectrode")
+                          "Coord_z", "Radius", "MNI305_x", "MNI305_y", 
+                          "MNI305_z", "FSIndex", "FSLabel", "FSLabel_aparc_a2009s_aseg", 
+                          "FSLabel_aparc_aseg", "FSLabel_aparc_DKTatlas_aseg", 
+                          "FSLabel_aseg", "OrigCoord_x", "OrigCoord_y", 
+                          "OrigCoord_z", "SurfaceElectrode", 
+                          "DistanceShifted", "DistanceToPial", 
+                          "Sphere_x", "Sphere_y", "Sphere_z")
                         if (all(tname1 %in% names(electrode_table))) {
                           tname2 <- tname2[tname2 %in% names(electrode_table)]
                           electrode_table <- electrode_table[, 
@@ -362,7 +374,14 @@ rm(._._env_._.)
                     plan_table$Coord_x %?<-% 0
                     plan_table$Coord_y %?<-% 0
                     plan_table$Coord_z %?<-% 0
-                    plan_table$Radius %?<-% 1
+                    plan_table$Radius %?<-% local({
+                      is_grid <- grepl("^(G$|Grid)", plan_table$LabelPrefix)
+                      is_mini <- grepl("mini$", plan_table$LabelPrefix)
+                      r <- rep(1, nrow(plan_table))
+                      r[is_grid] <- 2
+                      r[is_mini] <- 0.5
+                      r
+                    })
                     plan_table$SurfaceElectrode %?<-% (plan_table$LocationType %in% 
                       c("ECoG"))
                     plan_table$SurfaceType %?<-% "pial"
