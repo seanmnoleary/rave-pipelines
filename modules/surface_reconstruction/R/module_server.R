@@ -264,7 +264,7 @@ module_server <- function(input, output, session, ...){
     deriv_path <- shiny::isolate(file.path(local_reactives$temp_dir, "derivative"))
     choices <- list.files(
       deriv_path,
-      pattern = "\\.(nii|\\.nii\\.gz)$",
+      pattern = "\\.(nii|nii\\.gz)$",
       full.names = FALSE,
       recursive = FALSE,
       ignore.case = TRUE,
