@@ -107,7 +107,7 @@ if(length(plan_table)) {
     electrodes <- plan_table$Electrode
   }
   if(length(electrodes) != length(plan_table$Electrode)) {
-    stop(sprintf("The electrode planned (n=%d) has inconsistent length with registered channel size (n=%d).", length(electrodes), length(plan_table$Electrode)))
+    stop(sprintf("The electrode planned (n=%d) has inconsistent length with registered channel size (n=%d).", length(plan_table$Electrode), length(electrodes)))
   }
   plan_table$Electrode <- electrodes
   # Load existing electrodes_unsaved.csv or electrodes.csv, generate plan table
@@ -146,10 +146,59 @@ if(length(plan_table)) {
     }
   }, silent = TRUE)
   
+  # "Coord_x", "Coord_y", "Coord_z", 
+  # "MNI305_x", "MNI305_y", "MNI305_z", 
+  # "Sphere_x", "Sphere_y", "Sphere_z"
+  # "OrigCoord_x", "OrigCoord_y", "OrigCoord_z", 
+  # "DistanceShifted", "DistanceToPial", 
+  
   plan_table$Coord_x %?<-% 0
   plan_table$Coord_y %?<-% 0
   plan_table$Coord_z %?<-% 0
-  plan_table$Radius %?<-% local({
+  
+  plan_table$MNI305_x %?<-% 0
+  plan_table$MNI305_y %?<-% 0
+  plan_table$MNI305_z %?<-% 0
+  
+  plan_table$Sphere_x %?<-% 0
+  plan_table$Sphere_y %?<-% 0
+  plan_table$Sphere_z %?<-% 0
+  
+  plan_table$OrigCoord_x %?<-% 0
+  plan_table$OrigCoord_y %?<-% 0
+  plan_table$OrigCoord_z %?<-% 0
+  
+  # make sure no NA is in Coord_xyz
+  has_NA <- is.na(plan_table$Coord_x) | is.na(plan_table$Coord_y) | is.na(plan_table$Coord_z)
+  if(any(has_NA)) {
+    plan_table$Coord_x[has_NA] <- 0
+    plan_table$Coord_y[has_NA] <- 0
+    plan_table$Coord_z[has_NA] <- 0
+  }
+  
+  has_NA_MNI <- has_NA | is.na(plan_table$MNI305_x) | is.na(plan_table$MNI305_y) | is.na(plan_table$MNI305_z)
+  if(any(has_NA_MNI)) {
+    plan_table$MNI305_x[has_NA_MNI] <- 0
+    plan_table$MNI305_y[has_NA_MNI] <- 0
+    plan_table$MNI305_z[has_NA_MNI] <- 0
+  }
+  
+  has_NA_sphere <- has_NA | is.na(plan_table$Sphere_x) | is.na(plan_table$Sphere_y) | is.na(plan_table$Sphere_z)
+  if(any(has_NA_sphere)) {
+    plan_table$Sphere_x[has_NA_sphere] <- 0
+    plan_table$Sphere_y[has_NA_sphere] <- 0
+    plan_table$Sphere_z[has_NA_sphere] <- 0
+    
+    plan_table$OrigCoord_x[has_NA_sphere] <- 0
+    plan_table$OrigCoord_y[has_NA_sphere] <- 0
+    plan_table$OrigCoord_z[has_NA_sphere] <- 0
+    
+    plan_table$DistanceShifted[has_NA_sphere] <- 0
+    plan_table$DistanceToPial[has_NA_sphere] <- 0
+  }
+  
+  # "Radius", 
+  default_radius <- local({
     is_grid <- grepl("^(G$|Grid)", plan_table$LabelPrefix)
     is_mini <- grepl("mini$", plan_table$LabelPrefix)
     r <- rep(1, nrow(plan_table))
@@ -157,13 +206,39 @@ if(length(plan_table)) {
     r[is_mini] <- 0.5
     r
   })
-  plan_table$SurfaceElectrode %?<-% (plan_table$LocationType %in% c("ECoG"))
+  
+  plan_table$Radius %?<-% default_radius
+  has_NA <- is.na(plan_table$Radius) | !is.numeric(plan_table$Radius)
+  if(any(has_NA)) {
+    plan_table$Radius[has_NA] <- default_radius[has_NA]
+  }
+  
+  
+  # "SurfaceElectrode", 
+  is_surface <- plan_table$LocationType %in% c("ECoG")
+  plan_table$SurfaceElectrode %?<-% is_surface
+  has_NA <- is.na(plan_table$SurfaceElectrode)
+  if( any(has_NA) ) {
+    plan_table$SurfaceElectrode[has_NA] <- is_surface[has_NA]
+  }
+  
   plan_table$SurfaceType %?<-% "pial"
-  plan_table$MNI305_x %?<-% 0
-  plan_table$MNI305_y %?<-% 0
-  plan_table$MNI305_z %?<-% 0
+  has_NA <- is.na(plan_table$SurfaceType)
+  if( any(has_NA) ) {
+    plan_table$SurfaceType[has_NA] <- "pial"
+  }
+  
+  # "FSIndex", "FSLabel", 
+  # "FSLabel_aparc_a2009s_aseg", "FSLabel_aparc_aseg",
+  # "FSLabel_aparc_DKTatlas_aseg", "FSLabel_aseg",
   plan_table$FSIndex %?<-% 0
   plan_table$FSLabel %?<-% "Unknown"
+  has_NA <- is.na(plan_table$FSIndex) | is.na(plan_table$FSLabel)
+  if( any(has_NA) ) {
+    plan_table$FSIndex[has_NA] <- 0L
+    plan_table$FSLabel[has_NA] <- "Unknown"
+  }
+  
   etypes <- subject$preprocess_settings$electrode_types
   if(!length(etypes)) {
     etypes <- ifelse(is.na(plan_table$LocationType) | plan_table$LocationType %in% c("EEG", "Others"), "Unknown", "LFP")
