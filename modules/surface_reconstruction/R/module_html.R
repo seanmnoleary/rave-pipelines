@@ -103,17 +103,9 @@ module_html <- function(){
                 shiny::div(
                   class = "float-right",
                   shiny::div(
-                    local({
-                      if(dry_run) {
-                        NULL
-                      } else {
-                        shiny::tagList(
-                          shiny::actionButton(ns("btn_dcm2niix_run_t1"), "Run from RAVE (T1 MRI)"),
-                          shiny::actionButton(ns("btn_dcm2niix_run_ct"), "Run from RAVE (CT)")
-                        )
-                      }
-                    }),
-                    dipsaus::actionButtonStyled(ns("btn_dcm2niix_copy"), "Save & run by yourself")
+                    shiny::actionButton(ns("btn_dcm2niix_run_t1"), "Run from RAVE (T1 MRI)"),
+                    shiny::actionButton(ns("btn_dcm2niix_run_ct"), "Run from RAVE (CT)")
+                    # dipsaus::actionButtonStyled(ns("btn_dcm2niix_copy"), "Save & run by yourself")
                   )
                 )
               )
@@ -132,17 +124,6 @@ module_html <- function(){
                 shiny::uiOutput(ns("panel_fs_recon"), container = shiny::p)
               ),
               shiny::div(
-                "RAVE electrode localization depend on the ",
-                shiny::pre(class="pre-compact no-padding display-inline", "FreeSurfer"),
-                " outputs. The whole complete reconstruction will take several hours to run. ",
-                "If you want to save time, please select flag: ",
-                shiny::pre(class="pre-compact no-padding display-inline", "-autorecon1"),
-                "This procedure only normalizes MRI and strips skulls, ",
-                "hence only takes around 10 minutes. ",
-                "For detailed documentation, please check the ",
-                shiny::a(href = "https://surfer.nmr.mgh.harvard.edu/fswiki/recon-all",
-                         target="_blank", "FreeSurfer website"), ".",
-                shiny::br(),
                 "* The script requires Unix ",
                 shiny::pre(class="pre-compact no-padding display-inline", "bash"),
                 " terminals. If you are using Windows, ",
@@ -161,7 +142,7 @@ module_html <- function(){
                   ),
 
                   shiny::column(
-                    width = 7L,
+                    width = 6L,
                     shiny::div(
                       shiny::selectInput(
                         inputId = ns("param_fs_infile"),
@@ -175,17 +156,28 @@ module_html <- function(){
                     )
                   ),
                   shiny::column(
-                    width = 5L,
-                    shiny::selectInput(
-                      inputId = ns("param_fs_steps"),
-                      label = "Recon flag",
-                      choices = autorecon_flags,
-                      selected = "-all"
+                    width = 6L,
+                    shiny::fluidRow(
+                      shiny::column(
+                        width = 12L,
+                        shiny::selectInput(
+                          inputId = ns("param_fs_prog"),
+                          label = "Command",
+                          choices = c("recon-all -all", "recon-all -autorecon1",
+                                      "recon-all-clinical.sh", "simple-import"),
+                          selected = "recon-all"
+                        )
+                      )
                     ),
-                    shiny::checkboxInput(
-                      inputId = ns("param_fs_fresh_start"),
-                      label = "Remove existing work before running the command (if applicable)",
-                      value = FALSE
+                    shiny::fluidRow(
+                      shiny::column(
+                        width = 12L,
+                        shiny::checkboxInput(
+                          inputId = ns("param_fs_fresh_start"),
+                          label = "Remove existing work before running the command (if applicable)",
+                          value = FALSE
+                        )
+                      )
                     )
                   )
                 ),

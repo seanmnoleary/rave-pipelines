@@ -784,10 +784,37 @@ module_server <- function(input, output, session, ...){
         float = input$param_dcm2niix_float,
         crop = input$param_dcm2niix_crop
       ),
-      freesurfer = list(
-        flag = input$param_fs_steps,
-        fresh_start = isTRUE(input$param_fs_fresh_start)
-      ),
+      freesurfer = local({
+        switch(
+          paste(input$param_fs_prog, collapse = ""),
+          "recon-all -all" = {
+            list(
+              program = "recon-all",
+              flag = "-all",
+              fresh_start = isTRUE(input$param_fs_fresh_start)
+            )
+          },
+          "recon-all -autorecon1" = {
+            list(
+              program = "recon-all",
+              flag = "-autorecon1",
+              fresh_start = isTRUE(input$param_fs_fresh_start)
+            )
+          },
+          "recon-all-clinical.sh" = {
+            list(
+              program = "recon-all-clinical.sh",
+              fresh_start = isTRUE(input$param_fs_fresh_start)
+            )
+          },
+          {
+            list(
+              program = "simple-import",
+              fresh_start = isTRUE(input$param_fs_fresh_start)
+            )
+          }
+        )
+      }),
       niftyreg = list(
         reference = input$param_coreg_mri,
         reg_type = input$coreg_niftyreg_type,

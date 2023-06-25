@@ -240,14 +240,8 @@ rm(._._env_._.)
                 }
                 ct <- file.path(subject$preprocess_settings$raw_path, 
                   path_ct)
-                if (is.null(cmd_tools$afni)) {
-                  warns <- append(warns, "AFNI path is missing/invalid: cannot use AFNI-ALICE co-registration script.")
-                } else if (is.null(cmd_tools$flirt)) {
-                  warns <- append(warns, "FSL home is missing/invalid: cannot use FSL-FLIRT co-registration script.")
-                } else {
-                  if (!path_is_valid(ct, dir_ok = TRUE)) {
-                    warns <- append(warns, "The CT path is invalid: co-registration will result in errors.")
-                  }
+                if (!path_is_valid(ct, dir_ok = TRUE)) {
+                  warns <- append(warns, "The CT path is invalid: co-registration will result in errors.")
                 }
                 if (!skip_recon) {
                   msgs <- append(msgs, sprintf("New FreeSurfer reconstruction will be created from %s", 
@@ -310,14 +304,8 @@ rm(._._env_._.)
                   }
                   ct <- file.path(subject$preprocess_settings$raw_path, 
                     path_ct)
-                  if (is.null(cmd_tools$afni)) {
-                    warns <- append(warns, "AFNI path is missing/invalid: cannot use AFNI-ALICE co-registration script.")
-                  } else if (is.null(cmd_tools$flirt)) {
-                    warns <- append(warns, "FSL home is missing/invalid: cannot use FSL-FLIRT co-registration script.")
-                  } else {
-                    if (!path_is_valid(ct, dir_ok = TRUE)) {
-                      warns <- append(warns, "The CT path is invalid: co-registration will result in errors.")
-                    }
+                  if (!path_is_valid(ct, dir_ok = TRUE)) {
+                    warns <- append(warns, "The CT path is invalid: co-registration will result in errors.")
                   }
                   if (!skip_recon) {
                     msgs <- append(msgs, sprintf("New FreeSurfer reconstruction will be created from %s", 
@@ -443,13 +431,47 @@ rm(._._env_._.)
                     stop("Please choose a Nifti file under ", 
                       mri_root)
                   }
-                  autorecon_flags <- c("-autorecon1", "-all", 
-                    "-autorecon2", "-autorecon3", "-autorecon2-cp", 
-                    "-autorecon2-wm", "-autorecon2-pial")
-                  flag <- params$freesurfer$flag %OF% autorecon_flags
-                  raveio::cmd_run_recon_all(subject = subject, 
-                    mri_path = mri_path, args = flag, overwrite = params$freesurfer$fresh_start, 
-                    dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
+                  mri_postfix <- gsub("^.*\\.(nii|nii\\.gz)$", 
+                    "\\1", basename(mri_path))
+                  overwrite <- isTRUE(params$freesurfer$fresh_start)
+                  switch(paste(params$freesurfer$program, collapse = ""), 
+                    `recon-all` = {
+                      autorecon_flags <- c("-autorecon1", "-all", 
+                        "-autorecon2", "-autorecon3", "-autorecon2-cp", 
+                        "-autorecon2-wm", "-autorecon2-pial")
+                      flag <- params$freesurfer$flag %OF% autorecon_flags
+                      raveio::cmd_run_recon_all(subject = subject, 
+                        mri_path = mri_path, args = flag, overwrite = overwrite, 
+                        dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
+                    }, `recon-all-clinical.sh` = {
+                      raveio::cmd_run_recon_all_clinical(subject = subject, 
+                        mri_path = mri_path, overwrite = overwrite, 
+                        dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
+                    }, {
+                      raveio::cmd_run_r(dry_run = TRUE, verbose = FALSE, 
+                        quoted = TRUE, expr = bquote({
+                          subject <- raveio::as_rave_subject(.(subject$subject_id))
+                          image_path <- file.path(subject$preprocess_settings$raw_path, 
+                            "rave-imaging")
+                          mri_src <- .(mri_path)
+                          mri_dirpath <- file.path(image_path, 
+                            "fs", "mri")
+                          mri_dst <- file.path(mri_dirpath, .(sprintf("brain.%s", 
+                            mri_postfix)))
+                          raveio::dir_create2(mri_dirpath)
+                          file.copy(from = mri_src, to = mri_dst, 
+                            overwrite = .(overwrite), recursive = FALSE, 
+                            copy.mode = TRUE, copy.date = TRUE)
+                          deriv_path <- file.path(image_path, 
+                            "derivative")
+                          raveio::dir_create2(deriv_path)
+                          file.copy(from = mri_src, to = file.path(deriv_path, 
+                            .(sprintf("MRI_RAW.%s", mri_postfix))), 
+                            overwrite = TRUE, recursive = FALSE, 
+                            copy.mode = TRUE, copy.date = TRUE)
+                          message("Done")
+                        }))
+                    })
                 }, error = function(e) {
                   list(error = TRUE, condition = e)
                 })
@@ -473,13 +495,47 @@ rm(._._env_._.)
                       stop("Please choose a Nifti file under ", 
                         mri_root)
                     }
-                    autorecon_flags <- c("-autorecon1", "-all", 
-                      "-autorecon2", "-autorecon3", "-autorecon2-cp", 
-                      "-autorecon2-wm", "-autorecon2-pial")
-                    flag <- params$freesurfer$flag %OF% autorecon_flags
-                    raveio::cmd_run_recon_all(subject = subject, 
-                      mri_path = mri_path, args = flag, overwrite = params$freesurfer$fresh_start, 
-                      dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
+                    mri_postfix <- gsub("^.*\\.(nii|nii\\.gz)$", 
+                      "\\1", basename(mri_path))
+                    overwrite <- isTRUE(params$freesurfer$fresh_start)
+                    switch(paste(params$freesurfer$program, collapse = ""), 
+                      `recon-all` = {
+                        autorecon_flags <- c("-autorecon1", "-all", 
+                          "-autorecon2", "-autorecon3", "-autorecon2-cp", 
+                          "-autorecon2-wm", "-autorecon2-pial")
+                        flag <- params$freesurfer$flag %OF% autorecon_flags
+                        raveio::cmd_run_recon_all(subject = subject, 
+                          mri_path = mri_path, args = flag, overwrite = overwrite, 
+                          dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
+                      }, `recon-all-clinical.sh` = {
+                        raveio::cmd_run_recon_all_clinical(subject = subject, 
+                          mri_path = mri_path, overwrite = overwrite, 
+                          dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
+                      }, {
+                        raveio::cmd_run_r(dry_run = TRUE, verbose = FALSE, 
+                          quoted = TRUE, expr = bquote({
+                            subject <- raveio::as_rave_subject(.(subject$subject_id))
+                            image_path <- file.path(subject$preprocess_settings$raw_path, 
+                              "rave-imaging")
+                            mri_src <- .(mri_path)
+                            mri_dirpath <- file.path(image_path, 
+                              "fs", "mri")
+                            mri_dst <- file.path(mri_dirpath, 
+                              .(sprintf("brain.%s", mri_postfix)))
+                            raveio::dir_create2(mri_dirpath)
+                            file.copy(from = mri_src, to = mri_dst, 
+                              overwrite = .(overwrite), recursive = FALSE, 
+                              copy.mode = TRUE, copy.date = TRUE)
+                            deriv_path <- file.path(image_path, 
+                              "derivative")
+                            raveio::dir_create2(deriv_path)
+                            file.copy(from = mri_src, to = file.path(deriv_path, 
+                              .(sprintf("MRI_RAW.%s", mri_postfix))), 
+                              overwrite = TRUE, recursive = FALSE, 
+                              copy.mode = TRUE, copy.date = TRUE)
+                            message("Done")
+                          }))
+                      })
                   }, error = function(e) {
                     list(error = TRUE, condition = e)
                   })

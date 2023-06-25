@@ -13,12 +13,12 @@ loader_html <- function(session = shiny::getDefaultReactiveDomain()){
           shiny::p(
             shiny::tags$small(
               "This module provides terminal scripts to ",
-              "imports the raw MR & CT images into RAVE, reconstruct ",
+              "imports the raw MR & CT images (DICOM/NIfTI) into RAVE, reconstruct ",
               "surface using FreeSurfer, and co-register CT to MRI via ",
-              "AFNI-3dAllineate or FSL-FLIRT. ",
+              "ANTs/NiftyReg/FSL-FLIRT. ",
               shiny::br(),
-              "This module requires installation of `dcm2niix`, `FreeSurfer`, `AFNI` (or `FSL`). ",
-              "Some of these commands (e.g. FreeSurfer) might not work properly under Windows. ",
+              "Some functions require installation of `dcm2niix`, `FreeSurfer`, or `FSL`. ",
+              "FreeSurfer might not work properly under Windows. ",
               "It is Highly Recommended that you run ",
               "these command in the terminal by yourself once the bash scripts are generated. ",
               shiny::br(),
