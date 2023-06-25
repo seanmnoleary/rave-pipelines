@@ -1,8 +1,8 @@
 subject_code: YAH
 fsl_path: /usr/local/fsl
 freesurfer_path: /Applications/freesurfer/7.4.1
-project_name: devel
-path_mri: MRI/MRI_RAW.nii
+project_name: demo
+path_mri: rave-uploads/MRI/MRI_RAW.nii
 skip_recon: no
 afni_path: /Users/dipterix/abin
 params:
@@ -14,7 +14,8 @@ params:
     float: 'Yes'
     crop: 'No'
   freesurfer:
-    program: simple-import
+    program: recon-all
+    flag: -all
     fresh_start: no
   niftyreg:
     reference: MRI_RAW.nii
@@ -43,5 +44,5 @@ params:
   afni:
     reference: MRI_RAW.nii
 dcm2niix_path: /opt/homebrew/Cellar/dcm2niix/1.0.20220720/bin/dcm2niix
-path_ct: CT/YAH_CT.nii
+path_ct: rave-uploads/CT/YAH_CT.nii
 skip_coregistration: no
