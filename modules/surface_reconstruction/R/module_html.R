@@ -142,7 +142,7 @@ module_html <- function(){
                   ),
 
                   shiny::column(
-                    width = 6L,
+                    width = 7L,
                     shiny::div(
                       shiny::selectInput(
                         inputId = ns("param_fs_infile"),
@@ -156,7 +156,7 @@ module_html <- function(){
                     )
                   ),
                   shiny::column(
-                    width = 6L,
+                    width = 5L,
                     shiny::fluidRow(
                       shiny::column(
                         width = 12L,
