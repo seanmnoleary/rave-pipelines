@@ -190,12 +190,21 @@ loader_server <- function(input, output, session, ...){
             size = "m",
             easyClose = FALSE,
             footer = shiny::actionButton(ns(image_path_dismiss_btn), label = "Cancel"),
-            shiny::fileInput(
-              inputId = ns( image_path_upload_inputId ),
-              label = "Please upload a NIfTI file (.nii or .nii.gz)",
-              multiple = FALSE, accept = c(".nii", ".nii.gz"),
-              width = "100%", placeholder = "Use button or drag & drop"
-            )
+            tryCatch({
+              dipsaus::fancyFileInput(
+                inputId = ns( image_path_upload_inputId ),
+                label = "Please upload a NIfTI file (.nii or .nii.gz)",
+                multiple = FALSE, accept = c(".nii", ".nii.gz"),
+                width = "100%", size = "m"
+              )
+            }, error = function(e) {
+              shiny::fileInput(
+                inputId = ns( image_path_upload_inputId ),
+                label = "Please upload a NIfTI file (.nii or .nii.gz)",
+                multiple = FALSE, accept = c(".nii", ".nii.gz"),
+                width = "100%", placeholder = "Use button or drag & drop"
+              )
+            })
           ))
         } else {
           local_data[[image_path_inputId]] <- input[[image_path_inputId]]
