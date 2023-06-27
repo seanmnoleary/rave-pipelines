@@ -425,22 +425,26 @@ module_server <- function(input, output, session, ...){
 
     promise <- promises::promise(function(resolve, reject) {
       listener <- function() {
-        if(is.function(check)) {
-          code <- check()
-        } else {
-          code <- check
-        }
-        path <- cmd$log_file
-        if(length(path) != 1 || is.na(path) || !file.exists(path) || path == '') {
-          msg <- NULL
-        } else {
-          suppressWarnings({
-            msg <- readLines(path)
-          })
-          if(!length(msg) || isTRUE(msg == "")) {
-            msg <- "Waiting for outputs..."
+        code <- 0
+        msg <- "Waiting for outputs..."
+        try({
+          if(is.function(check)) {
+            code <- check()
+          } else {
+            code <- check
           }
-        }
+          path <- cmd$log_file
+          if(length(path) != 1 || is.na(path) || !file.exists(path) || path == '') {
+            msg <- NULL
+          } else {
+            suppressWarnings({
+              msg <- readLines(path)
+            })
+            if(!length(msg) || isTRUE(msg == "")) {
+              msg <- "Waiting for outputs..."
+            }
+          }
+        })
 
         if(code == 0) {
           renderMsg(c(msg, "Finished."))
