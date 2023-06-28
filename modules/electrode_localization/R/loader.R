@@ -222,6 +222,10 @@ loader_server <- function(input, output, session, ...){
 
     localization_method <- "Re-sampled CT"
 
+    ct_name <- character()
+    mri_name <- character()
+    trans_name <- NULL
+
     if( file.exists(path_coreg_conf) ) {
       coreg_conf <- raveio::load_yaml(path_coreg_conf)
 
