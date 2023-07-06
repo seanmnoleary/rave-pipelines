@@ -155,7 +155,7 @@ module_server <- function(input, output, session, ...){
 
         tryCatch({
           pipeline$run(
-            as_promise = TRUE,
+            as_promise = FALSE,
             names = c("subject", "clear_cache"),
             scheduler = "none",
             callr_function = NULL,
