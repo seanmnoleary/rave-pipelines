@@ -94,7 +94,6 @@ skull_strip = normalized.clone()
 skull_strip[brain_mask == 0] = 0
 ```
 
-
 ## Step 4: Image segmentation
 
 ### Deep-Atropos (on template space)
@@ -129,15 +128,14 @@ for img in atropos_template['probability_images']:
   ))
 ```
 
-* Atropos segmentation: `atropos_native['segmentation_image']`
-* Atropos probabilities:
-  * CSF: `atropos_native['probability_images'][1]`
-  * Gray-matter: `atropos_native['probability_images'][2]`
-  * White-matter: `atropos_native['probability_images'][3]`
-  * Deep gray-matter: `atropos_native['probability_images'][4]`
-  * Brain-stem: `atropos_native['probability_images'][5]`
-  * Cerebellum: `atropos_native['probability_images'][6]`
-
+-   Atropos segmentation: `atropos_native['segmentation_image']`
+-   Atropos probabilities:
+    -   CSF: `atropos_native['probability_images'][1]`
+    -   Gray-matter: `atropos_native['probability_images'][2]`
+    -   White-matter: `atropos_native['probability_images'][3]`
+    -   Deep gray-matter: `atropos_native['probability_images'][4]`
+    -   Brain-stem: `atropos_native['probability_images'][5]`
+    -   Cerebellum: `atropos_native['probability_images'][6]`
 
 ### Desikan-Killiang-Tourville segmentation
 
@@ -213,7 +211,6 @@ Please make sure the following code block is at the end of your pipeline file. T
 build_pipeline(make_file = "make-ants_preprocessing.R")
 ```
 
-
 Once the pipeline script `make-ants_preprocessing.R` is built, you can visualize and execute the pipeline without the need of re-knit this document. Notice we use `r` block instead of `rave`. (This is because the code blocks are not part of pipeline targets.)
 
 ```{r visualize, echo=FALSE}
@@ -223,10 +220,3 @@ try({
     pipeline_path = ".", glimpse = TRUE)
 }, silent = TRUE)
 ```
-
-
-
-
-
-
-
