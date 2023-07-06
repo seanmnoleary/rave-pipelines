@@ -15,13 +15,7 @@ options("raveio.debug" = TRUE)
 
 Load necessary data in RAVE. At this stage, you are using R
 
-```{rave get_subject_instance, export = "subject", format = "rave-subject", use_rave = TRUE}
-subject <- raveio::as_rave_subject(
-  subject_id = sprintf("demo1/%s", subject_code), 
-  strict = FALSE)
-```
-
-Collect paths
+Collect paths, make sure `image_path` exists. Can also use `Python` to do it.
 
 ```{rave collect_paths, export = "image_path_normalized", cue = "always", use_rave = TRUE}
 image_path_normalized <- normalizePath(image_path, mustWork = TRUE)

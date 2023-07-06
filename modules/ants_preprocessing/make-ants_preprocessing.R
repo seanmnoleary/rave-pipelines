@@ -30,10 +30,7 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_subject_code = targets::tar_target_raw("subject_code", 
-        quote({
-            settings[["subject_code"]]
-        }), deps = "settings"), input_image_path = targets::tar_target_raw("image_path", 
+    input_image_path = targets::tar_target_raw("image_path", 
         quote({
             settings[["image_path"]]
         }), deps = "settings"), input_resample = targets::tar_target_raw("resample", 
@@ -42,29 +39,7 @@ rm(._._env_._.)
         }), deps = "settings"), input_calculate_cortical_thickness = targets::tar_target_raw("calculate_cortical_thickness", 
         quote({
             settings[["calculate_cortical_thickness"]]
-        }), deps = "settings"), get_subject_instance = targets::tar_target_raw(name = "subject", 
-        command = quote({
-            .__target_expr__. <- quote({
-                subject <- raveio::as_rave_subject(subject_id = sprintf("demo1/%s", 
-                  subject_code), strict = FALSE)
-            })
-            tryCatch({
-                eval(.__target_expr__.)
-                return(subject)
-            }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "subject", 
-                  condition = e, expr = .__target_expr__.)
-            })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = "rave-subject", 
-            target_export = "subject", target_expr = quote({
-                {
-                  subject <- raveio::as_rave_subject(subject_id = sprintf("demo1/%s", 
-                    subject_code), strict = FALSE)
-                }
-                subject
-            }), target_depends = "subject_code"), deps = "subject_code", 
-        cue = targets::tar_cue("thorough"), pattern = NULL, iteration = "list"), 
-    collect_paths = targets::tar_target_raw(name = "image_path_normalized", 
+        }), deps = "settings"), collect_paths = targets::tar_target_raw(name = "image_path_normalized", 
         command = quote({
             .__target_expr__. <- quote({
                 image_path_normalized <- normalizePath(image_path, 
@@ -97,7 +72,7 @@ rm(._._env_._.)
             writeLines(text = paste("image_original = ants.image_read(image_path_normalized)", 
                 collapse = "\n"), con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in "image_path_normalized") {
                 py[[nm]] <- get(nm)
             }
@@ -125,7 +100,7 @@ rm(._._env_._.)
             "    use_voxels = True, ", "    interp_type = 4", 
             "  )"), collapse = "\n"), con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in c("resample", "image_original")) {
                 py[[nm]] <- get(nm)
             }
@@ -157,7 +132,7 @@ rm(._._env_._.)
             "transforms[\"skull_strip\"] = skull_strip_template"
             ), collapse = "\n"), con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in "image_resampled") {
                 py[[nm]] <- get(nm)
             }
@@ -185,7 +160,7 @@ rm(._._env_._.)
             "  whichtoinvert = [True], interpolator=\"linear\", verbose = True)"
             ), collapse = "\n"), con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in c("image_resampled", "transforms")) {
                 py[[nm]] <- get(nm)
             }
@@ -213,7 +188,7 @@ rm(._._env_._.)
             "  whichtoinvert = [True], interpolator=\"linear\", verbose = True)"
             ), collapse = "\n"), con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in c("image_resampled", "transforms")) {
                 py[[nm]] <- get(nm)
             }
@@ -239,7 +214,7 @@ rm(._._env_._.)
             "skull_strip[brain_mask == 0] = 0"), collapse = "\n"), 
                 con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in c("normalized", "brain_mask")) {
                 py[[nm]] <- get(nm)
             }
@@ -266,7 +241,7 @@ rm(._._env_._.)
             "  use_spatial_priors = True, ", "  verbose = True)"
             ), collapse = "\n"), con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in "transforms") {
                 py[[nm]] <- get(nm)
             }
@@ -299,7 +274,7 @@ rm(._._env_._.)
             "    transformlist = transform_list,", "    whichtoinvert = [True], interpolator=\"linear\", verbose = False", 
             "  ))"), collapse = "\n"), con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in c("image_resampled", "atropos_template", 
             "transforms")) {
                 py[[nm]] <- get(nm)
@@ -328,7 +303,7 @@ rm(._._env_._.)
             "  return_probability_images = False,", "  do_lobar_parcellation = False, ", 
             "  verbose = True ", ")"), collapse = "\n"), con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in "transforms") {
                 py[[nm]] <- get(nm)
             }
@@ -356,7 +331,7 @@ rm(._._env_._.)
             "  whichtoinvert = [True], interpolator=\"nearestNeighbor\", verbose = True)"
             ), collapse = "\n"), con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in c("transforms", "DKTatlas_template", "image_resampled"
             )) {
                 py[[nm]] <- get(nm)
@@ -390,7 +365,7 @@ rm(._._env_._.)
             "    its=45, r=0.025, m=1.5, x=0, verbose=1)"), collapse = "\n"), 
                 con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in c("atropos_native", "calculate_cortical_thickness"
             )) {
                 py[[nm]] <- get(nm)
@@ -423,7 +398,7 @@ rm(._._env_._.)
             "  DKT_propagated = ants.iMath(kk_mask, \"PropagateLabelsThroughMask\", kk_mask * dtk)"
             ), collapse = "\n"), con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in c("DKTatlas_native", "cortical_thickness", 
             "calculate_cortical_thickness")) {
                 py[[nm]] <- get(nm)
@@ -452,7 +427,7 @@ rm(._._env_._.)
             "    cortical_thickness, DKT_propagated)"), collapse = "\n"), 
                 con = script_path)
             rpymat::ensure_rpymat(verbose = FALSE)
-            py <- reticulate::py
+            py <- rpymat::import("__main__", convert = FALSE)
             for (nm in c("calculate_cortical_thickness", "DKT_propagated", 
             "cortical_thickness")) {
                 py[[nm]] <- get(nm)
