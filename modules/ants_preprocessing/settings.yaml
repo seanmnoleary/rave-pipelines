@@ -1,0 +1,4 @@
+calculate_cortical_thickness: yes
+resample: no
+image_path: /Users/dipterix/Dropbox (PennNeurosurgery)/RAVE/Samples/raw/YAH/MRI/MRI_RAW.nii
+subject_code: YAH

@@ -27,6 +27,8 @@ Imports:
     raveio,
     ravetools,
     ravedash,
+    readNSx,
+    rpyANTs,
     rpymat,
     shidashi,
     shiny,
@@ -36,7 +38,7 @@ Imports:
     targets,
     threeBrain,
     checkmate,
-    yaml,
+    yaml
 Suggests:
     rstudioapi,
     knitr,
@@ -50,7 +52,8 @@ SubPipelines:
     modules/surface_reconstruction,
     modules/custom_3d_viewer,
     modules/block_explorer,
-    modules/import_bids
+    modules/import_bids,
+    modules/ants_preprocessing
 InteractiveModules:
     modules/import_lfp_native,
     modules/notch_filter,
