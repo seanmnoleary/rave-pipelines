@@ -16,10 +16,12 @@ def ants_image_serializer(x, path):
     x.to_file( path2 )
   return path2
 
-def ants_image_unserializer(path):
+def ants_image_unserializer(path, missing_ok = False):
   path2 = f"{path}.nii.gz"
   if os.path.exists(path2):
     return ants.image_read(path2)
+  if not missing_ok:
+    raise Exception(f"Cannot find image from path: {path2}")
   return None
 
 def serialize_df(x, path):
@@ -77,14 +79,16 @@ def serialize_transforms(x, path):
   
 def unserialize_transforms(path):
   if not os.path.exists(path):
-    raise "Unable to unserialize `transforms`"
+    raise Exception("Unable to unserialize `transforms`")
   transform_paths = json_unserializer(os.path.join(path, "transform_paths.json"))
   return {
     'preprocessed_image': ants_image_unserializer(os.path.join(path, 'preprocessed_image')),
     'brain_mask': ants_image_unserializer(os.path.join(path, 'brain_mask')),
     'skull_strip': ants_image_unserializer(os.path.join(path, 'skull_strip')),
-    'fwdtransforms': [os.path.abspath(os.path.join(path, x)) for x in transform_paths['fwdtransforms']],
-    'invtransforms': [os.path.abspath(os.path.join(path, x)) for x in transform_paths['invtransforms']]
+    'template_transforms' : {
+      'fwdtransforms': [os.path.abspath(os.path.join(path, x)) for x in transform_paths['fwdtransforms']],
+      'invtransforms': [os.path.abspath(os.path.join(path, x)) for x in transform_paths['invtransforms']]
+    }
   }
 
 def serialize_atropos_template(x, path):
@@ -109,7 +113,7 @@ def serialize_atropos_template(x, path):
 
 def unserialize_atropos_template(path):
   if not os.path.exists(path):
-    raise "Unable to unserialize `atropos_template`"
+    raise Exception("Unable to unserialize `atropos_template`")
   re = {}
   re['segmentation_image'] = ants_image_unserializer(path = os.path.join(path, "segmentation_image"))
   re['probability_images'] = []

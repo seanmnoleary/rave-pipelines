@@ -8,7 +8,6 @@ output:
 ```{r setup, include = FALSE}
 # This code block sets up the engine environment
 # Please do not remove me
-knitr::cache_engines$delete(c("python", "R"))
 raveio::pipeline_setup_rmd("ants_preprocessing")
 options("raveio.debug" = TRUE)
 ```
@@ -25,18 +24,26 @@ Here comes the Python part
 
 You can use all pipeline input variables in `Python` directly. RAVE converts them for you automatically. If you want Python to get access to more variables, use `rave` code blocks (see regular RAVE pipelines)
 
-For easy debug, I manually copy everything from R to Python. Notice I use `python` block with no `use_rave` specified. This block will not be incorporated into the pipeline (debug only)
+For easy debug, I manually copy everything from R to Python. Notice I use `python` block with no `use_rave` specified. This block will not be incorporated into the pipeline (debug inputs only)
+
+```{r}
+# Debug: Override `debug` when compiled as report
+debug <- TRUE
+```
 
 ```{python}
 image_path_normalized = r.image_path_normalized
 resample = r.resample
 calculate_cortical_thickness = r.calculate_cortical_thickness
+debug = r.debug
 ```
 
 ## Step 1: Load and resample the T1-weighted MRI
 
-```{python load_original_image, export = "image_original", deps = "image_path_normalized", cue = "always", use_rave = TRUE}
+```{python load_original_image, export = "image_original", deps = c("image_path_normalized", "debug"), cue = "always", use_rave = TRUE}
 image_original = ants.image_read(image_path_normalized)
+if debug:
+  image_original.plot(black_bg=False, nslices=12, ncol=4)
 ```
 
 ```{python resample_image, export = "image_resampled", deps = c("resample", "image_original"), use_rave = TRUE}
@@ -48,6 +55,8 @@ if resample == True:
     use_voxels = True, 
     interp_type = 4
   )
+  if debug:
+    image_resampled.plot(black_bg=False, nslices=12, ncol=4)
 ```
 
 ## Step 2: Align the native MRI to template
@@ -69,29 +78,35 @@ transforms["skull_strip"] = skull_strip_template
 
 Morph the normalized brain back to native brain
 
-```{python normalize_brain, export = "normalized", deps = c("image_resampled", "transforms"), use_rave = TRUE}
+```{python normalize_brain, export = "normalized", deps = c("image_resampled", "transforms", "debug"), use_rave = TRUE}
 normalized = ants.apply_transforms(
   fixed = image_resampled,
   moving = transforms['preprocessed_image'],
   transformlist = transforms['template_transforms']['invtransforms'],
   whichtoinvert = [True], interpolator="linear", verbose = True)
+if debug:
+  normalized.plot(black_bg=False, nslices=12, ncol=4)
 ```
 
 Get brain-mask (skull-strip) on native brain
 
-```{python generate_brain_mask, export = "brain_mask", deps = c("image_resampled", "transforms"), use_rave = TRUE}
+```{python generate_brain_mask, export = "brain_mask", deps = c("image_resampled", "transforms", "debug"), use_rave = TRUE}
 brain_mask = ants.apply_transforms(
   fixed = image_resampled,
   moving = transforms['brain_mask'],
   transformlist=transforms['template_transforms']['invtransforms'],
   whichtoinvert = [True], interpolator="linear", verbose = True)
+if debug:
+  brain_mask.plot(black_bg=False, nslices=12, ncol=4)
 ```
 
 Apply the brain-mask
 
-```{python strip_skull, export = "skull_strip", deps = c("normalized", "brain_mask"), use_rave = TRUE}
+```{python strip_skull, export = "skull_strip", deps = c("normalized", "brain_mask", "debug"), use_rave = TRUE}
 skull_strip = normalized.clone()
 skull_strip[brain_mask == 0] = 0
+if debug:
+  skull_strip.plot(black_bg=False, nslices=12, ncol=4)
 ```
 
 ## Step 4: Image segmentation
@@ -151,12 +166,14 @@ DKTatlas_template = antspynet.desikan_killiany_tourville_labeling(
 
 Morph Desikan-Killiang-Tourville segmentation back to native space
 
-```{python obtain_DKT_on_native_brain, export = "DKTatlas_native", deps = c("transforms", "DKTatlas_template", "image_resampled"), use_rave = TRUE}
+```{python obtain_DKT_on_native_brain, export = "DKTatlas_native", deps = c("transforms", "DKTatlas_template", "image_resampled", "debug"), use_rave = TRUE}
 DKTatlas_native = ants.apply_transforms(
   fixed = image_resampled,
   moving = DKTatlas_template,
   transformlist=transforms['template_transforms']['invtransforms'],
   whichtoinvert = [True], interpolator="nearestNeighbor", verbose = True)
+if debug:
+  DKTatlas_native.plot(cmap = "Set2", nslices=12, ncol=4)
 ```
 
 ## Step 5: Calculate cortical thickness

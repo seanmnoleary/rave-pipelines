@@ -3,6 +3,8 @@
 .RData
 .Ruserdata
 .DS_Store
+.pyc
+__pycache__
 shared/
 grant
 backup
