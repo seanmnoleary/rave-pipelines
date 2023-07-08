@@ -10,27 +10,20 @@ editor_options:
 ```{r setup, include = FALSE}
 # This code block sets up the engine environment
 # Please do not remove me
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
-build_pipeline <- raveio::configure_knitr()
-# build_pipeline(make_file = "make-import_lfp_native.R")
-if(FALSE){
-  settings <- raveio::load_yaml(file.path(rstudioapi::getActiveProject(), "modules", 'import_lfp_native', "settings.yaml"))
-  list2env(as.list(settings), envir = environment())
-}
+raveio::pipeline_setup_rmd("import_lfp_native")
+
+# DIPSAUS DEBUG START
+# pipeline <- raveio::pipeline(
+#   pipeline_name = "import_lfp_native", 
+#   paths = file.path(rstudioapi::getActiveProject(), "modules"))
 ```
 
 ```{rave obtain_subject_instance, language = "R", export = "subject", format = "rave-subject"}
-# raveio::pipeline_debug(quick = FALSE)
-subject_id <- sprintf("%s/%s",
-                      import_setup__project_name,
-                      import_setup__subject_code)
-
 subject <- raveio::RAVESubject$new(
   project_name = import_setup__project_name,
   subject_code = import_setup__subject_code,
   strict = FALSE
 )
-
 ```
 
 ```{rave validate_data, language = "R", export = "validation_result"}

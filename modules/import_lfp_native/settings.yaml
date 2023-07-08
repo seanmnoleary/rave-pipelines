@@ -1,10 +1,10 @@
 force_import: yes
-import_blocks__format: Single BlackRock file (.nev+.nsx) per block
-import_blocks__session_block: BLOCK016_SpeechModalityLocalizer
+import_blocks__format: .mat/.h5 file per electrode per block
+import_blocks__session_block: 008
 import_channels__electrode_file: auto
-import_channels__electrodes: 1-20
+import_channels__electrodes: 14-15
 import_channels__sample_rate: 2000
 import_channels__unit: NA
-import_setup__project_name: YAEL
-import_setup__subject_code: PAV020
+import_setup__project_name: test
+import_setup__subject_code: DemoSubject
 skip_validation: yes
