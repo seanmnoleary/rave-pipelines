@@ -5,13 +5,9 @@
 .DS_Store
 .pyc
 __pycache__
-shared/
-grant
-backup
-adhoc
+modules/*/shared/
 _rs_job.R
 Rplots.pdf
-log
 .Rhistory*
 node_modules
 modules_\[backup_*\].yaml
