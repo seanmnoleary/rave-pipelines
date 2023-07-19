@@ -562,9 +562,9 @@ module_server <- function(input, output, session, ...){
 
   shiny::bindEvent(
     ravedash::safe_observe({
-      # cmd <- res$fs_recon
+      # cmd <- res$image_segmentation
       # cmd2 <- res$import_CT
-      cmd <- local_reactives$bash_scripts$fs_recon
+      cmd <- local_reactives$bash_scripts$image_segmentation
       if(isTRUE(cmd$error)) {
         error_notification(cmd$condition)
         return()
@@ -598,7 +598,7 @@ module_server <- function(input, output, session, ...){
   )
   shiny::bindEvent(
     ravedash::safe_observe({
-      cmd <- local_reactives$bash_scripts$fs_recon
+      cmd <- local_reactives$bash_scripts$image_segmentation
       if(isTRUE(cmd$error)) {
         error_notification(cmd$condition)
         return()
@@ -788,7 +788,7 @@ module_server <- function(input, output, session, ...){
         float = input$param_dcm2niix_float,
         crop = input$param_dcm2niix_crop
       ),
-      freesurfer = local({
+      segmentation = local({
         switch(
           paste(input$param_fs_prog, collapse = ""),
           "recon-all -all" = {
@@ -809,6 +809,11 @@ module_server <- function(input, output, session, ...){
             list(
               program = "recon-all-clinical.sh",
               fresh_start = isTRUE(input$param_fs_fresh_start)
+            )
+          },
+          "ants-preprocessing" = {
+            list(
+              program = "ants-preprocessing"
             )
           },
           {
@@ -1030,7 +1035,7 @@ module_server <- function(input, output, session, ...){
 
       res <- pipeline$eval(
         names = c("settings", 'subject', "params", "import_T1",
-                  "import_CT", "fs_recon", "morphmri_ants",
+                  "import_CT", "image_segmentation", "morphmri_ants",
                   "coreg_flirt", "coreg_niftyreg", "coreg_ants",
                   "coreg_3dallineate", "coreg_nipy"),
         env = local_env, clean = FALSE
@@ -1038,7 +1043,7 @@ module_server <- function(input, output, session, ...){
       # res <- pipeline$run(
       #   as_promise = FALSE,
       #   names = c("settings", 'subject', "params", "import_T1", "import_CT",
-      #             "fs_recon", "coreg_flirt", "coreg_3dallineate"),
+      #             "image_segmentation", "coreg_flirt", "coreg_3dallineate"),
       #   type = "vanilla",
       #   scheduler = "none",
       #   shortcut = TRUE
@@ -1098,8 +1103,8 @@ module_server <- function(input, output, session, ...){
     render_shell(cmd$script)
   })
 
-  output$panel_fs_recon <- shiny::renderUI({
-    cmd <- local_reactives$bash_scripts$fs_recon
+  output$panel_image_segmentation <- shiny::renderUI({
+    cmd <- local_reactives$bash_scripts$image_segmentation
     shiny::validate(
       shiny::need(!isTRUE(cmd$error),
                   message = cmd$condition$message)

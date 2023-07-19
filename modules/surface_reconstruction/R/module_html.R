@@ -115,13 +115,13 @@ module_html <- function(){
               title = "Surface Reconstruction",
               start_collapsed = TRUE,
               tools = list(
-                shidashi::as_badge("requires `FreeSurfer`|bg-yellow")
+                shidashi::as_badge("may require `FreeSurfer`|bg-yellow")
               ),
               append_tools = FALSE,
               # class_foot = "no-padding",
               footer = shiny::tags$details(
-                shiny::tags$summary("Terminal script - FreeSurfer recon-all"),
-                shiny::uiOutput(ns("panel_fs_recon"), container = shiny::p)
+                shiny::tags$summary("Terminal script - Imaging segmentation"),
+                shiny::uiOutput(ns("panel_image_segmentation"), container = shiny::p)
               ),
               shiny::div(
                 "* The script requires Unix ",
@@ -164,7 +164,8 @@ module_html <- function(){
                           inputId = ns("param_fs_prog"),
                           label = "Command",
                           choices = c("recon-all -all", "recon-all -autorecon1",
-                                      "recon-all-clinical.sh", "simple-import"),
+                                      "recon-all-clinical.sh", "ants-preprocessing",
+                                      "simple-import"),
                           selected = "recon-all"
                         )
                       )
@@ -218,7 +219,7 @@ module_html <- function(){
                 shiny::pre(class="pre-compact no-padding display-inline", "MRI_RAW.nii"),
                 " is the original image file, and ",
                 shiny::pre(class="pre-compact no-padding display-inline", "T1.nii"),
-                " is the FreeSurfer-normalized image.",
+                " is the FreeSurfer/ANTs-normalized image.",
               ),
               shiny::div(
                 shiny::tags$ul(
@@ -525,44 +526,44 @@ module_html <- function(){
                   )
                 )
               )
-            ),
-
-            ravedash::output_card(
-              title = "Align MRI to Template",
-              start_collapsed = TRUE,
-              tools = list(
-                shidashi::as_badge("requires `Python`|bg-yellow")
-              ),
-              append_tools = FALSE,
-              shiny::div(
-                "This *optional* step non-linearly aligns native ",
-                shiny::pre(class="pre-compact no-padding display-inline", "aparc+aseg"),
-                "to template brain in MNI space. Please make sure to finish FreeSurfer ",
-                "has finished for this subject. You can skip this step and proceed to ",
-                "electrode localization.",
-                shiny::hr(),
-
-                shiny::fluidRow(
-
-                  shiny::column(
-                    width = 4L,
-                    shiny::selectInput(
-                      inputId = ns("mri_morph_template_subject"),
-                      label = "Template to morph into",
-                      choices = c("fsaverage", "N27", "bert", "cvs_avg35", "cvs_avg35_inMNI152"),
-                      selected = getOption("threeBrain.template_subject", "fsaverage")
-                    )
-                  )
-                ),
-
-                shiny::div(
-                  class = "float-right",
-                  shiny::div(
-                    dipsaus::actionButtonStyled(ns("btn_mri_morph_run"), "Run from RAVE")
-                  )
-                )
-              )
             )
+
+            # ravedash::output_card(
+            #   title = "Align MRI to Template",
+            #   start_collapsed = TRUE,
+            #   tools = list(
+            #     shidashi::as_badge("requires `Python`|bg-yellow")
+            #   ),
+            #   append_tools = FALSE,
+            #   shiny::div(
+            #     "This *optional* step non-linearly aligns native ",
+            #     shiny::pre(class="pre-compact no-padding display-inline", "aparc+aseg"),
+            #     "to template brain in MNI space. Please make sure to finish FreeSurfer ",
+            #     "has finished for this subject. You can skip this step and proceed to ",
+            #     "electrode localization.",
+            #     shiny::hr(),
+            #
+            #     shiny::fluidRow(
+            #
+            #       shiny::column(
+            #         width = 4L,
+            #         shiny::selectInput(
+            #           inputId = ns("mri_morph_template_subject"),
+            #           label = "Template to morph into",
+            #           choices = c("fsaverage", "N27", "bert", "cvs_avg35", "cvs_avg35_inMNI152"),
+            #           selected = getOption("threeBrain.template_subject", "fsaverage")
+            #         )
+            #       )
+            #     ),
+            #
+            #     shiny::div(
+            #       class = "float-right",
+            #       shiny::div(
+            #         dipsaus::actionButtonStyled(ns("btn_mri_morph_run"), "Run from RAVE")
+            #       )
+            #     )
+            #   )
+            # )
 
           )
         )

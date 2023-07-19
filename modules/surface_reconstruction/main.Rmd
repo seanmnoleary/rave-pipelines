@@ -249,8 +249,8 @@ Find imported volume (in `Nifti` format) under the following folder:
 
 The imported MRI will be used to reconstruct `FreeSurfer` surface. Normally the entire process will take 6-12 hours. However, if you just want to localize electrodes, then choose the `flag` to be `-autorecon1`. This flag only normalize and skull-strip the MRI. This sub-procedure only takes 8-10 minutes.
 
-```{rave FreeSurfer_reconstruction, export = "fs_recon", cue = "always", echo=FALSE}
-fs_recon <- tryCatch({
+```{rave Image_segmentation, export = "image_segmentation", cue = "always", echo=FALSE}
+image_segmentation <- tryCatch({
   mri_path <- params$nii_t1
   mri_root <- file.path(check_result$path_temp, "inputs", "MRI")
   mri_path <- file.path(mri_root, mri_path)
@@ -260,16 +260,16 @@ fs_recon <- tryCatch({
   
   mri_postfix <- gsub("^.*\\.(nii|nii\\.gz)$", "\\1", basename(mri_path))
   
-  overwrite <- isTRUE(params$freesurfer$fresh_start)
+  overwrite <- isTRUE(params$segmentation$fresh_start)
   
   switch(
-    paste(params$freesurfer$program, collapse = ""),
+    paste(params$segmentation$program, collapse = ""),
     "recon-all" = {
       autorecon_flags <- c(
         "-autorecon1", "-all", "-autorecon2", "-autorecon3",
         "-autorecon2-cp", "-autorecon2-wm", "-autorecon2-pial"
       )
-      flag <- params$freesurfer$flag %OF% autorecon_flags
+      flag <- params$segmentation$flag %OF% autorecon_flags
       raveio::cmd_run_recon_all(
         subject = subject,
         mri_path = mri_path,
@@ -288,6 +288,52 @@ fs_recon <- tryCatch({
         dry_run = TRUE,
         verbose = FALSE,
         command_path = cmd_tools$freesurfer
+      )
+    },
+    "ants-preprocessing" = {
+      raveio::cmd_run_r(
+        dry_run = TRUE,
+        verbose = FALSE,
+        quoted = TRUE, 
+        expr = bquote({
+          subject <- raveio::as_rave_subject(.(subject$subject_id))
+          
+          mri_src <- .(mri_path)
+          ants_dirpath <- file.path(subject$preprocess_settings$raw_path, "rave-imaging", "ants")
+          
+          raveio::ants_preprocessing(
+            work_path = ants_dirpath,
+            image_path = mri_src,
+            resample = TRUE,
+            verbose = TRUE,
+            template_subject = .(raveio::raveio_getopt("threeBrain_template_subject"))
+          )
+          
+          # Backup, also used by coreg
+          deriv_path <-
+            file.path(subject$preprocess_settings$raw_path,
+                      "rave-imaging",
+                      "derivative")
+          raveio::dir_create2(deriv_path)
+          file.copy(
+            from = mri_src,
+            to = file.path(deriv_path, .(sprintf("MRI_RAW.%s", mri_postfix))),
+            overwrite = TRUE,
+            recursive = FALSE,
+            copy.mode = TRUE,
+            copy.date = TRUE
+          )
+          file.copy(
+            from = file.path(ants_dirpath, "mri", "resampled.nii.gz"),
+            to = file.path(deriv_path, "T1-ants.nii.gz"),
+            overwrite = TRUE,
+            recursive = FALSE,
+            copy.mode = TRUE,
+            copy.date = TRUE
+          )
+
+          message("Done")
+        })
       )
     },
     {
@@ -346,7 +392,7 @@ fs_recon <- tryCatch({
 <pre class="sh">
 <code class="hljs">
 ```{r, results='asis', echo=FALSE}
-cmd <- fs_recon
+cmd <- image_segmentation
 if(isTRUE(cmd$error)) {
   cat("Error: ", cmd$condition$message, "\n")
 } else {

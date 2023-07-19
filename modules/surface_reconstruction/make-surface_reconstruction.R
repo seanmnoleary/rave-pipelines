@@ -419,10 +419,10 @@ rm(._._env_._.)
             }), target_depends = c("subject", "check_result", 
             "params", "cmd_tools")), deps = c("subject", "check_result", 
         "params", "cmd_tools"), cue = targets::tar_cue("always"), 
-        pattern = NULL, iteration = "list"), FreeSurfer_reconstruction = targets::tar_target_raw(name = "fs_recon", 
+        pattern = NULL, iteration = "list"), Image_segmentation = targets::tar_target_raw(name = "image_segmentation", 
         command = quote({
             .__target_expr__. <- quote({
-                fs_recon <- tryCatch({
+                image_segmentation <- tryCatch({
                   mri_path <- params$nii_t1
                   mri_root <- file.path(check_result$path_temp, 
                     "inputs", "MRI")
@@ -433,13 +433,13 @@ rm(._._env_._.)
                   }
                   mri_postfix <- gsub("^.*\\.(nii|nii\\.gz)$", 
                     "\\1", basename(mri_path))
-                  overwrite <- isTRUE(params$freesurfer$fresh_start)
-                  switch(paste(params$freesurfer$program, collapse = ""), 
+                  overwrite <- isTRUE(params$segmentation$fresh_start)
+                  switch(paste(params$segmentation$program, collapse = ""), 
                     `recon-all` = {
                       autorecon_flags <- c("-autorecon1", "-all", 
                         "-autorecon2", "-autorecon3", "-autorecon2-cp", 
                         "-autorecon2-wm", "-autorecon2-pial")
-                      flag <- params$freesurfer$flag %OF% autorecon_flags
+                      flag <- params$segmentation$flag %OF% autorecon_flags
                       raveio::cmd_run_recon_all(subject = subject, 
                         mri_path = mri_path, args = flag, overwrite = overwrite, 
                         dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
@@ -447,6 +447,25 @@ rm(._._env_._.)
                       raveio::cmd_run_recon_all_clinical(subject = subject, 
                         mri_path = mri_path, overwrite = overwrite, 
                         dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
+                    }, `ants-preprocessing` = {
+                      raveio::cmd_run_r(dry_run = TRUE, verbose = FALSE, 
+                        quoted = TRUE, expr = bquote({
+                          subject <- raveio::as_rave_subject(.(subject$subject_id))
+                          mri_src <- .(mri_path)
+                          mri_dirpath <- file.path(subject$preprocess_settings$raw_path, 
+                            "rave-imaging", "ants")
+                          raveio::ants_preprocessing(work_path = mri_dirpath, 
+                            image_path = mri_src, resample = TRUE, 
+                            verbose = TRUE, template_subject = .(raveio::raveio_getopt("threeBrain_template_subject")))
+                          deriv_path <- file.path(subject$preprocess_settings$raw_path, 
+                            "rave-imaging", "derivative")
+                          raveio::dir_create2(deriv_path)
+                          file.copy(from = mri_src, to = file.path(deriv_path, 
+                            .(sprintf("MRI_RAW.%s", mri_postfix))), 
+                            overwrite = TRUE, recursive = FALSE, 
+                            copy.mode = TRUE, copy.date = TRUE)
+                          message("Done")
+                        }))
                     }, {
                       raveio::cmd_run_r(dry_run = TRUE, verbose = FALSE, 
                         quoted = TRUE, expr = bquote({
@@ -478,15 +497,15 @@ rm(._._env_._.)
             })
             tryCatch({
                 eval(.__target_expr__.)
-                return(fs_recon)
+                return(image_segmentation)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "fs_recon", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "image_segmentation", 
                   condition = e, expr = .__target_expr__.)
             })
         }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
-            target_export = "fs_recon", target_expr = quote({
+            target_export = "image_segmentation", target_expr = quote({
                 {
-                  fs_recon <- tryCatch({
+                  image_segmentation <- tryCatch({
                     mri_path <- params$nii_t1
                     mri_root <- file.path(check_result$path_temp, 
                       "inputs", "MRI")
@@ -497,50 +516,69 @@ rm(._._env_._.)
                     }
                     mri_postfix <- gsub("^.*\\.(nii|nii\\.gz)$", 
                       "\\1", basename(mri_path))
-                    overwrite <- isTRUE(params$freesurfer$fresh_start)
-                    switch(paste(params$freesurfer$program, collapse = ""), 
-                      `recon-all` = {
-                        autorecon_flags <- c("-autorecon1", "-all", 
-                          "-autorecon2", "-autorecon3", "-autorecon2-cp", 
-                          "-autorecon2-wm", "-autorecon2-pial")
-                        flag <- params$freesurfer$flag %OF% autorecon_flags
-                        raveio::cmd_run_recon_all(subject = subject, 
-                          mri_path = mri_path, args = flag, overwrite = overwrite, 
-                          dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
-                      }, `recon-all-clinical.sh` = {
-                        raveio::cmd_run_recon_all_clinical(subject = subject, 
-                          mri_path = mri_path, overwrite = overwrite, 
-                          dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
-                      }, {
-                        raveio::cmd_run_r(dry_run = TRUE, verbose = FALSE, 
-                          quoted = TRUE, expr = bquote({
-                            subject <- raveio::as_rave_subject(.(subject$subject_id))
-                            image_path <- file.path(subject$preprocess_settings$raw_path, 
-                              "rave-imaging")
-                            mri_src <- .(mri_path)
-                            mri_dirpath <- file.path(image_path, 
-                              "fs", "mri")
-                            mri_dst <- file.path(mri_dirpath, 
-                              .(sprintf("brain.%s", mri_postfix)))
-                            raveio::dir_create2(mri_dirpath)
-                            file.copy(from = mri_src, to = mri_dst, 
-                              overwrite = .(overwrite), recursive = FALSE, 
-                              copy.mode = TRUE, copy.date = TRUE)
-                            deriv_path <- file.path(image_path, 
-                              "derivative")
-                            raveio::dir_create2(deriv_path)
-                            file.copy(from = mri_src, to = file.path(deriv_path, 
-                              .(sprintf("MRI_RAW.%s", mri_postfix))), 
-                              overwrite = TRUE, recursive = FALSE, 
-                              copy.mode = TRUE, copy.date = TRUE)
-                            message("Done")
-                          }))
-                      })
+                    overwrite <- isTRUE(params$segmentation$fresh_start)
+                    switch(paste(params$segmentation$program, 
+                      collapse = ""), `recon-all` = {
+                      autorecon_flags <- c("-autorecon1", "-all", 
+                        "-autorecon2", "-autorecon3", "-autorecon2-cp", 
+                        "-autorecon2-wm", "-autorecon2-pial")
+                      flag <- params$segmentation$flag %OF% autorecon_flags
+                      raveio::cmd_run_recon_all(subject = subject, 
+                        mri_path = mri_path, args = flag, overwrite = overwrite, 
+                        dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
+                    }, `recon-all-clinical.sh` = {
+                      raveio::cmd_run_recon_all_clinical(subject = subject, 
+                        mri_path = mri_path, overwrite = overwrite, 
+                        dry_run = TRUE, verbose = FALSE, command_path = cmd_tools$freesurfer)
+                    }, `ants-preprocessing` = {
+                      raveio::cmd_run_r(dry_run = TRUE, verbose = FALSE, 
+                        quoted = TRUE, expr = bquote({
+                          subject <- raveio::as_rave_subject(.(subject$subject_id))
+                          mri_src <- .(mri_path)
+                          mri_dirpath <- file.path(subject$preprocess_settings$raw_path, 
+                            "rave-imaging", "ants")
+                          raveio::ants_preprocessing(work_path = mri_dirpath, 
+                            image_path = mri_src, resample = TRUE, 
+                            verbose = TRUE, template_subject = .(raveio::raveio_getopt("threeBrain_template_subject")))
+                          deriv_path <- file.path(subject$preprocess_settings$raw_path, 
+                            "rave-imaging", "derivative")
+                          raveio::dir_create2(deriv_path)
+                          file.copy(from = mri_src, to = file.path(deriv_path, 
+                            .(sprintf("MRI_RAW.%s", mri_postfix))), 
+                            overwrite = TRUE, recursive = FALSE, 
+                            copy.mode = TRUE, copy.date = TRUE)
+                          message("Done")
+                        }))
+                    }, {
+                      raveio::cmd_run_r(dry_run = TRUE, verbose = FALSE, 
+                        quoted = TRUE, expr = bquote({
+                          subject <- raveio::as_rave_subject(.(subject$subject_id))
+                          image_path <- file.path(subject$preprocess_settings$raw_path, 
+                            "rave-imaging")
+                          mri_src <- .(mri_path)
+                          mri_dirpath <- file.path(image_path, 
+                            "fs", "mri")
+                          mri_dst <- file.path(mri_dirpath, .(sprintf("brain.%s", 
+                            mri_postfix)))
+                          raveio::dir_create2(mri_dirpath)
+                          file.copy(from = mri_src, to = mri_dst, 
+                            overwrite = .(overwrite), recursive = FALSE, 
+                            copy.mode = TRUE, copy.date = TRUE)
+                          deriv_path <- file.path(image_path, 
+                            "derivative")
+                          raveio::dir_create2(deriv_path)
+                          file.copy(from = mri_src, to = file.path(deriv_path, 
+                            .(sprintf("MRI_RAW.%s", mri_postfix))), 
+                            overwrite = TRUE, recursive = FALSE, 
+                            copy.mode = TRUE, copy.date = TRUE)
+                          message("Done")
+                        }))
+                    })
                   }, error = function(e) {
                     list(error = TRUE, condition = e)
                   })
                 }
-                fs_recon
+                image_segmentation
             }), target_depends = c("params", "check_result", 
             "subject", "cmd_tools")), deps = c("params", "check_result", 
         "subject", "cmd_tools"), cue = targets::tar_cue("always"), 
