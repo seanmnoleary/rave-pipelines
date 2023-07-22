@@ -11,4 +11,4 @@ Authors@R: c(
 Description: Use 'dcm2niix' to import 'DICOM' files to 'NIFTI' format,
     apply 'FreeSurfer' commands to generate surface files, then adopt
     'FSL' ('FLIRT') to co-register CT to MRI.
-BugReports: https://github.com/dipterix/rave-pipelines/issues
+BugReports: https://github.com/rave-ieeg/rave-pipelines/issues
