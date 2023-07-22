@@ -902,7 +902,7 @@ module_server <- function(input, output, session, ...){
       ct_preview_path()
     ),
     ct_preview_path(),
-    ignoreNULL = FALSE, ignoreInit = FALSE
+    ignoreNULL = TRUE, ignoreInit = FALSE
   )
 
 
@@ -983,7 +983,7 @@ module_server <- function(input, output, session, ...){
       mri_preview_path()
     ),
     mri_preview_path(),
-    ignoreNULL = FALSE, ignoreInit = FALSE
+    ignoreNULL = TRUE, ignoreInit = FALSE
   )
 
 

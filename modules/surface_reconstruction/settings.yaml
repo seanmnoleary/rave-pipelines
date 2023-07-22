@@ -1,9 +1,13 @@
-skip_coregistration: no
-path_ct: junk/CT_RAW.nii.gz
-dcm2niix_path: /opt/homebrew/Cellar/dcm2niix/1.0.20230411/bin/dcm2niix
+subject_code: PAV006
+fsl_path: /usr/local/fsl
+freesurfer_path: /Applications/freesurfer/7.4.1
+project_name: devel
+path_mri: junk/MRI_reference.nii
+skip_recon: no
+afni_path: /Users/dipterix/abin
 params:
   nii_t1: MRI_RAW.nii
-  nii_ct: POST_IMPLANT_CT_0_0.nii
+  nii_ct: POST_IMPLANT_CT_1_STEALTH_20220824232445_2.nii
   template_brain: ~
   dcm2niix:
     merge: Auto
@@ -39,10 +43,6 @@ params:
     optimizer: powell
   afni:
     reference: MRI_RAW.nii
-afni_path: /Users/dipterix/abin
-skip_recon: no
-path_mri: junk/MRI_reference.nii
-project_name: devel
-freesurfer_path: /Applications/freesurfer/7.4.1
-fsl_path: /usr/local/fsl
-subject_code: PAV006
+dcm2niix_path: /opt/homebrew/Cellar/dcm2niix/1.0.20230411/bin/dcm2niix
+path_ct: junk/CT_RAW.nii.gz
+skip_coregistration: no

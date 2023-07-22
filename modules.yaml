@@ -2,7 +2,7 @@ groups:
   Import Signals:
     order: 1
     open: no
-  Surface & Electrodes:
+  Images & Electrodes:
     order: 7
     open: no
 modules:
@@ -36,11 +36,11 @@ modules:
     order: 6
   surface_reconstruction:
     label: MRI/CT Preprocessing
-    group: Surface & Electrodes
+    group: Images & Electrodes
     order: 7.1
   electrode_localization:
     label: Electrode Localization
-    group: Surface & Electrodes
+    group: Images & Electrodes
     order: 7.2
   compatibility_rave1:
     label: Data Tools
