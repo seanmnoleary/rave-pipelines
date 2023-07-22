@@ -49,7 +49,7 @@ module_html <- function(){
           shiny::column(
             width = 12L,
             ravedash::output_card(
-              'Interactive 3D Viewer',
+              'YAEL 3D Viewer',
               class_body = "no-padding fill-width height-vh80 min-height-450 resize-vertical",
               shiny::div(
                 class = 'position-relative fill',
