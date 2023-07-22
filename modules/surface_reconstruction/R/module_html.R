@@ -112,7 +112,7 @@ module_html <- function(){
             ),
 
             ravedash::output_card(
-              title = "Surface Reconstruction",
+              title = "MRI Preprocessing",
               start_collapsed = TRUE,
               tools = list(
                 shidashi::as_badge("may require `FreeSurfer`|bg-yellow")
@@ -124,7 +124,7 @@ module_html <- function(){
                 shiny::uiOutput(ns("panel_image_segmentation"), container = shiny::p)
               ),
               shiny::div(
-                "* The script requires Unix ",
+                "* If you choose to use the FreeSurfer, then the script requires Unix ",
                 shiny::pre(class="pre-compact no-padding display-inline", "bash"),
                 " terminals. If you are using Windows, ",
                 "please use Window sub-system for Linux [WSL2].",
@@ -202,7 +202,7 @@ module_html <- function(){
             ),
 
             ravedash::output_card(
-              title = "Co-registration CT to T1",
+              title = "Co-registration CT and T1",
               start_collapsed = TRUE,
               tools = list(
                 shidashi::as_badge("may require `AFNI/FSL/Python`|bg-yellow")

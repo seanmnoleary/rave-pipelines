@@ -1,33 +1,35 @@
 skip_coregistration: no
-path_ct: rave-uploads/CT/YAH_CT.nii
-dcm2niix_path: ''
+path_ct: junk/CT_RAW.nii.gz
+dcm2niix_path: /opt/homebrew/Cellar/dcm2niix/1.0.20230411/bin/dcm2niix
 params:
   nii_t1: MRI_RAW.nii
-  nii_ct: CT_RAW.nii
+  nii_ct: POST_IMPLANT_CT_0_0.nii
   template_brain: ~
   dcm2niix:
     merge: Auto
     float: 'Yes'
     crop: 'No'
   segmentation:
-    program: ants-preprocessing
+    program: recon-all
+    flag: -all
+    fresh_start: no
   niftyreg:
-    reference: T1-ants.nii.gz
+    reference: MRI_RAW.nii
     reg_type: rigid
     interp: trilinear
   ants:
-    reference: T1-ants.nii.gz
+    reference: MRI_RAW.nii
     reg_type: Rigid
     aff_metric: mattes
     syn_metric: mattes
   flirt:
-    reference: T1-ants.nii.gz
+    reference: MRI_RAW.nii
     dof: 6
     cost: mutualinfo
     search: 90
     searchcost: mutualinfo
   nipy:
-    reference: T1-ants.nii.gz
+    reference: MRI_RAW.nii
     clean_source: yes
     inverse_target: yes
     precenter_source: yes
@@ -36,11 +38,11 @@ params:
     interp: pv
     optimizer: powell
   afni:
-    reference: T1-ants.nii.gz
+    reference: MRI_RAW.nii
 afni_path: /Users/dipterix/abin
 skip_recon: no
-path_mri: rave-uploads/MRI/MRI_RAW.nii
-project_name: demo
+path_mri: junk/MRI_reference.nii
+project_name: devel
 freesurfer_path: /Applications/freesurfer/7.4.1
 fsl_path: /usr/local/fsl
-subject_code: YAH
+subject_code: PAV006

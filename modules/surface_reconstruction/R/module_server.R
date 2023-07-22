@@ -72,8 +72,8 @@ module_server <- function(input, output, session, ...){
       local_reactives$build_command <- Sys.time()
 
       shidashi::card_operate(title = "Import DICOM Folders or Nifti Images", method = "collapse")
-      shidashi::card_operate(title = "Surface Reconstruction", method = "collapse")
-      shidashi::card_operate(title = "Co-registration CT to T1", method = "collapse")
+      shidashi::card_operate(title = "MRI Preprocessing", method = "collapse")
+      shidashi::card_operate(title = "Co-registration CT and T1", method = "collapse")
       shidashi::card_operate(title = "Align MRI to Template", method = "collapse")
 
       component_container$reset_data()
@@ -95,8 +95,8 @@ module_server <- function(input, output, session, ...){
   shiny::bindEvent(
     ravedash::safe_observe({
       shidashi::card_operate(title = "Import DICOM Folders or Nifti Images", method = "expand")
-      shidashi::card_operate(title = "Surface Reconstruction", method = "collapse")
-      shidashi::card_operate(title = "Co-registration CT to T1", method = "collapse")
+      shidashi::card_operate(title = "MRI Preprocessing", method = "collapse")
+      shidashi::card_operate(title = "Co-registration CT and T1", method = "collapse")
       shidashi::card_operate(title = "Align MRI to Template", method = "collapse")
     }),
     input$jump_import_dicom,
@@ -105,8 +105,8 @@ module_server <- function(input, output, session, ...){
   shiny::bindEvent(
     ravedash::safe_observe({
       shidashi::card_operate(title = "Import DICOM Folders or Nifti Images", method = "collapse")
-      shidashi::card_operate(title = "Surface Reconstruction", method = "expand")
-      shidashi::card_operate(title = "Co-registration CT to T1", method = "collapse")
+      shidashi::card_operate(title = "MRI Preprocessing", method = "expand")
+      shidashi::card_operate(title = "Co-registration CT and T1", method = "collapse")
       shidashi::card_operate(title = "Align MRI to Template", method = "collapse")
     }),
     input$jump_recon,
@@ -115,8 +115,8 @@ module_server <- function(input, output, session, ...){
   shiny::bindEvent(
     ravedash::safe_observe({
       shidashi::card_operate(title = "Import DICOM Folders or Nifti Images", method = "collapse")
-      shidashi::card_operate(title = "Surface Reconstruction", method = "collapse")
-      shidashi::card_operate(title = "Co-registration CT to T1", method = "expand")
+      shidashi::card_operate(title = "MRI Preprocessing", method = "collapse")
+      shidashi::card_operate(title = "Co-registration CT and T1", method = "expand")
       shidashi::card_operate(title = "Align MRI to Template", method = "collapse")
     }),
     input$jump_coregistration,
@@ -125,8 +125,8 @@ module_server <- function(input, output, session, ...){
   shiny::bindEvent(
     ravedash::safe_observe({
       shidashi::card_operate(title = "Import DICOM Folders or Nifti Images", method = "collapse")
-      shidashi::card_operate(title = "Surface Reconstruction", method = "collapse")
-      shidashi::card_operate(title = "Co-registration CT to T1", method = "collapse")
+      shidashi::card_operate(title = "MRI Preprocessing", method = "collapse")
+      shidashi::card_operate(title = "Co-registration CT and T1", method = "collapse")
       shidashi::card_operate(title = "Align MRI to Template", method = "expand")
     }),
     input$jump_mri_template_registration,
@@ -154,53 +154,19 @@ module_server <- function(input, output, session, ...){
         shiny::tags$li(
           shiny::actionLink(
             inputId = ns("jump_import_dicom"),
-            label = shiny::tagList(
-              "Import DICOM or Nifti images ", local({
-                if(length(tools$dcm2niix) == 1 &&
-                   !is.na(tools$dcm2niix) &&
-                   isTRUE(file.exists(tools$dcm2niix))) {
-                  shiny::span(type = "primary", ravedash::shiny_icons$arrow_right)
-                } else {
-                  shiny::icon("times")
-                }
-              })
-            )
+            label = "Import DICOM or Nifti images "
           )
         ),
         shiny::tags$li(
           shiny::actionLink(
             inputId = ns("jump_recon"),
-            label = shiny::tagList(
-              "Surface reconstruction ", local({
-                if(actions$skip_recon) {
-                  shiny::icon("times")
-                } else {
-                  ravedash::shiny_icons$arrow_right
-                }
-              })
-            )
+            label = "MRI Preprocessing"
           )
         ),
         shiny::tags$li(
           shiny::actionLink(
             inputId = ns("jump_coregistration"),
-            label = shiny::tagList(
-              "CT co-registration ", local({
-                if(actions$skip_coregistration) {
-                  shiny::icon("times")
-                } else {
-                  ravedash::shiny_icons$arrow_right
-                }
-              })
-            )
-          )
-        ),
-        shiny::tags$li(
-          shiny::actionLink(
-            inputId = ns("jump_mri_template_registration"),
-            label = shiny::tagList(
-              "Align MRI to template ", ravedash::shiny_icons$arrow_right
-            )
+            label = "CT MRI co-registration"
           )
         )
       )

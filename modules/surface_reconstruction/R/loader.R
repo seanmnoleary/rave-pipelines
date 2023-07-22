@@ -12,10 +12,9 @@ loader_html <- function(session = shiny::getDefaultReactiveDomain()){
 
           shiny::p(
             shiny::tags$small(
-              "This module provides terminal scripts to ",
-              "imports the raw MR & CT images (DICOM/NIfTI) into RAVE, reconstruct ",
-              "surface using FreeSurfer, and co-register CT to MRI via ",
-              "ANTs/NiftyReg/FSL-FLIRT. ",
+              "This module is NOT mandatory for YAEL. You may integrate your own pipelines. ",
+              "Please check ", shiny::a(href = "https://yael.wiki", target = "_blank", "yael.wiki"),
+              " or ask the developers for more information.",
               shiny::br(),
               "Some functions require optional installation of `dcm2niix`, `FreeSurfer`, or `FSL`. ",
               "Please consider installing them if you want to use these functions. "
@@ -100,7 +99,7 @@ loader_html <- function(session = shiny::getDefaultReactiveDomain()){
         width = 4L,
 
         ravedash::input_card(
-          title = "Command-line settings",
+          title = "Command-line (optional)",
           class_header = "",
 
           ravedash::flex_group_box(
@@ -335,7 +334,7 @@ loader_server <- function(input, output, session, ...){
             title = "Confirmation",
             size = "l",
             shiny::p("Please confirm the to-do list and carefully read warnings. ",
-                     "Please do NOT ignore warnings ",
+                     "Please read warnings ",
                      "that have statements such as ",
                      '"the script will fail/error".'),
             msg_ui,
