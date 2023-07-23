@@ -91,6 +91,12 @@ module_server <- function(input, output, session, ...){
     # backup unsaved.csv as it's not useful anymore
     unlink(file.path(subject$meta_path, "electrodes_unsaved.csv"))
 
+    # also save it to subject custom-data path so users can view the results with colors
+    custom_path <- file.path(subject$preprocess_settings$raw_path,
+                             "rave-imaging", "custom-data")
+    custom_path <- raveio::dir_create2(custom_path)
+    raveio::save_fst(table, path = file.path(custom_path, sprintf("%s-electrodes.fst", subject$project_name)))
+
     dipsaus::shiny_alert2(
       title = "Success!",
       icon = 'success',
@@ -100,6 +106,7 @@ module_server <- function(input, output, session, ...){
         shiny::removeModal()
       }
     )
+
   }
 
   shiny::bindEvent(
