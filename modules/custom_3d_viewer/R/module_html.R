@@ -69,10 +69,20 @@ module_html <- function(){
                     "input['%s'] === '[New Uploads]'",
                     ns("uploaded_source")
                   ),
-                  shiny::fileInput(
+                  dipsaus::fancyFileInput(
                     inputId = ns("uploaded_file"),
-                    label = "Upload csv/fst table",
-                    multiple = FALSE
+                    label = "Upload csv/fst/xlsx table",
+                    width = "100%",
+                    size = "s"
+                  ),
+                  # shiny::fileInput(
+                  #   inputId = ns("uploaded_file"),
+                  #   label = "Upload csv/fst table",
+                  #   multiple = FALSE
+                  # ),
+                  shiny::actionLink(
+                    inputId = ns("download_template_btn"),
+                    label = "Show/Download a template table"
                   )
                 )
               ),

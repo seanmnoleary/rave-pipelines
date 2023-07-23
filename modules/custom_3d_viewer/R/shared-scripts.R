@@ -40,6 +40,12 @@ targets::tar_option_set(
 
 )
 
+`%OF%` <- dipsaus::`%OF%`
+TEMPLATE_CHOICES = c(
+  "Simple property",
+  "Multiple properties",
+  "Animation"
+)
 
 load_brain_from_subject_code <- function(subject_code, project_name = "[Auto]", surface_types = NULL, use_template = FALSE) {
 
@@ -118,4 +124,11 @@ load_brain_from_subject_code <- function(subject_code, project_name = "[Auto]", 
     electrode_table = electrode_table,
     surface_types = brain$surface_types
   )
+}
+
+read_xlsx <- function(path, sheet = NULL, ...) {
+  if( !rpymat:::env_available() && !dipsaus::package_installed("readxl") ) {
+    ravemanager:::install_packages("readxl")
+  }
+  rpymat::read_xlsx(path = path, sheet = sheet, ...)
 }
