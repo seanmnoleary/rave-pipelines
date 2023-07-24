@@ -16,36 +16,36 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_skip_validation = targets::tar_target_raw("skip_validation", 
+    input_force_import = targets::tar_target_raw("force_import", 
         quote({
-            settings[["skip_validation"]]
-        }), deps = "settings"), input_import_setup__subject_code = targets::tar_target_raw("import_setup__subject_code", 
-        quote({
-            settings[["import_setup__subject_code"]]
-        }), deps = "settings"), input_import_setup__project_name = targets::tar_target_raw("import_setup__project_name", 
-        quote({
-            settings[["import_setup__project_name"]]
-        }), deps = "settings"), input_import_channels__unit = targets::tar_target_raw("import_channels__unit", 
-        quote({
-            settings[["import_channels__unit"]]
-        }), deps = "settings"), input_import_channels__sample_rate = targets::tar_target_raw("import_channels__sample_rate", 
-        quote({
-            settings[["import_channels__sample_rate"]]
-        }), deps = "settings"), input_import_channels__electrodes = targets::tar_target_raw("import_channels__electrodes", 
-        quote({
-            settings[["import_channels__electrodes"]]
-        }), deps = "settings"), input_import_channels__electrode_file = targets::tar_target_raw("import_channels__electrode_file", 
-        quote({
-            settings[["import_channels__electrode_file"]]
-        }), deps = "settings"), input_import_blocks__session_block = targets::tar_target_raw("import_blocks__session_block", 
-        quote({
-            settings[["import_blocks__session_block"]]
+            settings[["force_import"]]
         }), deps = "settings"), input_import_blocks__format = targets::tar_target_raw("import_blocks__format", 
         quote({
             settings[["import_blocks__format"]]
-        }), deps = "settings"), input_force_import = targets::tar_target_raw("force_import", 
+        }), deps = "settings"), input_import_blocks__session_block = targets::tar_target_raw("import_blocks__session_block", 
         quote({
-            settings[["force_import"]]
+            settings[["import_blocks__session_block"]]
+        }), deps = "settings"), input_import_channels__electrode_file = targets::tar_target_raw("import_channels__electrode_file", 
+        quote({
+            settings[["import_channels__electrode_file"]]
+        }), deps = "settings"), input_import_channels__electrodes = targets::tar_target_raw("import_channels__electrodes", 
+        quote({
+            settings[["import_channels__electrodes"]]
+        }), deps = "settings"), input_import_channels__sample_rate = targets::tar_target_raw("import_channels__sample_rate", 
+        quote({
+            settings[["import_channels__sample_rate"]]
+        }), deps = "settings"), input_import_channels__unit = targets::tar_target_raw("import_channels__unit", 
+        quote({
+            settings[["import_channels__unit"]]
+        }), deps = "settings"), input_import_setup__project_name = targets::tar_target_raw("import_setup__project_name", 
+        quote({
+            settings[["import_setup__project_name"]]
+        }), deps = "settings"), input_import_setup__subject_code = targets::tar_target_raw("import_setup__subject_code", 
+        quote({
+            settings[["import_setup__subject_code"]]
+        }), deps = "settings"), input_skip_validation = targets::tar_target_raw("skip_validation", 
+        quote({
+            settings[["skip_validation"]]
         }), deps = "settings"), obtain_subject_instance = targets::tar_target_raw(name = "subject", 
         command = quote({
             .__target_expr__. <- quote({
@@ -229,21 +229,6 @@ rm(._._env_._.)
                   electrodes = electrodes, sample_rate = sample_rate, 
                   format = format, conversion = physical_unit, 
                   data_type = "LFP", add = FALSE, skip_validation = TRUE)
-                tryCatch({
-                  has_fs <- !is.null(raveio::rave_brain(subject))
-                  orig <- subject$get_electrode_table(reference_name = ".fake", 
-                    simplify = FALSE)
-                  raveio::import_electrode_table(path = file.path(subject$meta_path, 
-                    "electrodes.csv"), subject = subject, use_fs = has_fs)
-                }, error = function(e) {
-                  ravedash::logger("Cannot import from existing electrodes.csv, creating a new one", 
-                    level = "warning")
-                  tbl <- data.frame(Electrode = subject$electrodes, 
-                    Coord_x = 0, Coord_y = 0, Coord_z = 0, Label = "NoLabel", 
-                    SignalType = subject$electrode_types)
-                  raveio::save_meta2(data = tbl, meta_type = "electrodes", 
-                    project_name = subject$project_name, subject_code = subject$subject_code)
-                })
                 module_id <- "import_lfp_native"
                 subject$set_default(namespace = module_id, key = "import_parameters", 
                   value = list(project_name = subject$project_name, 
@@ -256,6 +241,8 @@ rm(._._env_._.)
                       usetz = TRUE)))
                 preprocess_info <- raveio::RAVEPreprocessSettings$new(subject$subject_id, 
                   read_only = TRUE)
+                subject$get_electrode_table(reference_name = ".fake", 
+                  simplify = FALSE)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -308,21 +295,6 @@ rm(._._env_._.)
                     electrodes = electrodes, sample_rate = sample_rate, 
                     format = format, conversion = physical_unit, 
                     data_type = "LFP", add = FALSE, skip_validation = TRUE)
-                  tryCatch({
-                    has_fs <- !is.null(raveio::rave_brain(subject))
-                    orig <- subject$get_electrode_table(reference_name = ".fake", 
-                      simplify = FALSE)
-                    raveio::import_electrode_table(path = file.path(subject$meta_path, 
-                      "electrodes.csv"), subject = subject, use_fs = has_fs)
-                  }, error = function(e) {
-                    ravedash::logger("Cannot import from existing electrodes.csv, creating a new one", 
-                      level = "warning")
-                    tbl <- data.frame(Electrode = subject$electrodes, 
-                      Coord_x = 0, Coord_y = 0, Coord_z = 0, 
-                      Label = "NoLabel", SignalType = subject$electrode_types)
-                    raveio::save_meta2(data = tbl, meta_type = "electrodes", 
-                      project_name = subject$project_name, subject_code = subject$subject_code)
-                  })
                   module_id <- "import_lfp_native"
                   subject$set_default(namespace = module_id, 
                     key = "import_parameters", value = list(project_name = subject$project_name, 
@@ -335,6 +307,8 @@ rm(._._env_._.)
                         usetz = TRUE)))
                   preprocess_info <- raveio::RAVEPreprocessSettings$new(subject$subject_id, 
                     read_only = TRUE)
+                  subject$get_electrode_table(reference_name = ".fake", 
+                    simplify = FALSE)
                 }
                 preprocess_info
             }), target_depends = c("validation_result", "subject", 
