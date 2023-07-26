@@ -1088,8 +1088,17 @@ module_server <- function(input, output, session, ...){
       "FSL" = {
         local_reactives$bash_scripts$coreg_flirt
       },
-      {
+      "img_pipe" = {
         local_reactives$bash_scripts$coreg_nipy
+      },
+      "NiftyReg" = {
+        local_reactives$bash_scripts$coreg_niftyreg
+      },
+      "ANTs" = {
+        local_reactives$bash_scripts$coreg_ants
+      },
+      {
+        "stop('Unknown coregistration command')"
       }
     )
 
