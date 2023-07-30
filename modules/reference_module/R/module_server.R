@@ -496,7 +496,9 @@ module_server <- function(input, output, session, ...){
 
       save_path <- file.path(subject$meta_path, sprintf("reference_%s.csv", name))
 
-      raveio::safe_write_csv(table, save_path)
+      table <- table[order(table$Electrode), ]
+
+      raveio::safe_write_csv(table, save_path, row.names = FALSE)
 
       dipsaus::shiny_alert2(
         title = "Succeed!",
