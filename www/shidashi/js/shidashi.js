@@ -4986,6 +4986,8 @@ const default_scroll_opt = {
 class Shidashi {
 
   constructor (Shiny){
+    // Insert build version here
+    this.build = { version: '1.0', date: '2023-08-10 09:56:18 EDT' };
     this._keep_alive = true;
     this._moduleId = undefined;
     this._raveId = undefined;

@@ -21,7 +21,7 @@
   "description": "Pipeline Template for 'RAVE' Modules",
   "private": true,
   "scripts": {
-    "build": "npx webpack",
+    "build": "Rscript --vanilla './src/build.R'",
     "test": "Rscript -e 'ravedash::debug_modules(\".\")'"
   },
   "repository": {
