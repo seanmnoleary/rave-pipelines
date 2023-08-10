@@ -940,6 +940,19 @@ body.dark-mode .nav-sidebar .nav-header.nav-divider {
   }
 }
 
+.card-header > .card-title {
+  & > .form-group {
+    display: inline-block;
+    margin: 0;
+
+    & label,
+    & label > span {
+      font-size: 1.1rem;
+      font-weight: 400 !important;
+    }
+  }
+}
+
 // card2
 .card2-body {
   @include overflow(hidden, x);
