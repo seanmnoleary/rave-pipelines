@@ -5119,7 +5119,7 @@ class Shidashi {
     if(document.readyState && document.readyState === "complete" &&
       this._shiny && this.shiny_connected) {
 
-      while(this._shiny_callstacks.length) {
+      while(this._shiny_callstacks.length > 0) {
         const f = this._shiny_callstacks.shift();
         try{
           f(this._shiny);
@@ -5128,7 +5128,37 @@ class Shidashi {
         }
       }
     } else {
-      console.debug(`Shiny is not connected, defering request... ($(this._shiny_callstacks.length))`);
+      console.debug(`Shiny is not connected, defering (${ this._shiny_callstacks.length }) requests...`);
+    }
+  }
+
+  bindAll( el, ensure = true ) {
+    const b = (shiny) => {
+      shiny.bindAll( el );
+      // also check tabsets
+      const $tabLists = jquery__WEBPACK_IMPORTED_MODULE_0___default()( el ).find('.card-tabs [role="tablist"]')
+      for( let ii = 0; ii < $tabLists.length; ii++ ) {
+        const pa = $tabLists[ ii ];
+        if(pa && pa.id) {
+          const activeTab = pa.querySelector("li.nav-item > .nav-link.active");
+          if( activeTab ) {
+            shiny.setInputValue(pa.id, activeTab.innerText);
+          }
+        }
+      }
+
+    };
+
+    if( ensure || this._shiny ) {
+      this.ensureShiny(b);
+    }
+  }
+  unbindAll( el, ensure = true ) {
+    const ub = (shiny) => {
+      shiny.unbindAll( el );
+    };
+    if( ensure || this._shiny ) {
+      this.ensureShiny( ub );
     }
   }
 
@@ -5404,7 +5434,7 @@ class Shidashi {
       }, timeout);
     } else {
       this.$window.trigger("resize");
-      this._shiny.unbindAll(this._dummy2);
+      this.unbindAll( this._dummy2 );
     }
 
   }
@@ -5465,9 +5495,7 @@ class Shidashi {
     elbody.appendChild(body_el);
 
 
-    this.ensureShiny((shiny) => {
-      shiny.bindAll(jquery__WEBPACK_IMPORTED_MODULE_0___default()(elbody));
-    });
+    this.bindAll( jquery__WEBPACK_IMPORTED_MODULE_0___default()(elbody) );
 
     if(active){
       return(this.tabsetActivate(inputId, title));
@@ -5502,9 +5530,7 @@ class Shidashi {
           const tabid = rem.attr("aria-controls");
           const tab = jquery__WEBPACK_IMPORTED_MODULE_0___default()("#" + tabid);
           const is_active = rem.attr("aria-selected");
-          this.ensureShiny((shiny) => {
-            shiny.unbindAll(tab);
-          });
+          this.unbindAll( tab );
           rem.parent().remove();
           tab.remove();
           if(is_active === "true"){
@@ -5628,15 +5654,11 @@ class Shidashi {
     const $el = jquery__WEBPACK_IMPORTED_MODULE_0___default()(selector);
     if(!$el.length) { return; }
 
-    if( this._shiny ) {
-      this._shiny.unbindAll($el);
-    }
+    this.unbindAll( $el, false );
 
     $el.html(content);
 
-    if( this._shiny ) {
-      this._shiny.bindAll($el);
-    }
+    this.bindAll( $el, false );
   }
 
   // notification
@@ -5895,9 +5917,9 @@ class Shidashi {
         if(card.length > 0){
 
           setTimeout(() => {
-            this.ensureShiny(() => { this._shiny.unbindAll(card); });
+            this.unbindAll( card );
             card.removeClass("start-collapsed");
-            this.ensureShiny(() => { this._shiny.bindAll(card); });
+            this.bindAll( card );
           }, 200);
 
         }
@@ -5929,16 +5951,26 @@ class Shidashi {
         this._shiny.setInputValue(pa.id, tabname);
       });
     })
+
+    this.ensureShiny((shiny) => {
+      const $tabLists = jquery__WEBPACK_IMPORTED_MODULE_0___default()( '.card-tabs [role="tablist"]' );
+      window.$tabLists = $tabLists;
+      for( let ii = 0; ii < $tabLists.length; ii++ ) {
+        const pa = $tabLists[ ii ];
+        if(pa && pa.id) {
+          const activeTab = pa.querySelector("li.nav-item > .nav-link.active");
+          if( activeTab ) {
+            shiny.setInputValue(pa.id, activeTab.innerText);
+          }
+        }
+      }
+    });
     // --------------- Notification system -----------
     this.$body.on('show.bs.toast', (evt)=>{
-      this.ensureShiny(() => {
-        this._shiny.bindAll(jquery__WEBPACK_IMPORTED_MODULE_0___default()(evt.target));
-      });
+      this.bindAll( jquery__WEBPACK_IMPORTED_MODULE_0___default()(evt.target) );
     });
     this.$body.on('hide.bs.toast', (evt)=>{
-      this.ensureShiny(() => {
-        this._shiny.unbindAll(jquery__WEBPACK_IMPORTED_MODULE_0___default()(evt.target));
-      });
+      this.unbindAll( jquery__WEBPACK_IMPORTED_MODULE_0___default()(evt.target) );
     });
 
     // --------------- Fancy scroll ---------------
@@ -13605,9 +13637,9 @@ function registerShidashi(shiny) {
   initShidashi();
   shidashi._shiny = shiny;
   shidashi._register_shiny();
-  shidashi._finalize_initialization();
   shidashi.shiny_connected = true;
   shidashi.ensureShiny();
+  shidashi._finalize_initialization();
 
   (0,_js_shiny_progress_js__WEBPACK_IMPORTED_MODULE_4__.registerProgressOutput)(shiny);
   (0,_js_shiny_clipboard_js__WEBPACK_IMPORTED_MODULE_5__.registerClipboardOutput)(shiny, shidashi);

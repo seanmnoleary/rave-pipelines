@@ -96,9 +96,9 @@ function registerShidashi(shiny) {
   initShidashi();
   shidashi._shiny = shiny;
   shidashi._register_shiny();
-  shidashi._finalize_initialization();
   shidashi.shiny_connected = true;
   shidashi.ensureShiny();
+  shidashi._finalize_initialization();
 
   registerProgressOutput(shiny);
   registerClipboardOutput(shiny, shidashi);
