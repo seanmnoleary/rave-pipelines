@@ -4987,7 +4987,7 @@ class Shidashi {
 
   constructor (Shiny){
     // Insert build version here
-    this.build = { version: '1.0', date: '2023-08-10 09:56:18 EDT' };
+    this.build = { version: '1.0', date: '2023-08-10 11:19:58 EDT' };
     this._keep_alive = true;
     this._moduleId = undefined;
     this._raveId = undefined;
@@ -5093,7 +5093,7 @@ class Shidashi {
       return;
     }
     const $title = document.createElement("p");
-    $title.innerText = title;
+    $title.text( title );
 
     const $link = document.createElement("a");
     $link.setAttribute("href", url);
@@ -5144,7 +5144,7 @@ class Shidashi {
         if(pa && pa.id) {
           const activeTab = pa.querySelector("li.nav-item > .nav-link.active");
           if( activeTab ) {
-            shiny.setInputValue(pa.id, activeTab.innerText);
+            shiny.setInputValue( pa.id, jquery__WEBPACK_IMPORTED_MODULE_0___default()(activeTab).text() );
           }
         }
       }
@@ -5455,7 +5455,7 @@ class Shidashi {
     if(existing_items.length){
       const existing_title = existing_items.children(".nav-link")
         .toArray()
-        .map((v) => {return(v.innerText);});
+        .map((v) => {return( jquery__WEBPACK_IMPORTED_MODULE_0___default()(v).text() );});
       if(existing_title.includes(title)){
         return("A tab with title '" + title + "' already exists.");
       }
@@ -5476,7 +5476,8 @@ class Shidashi {
     header_a.setAttribute("role", "tab");
     header_a.setAttribute("aria-controls", `${ inputId }-${tabId}`);
     header_a.setAttribute("aria-selected", "false");
-    header_a.innerText = title;
+    // header_a.innerText = title;
+    jquery__WEBPACK_IMPORTED_MODULE_0___default()(header_a).text( title );
 
     header_item.appendChild(header_a);
 
@@ -5525,7 +5526,7 @@ class Shidashi {
     let remove_idx = 0;
     const existing_title = el.toArray()
       .map((v, i) => {
-        if(v.innerText === title) {
+        if( jquery__WEBPACK_IMPORTED_MODULE_0___default()(v).text() === title ) {
           // remove this tab
           remove_idx = i;
           const rem = jquery__WEBPACK_IMPORTED_MODULE_0___default()(el[i]);
@@ -5539,7 +5540,7 @@ class Shidashi {
             activate = true;
           }
         }
-        return(v.innerText);
+        return( jquery__WEBPACK_IMPORTED_MODULE_0___default()(v).text() );
       });
     if(!existing_title.includes(title)){
       return("A tab with title '" + title + "' cannot be found.");
@@ -5947,26 +5948,29 @@ class Shidashi {
       const pa = el.parentNode.closest('.card-tabs [role="tablist"]');
 
       if(!pa || !pa.id) { return; }
-      const tabname = el.innerText;
+      const tabname = jquery__WEBPACK_IMPORTED_MODULE_0___default()(el).text();
 
       this.ensureShiny(() => {
         this._shiny.setInputValue(pa.id, tabname);
       });
     })
 
-    this.ensureShiny((shiny) => {
-      const $tabLists = jquery__WEBPACK_IMPORTED_MODULE_0___default()( '.card-tabs [role="tablist"]' );
-      window.$tabLists = $tabLists;
-      for( let ii = 0; ii < $tabLists.length; ii++ ) {
-        const pa = $tabLists[ ii ];
-        if(pa && pa.id) {
-          const activeTab = pa.querySelector("li.nav-item > .nav-link.active");
-          if( activeTab ) {
-            shiny.setInputValue(pa.id, activeTab.innerText);
+
+    this.$document.ready(() => {
+      this.ensureShiny((shiny) => {
+        const $tabLists = jquery__WEBPACK_IMPORTED_MODULE_0___default()( '.card-tabs [role="tablist"]' );
+        for( let ii = 0; ii < $tabLists.length; ii++ ) {
+          const pa = $tabLists[ ii ];
+          if(pa && pa.id) {
+            const activeTab = pa.querySelector("li.nav-item > .nav-link.active");
+            if( activeTab ) {
+              shiny.setInputValue(pa.id, jquery__WEBPACK_IMPORTED_MODULE_0___default()(activeTab).text());
+            }
           }
         }
-      }
+      });
     });
+
     // --------------- Notification system -----------
     this.$body.on('show.bs.toast', (evt)=>{
       this.bindAll( jquery__WEBPACK_IMPORTED_MODULE_0___default()(evt.target) );
@@ -13594,7 +13598,7 @@ function initShidashi() {
     const data = {
       type: "active_module",
       id : module_id,
-      label : item[0].innerText.trim()
+      label : jquery__WEBPACK_IMPORTED_MODULE_0___default()(item[0]).text().trim()
     };
     shidashi.shinySetInput("@rave_action@", data, true, true);
     // shidashi.notifyIframes("shinySetInput", ["@rave_action@", data, true, true]);

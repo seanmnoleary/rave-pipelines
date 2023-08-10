@@ -51,7 +51,7 @@ function initShidashi() {
     const data = {
       type: "active_module",
       id : module_id,
-      label : item[0].innerText.trim()
+      label : $(item[0]).text().trim()
     };
     shidashi.shinySetInput("@rave_action@", data, true, true);
     // shidashi.notifyIframes("shinySetInput", ["@rave_action@", data, true, true]);
