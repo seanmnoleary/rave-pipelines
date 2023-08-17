@@ -4987,7 +4987,7 @@ class Shidashi {
 
   constructor (Shiny){
     // Insert build version here
-    this.build = { version: '1.0', date: '2023-08-17 13:35:02 EDT' };
+    this.build = { version: '1.0', date: '2023-08-17 14:53:36 EDT' };
     this._keep_alive = true;
     this._moduleId = undefined;
     this._raveId = undefined;
@@ -5074,9 +5074,22 @@ class Shidashi {
   }
 
   openURL(url, target = "_blank") {
+    console.debug(`Opening ${url}`);
     this._dummyLink.setAttribute("target", target);
     this._dummyLink.setAttribute("href", url);
     this._dummyLink.click();
+    this._dummyLink.innerHTML = "A new window with given link has been opened. If you haven't seen it, please click here. (This notification automatically closes in 10 seconds.)"
+    this.createNotification({
+      title: 'Opening the link',
+      fixed: true,
+      autoremove: true,
+      autohide: true,
+      delay: 10000,
+      icon: "fas fa-link",
+      subtitle: "Link created",
+      close: true,
+      body: this._dummyLink
+    })
   }
 
   openIFrameTab(url, title, more = {}, target = "_blank") {
@@ -5107,7 +5120,7 @@ class Shidashi {
   }
 
   launchStandaloneViewer(outputId) {
-    const url = `/?output_id=${ outputId }&rave_id=${ this._raveId }&module=standalone_viewer`;
+    const url = `?output_id=${ outputId }&rave_id=${ this._raveId }&module=standalone_viewer`;
     this.openURL(url);
   }
 
@@ -5956,8 +5969,11 @@ class Shidashi {
     })
 
 
+    // -------------- Documentation ready hook !!! ------------
     this.$document.ready(() => {
       this.ensureShiny((shiny) => {
+
+        // report active tab to shiny
         const $tabLists = jquery__WEBPACK_IMPORTED_MODULE_0___default()( '.card-tabs [role="tablist"]' );
         for( let ii = 0; ii < $tabLists.length; ii++ ) {
           const pa = $tabLists[ ii ];
@@ -5968,7 +5984,35 @@ class Shidashi {
             }
           }
         }
+
+
       });
+    });
+
+    this._dummy2.addEventListener("shidashi-internal-event", (evt) => {
+      window.eeevt = evt;
+      if( !evt.detail || typeof evt.detail !== "object" || !evt.detail.type ) { return; }
+
+      switch (evt.detail.type) {
+        case "set this._raveId":
+          const $output_widgets = jquery__WEBPACK_IMPORTED_MODULE_0___default()( '.ravedash-output-widget[data-type="standalone"]' );
+          for( let ii = 0 ; ii < $output_widgets.length ; ii++ ) {
+            const el = $output_widgets[ ii ];
+            let outputId = el.getAttribute("data-target");
+            if( typeof outputId === "string" ) {
+              if( outputId.startsWith(this._moduleId + "-") ) {
+                outputId = outputId.replace(this._moduleId + "-", "");
+              }
+              if( outputId.length > 0 ) {
+                const url = `?output_id=${ outputId }&rave_id=${ this._raveId }&module=standalone_viewer`;
+                el.setAttribute("href", url);
+                el.setAttribute("target", "_blank");
+              }
+            }
+          }
+          break;
+        default:
+      }
     });
 
     // --------------- Notification system -----------
@@ -6129,15 +6173,18 @@ class Shidashi {
         }
       );
 
+
       this.matchSelector(
         evt.target,
         '.ravedash-output-widget[data-type="standalone"]',
         (el) => {
-          let outputId = el.getAttribute("data-target");
-          if( outputId.startsWith(this._moduleId + "-") ) {
-            outputId = outputId.replace(this._moduleId + "-", "");
+          if( el.getAttribute("href") === "#" ) {
+            let outputId = el.getAttribute("data-target");
+            if( outputId.startsWith(this._moduleId + "-") ) {
+              outputId = outputId.replace(this._moduleId + "-", "");
+            }
+            this.launchStandaloneViewer(outputId);
           }
-          this.launchStandaloneViewer(outputId);
         }
       );
 
@@ -6207,6 +6254,12 @@ class Shidashi {
     this.shinyHandler("set_current_module", (params) => {
       this._moduleId = params.module_id;
       this._raveId = params.rave_id;
+      this._dummy2.dispatchEvent(new CustomEvent("shidashi-internal-event", {
+        "detail": {
+          "type" : "set this._raveId",
+          "value": params.rave_id
+        }
+      }))
     });
 
     this.shinyHandler("click", (params) => {
