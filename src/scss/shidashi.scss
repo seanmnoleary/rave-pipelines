@@ -915,6 +915,12 @@ body.dark-mode .nav-sidebar .nav-header.nav-divider {
   z-index: 1040;
 }
 
+
+.card-expanded .os-viewport {
+  /* Fix safari card not on top issue */
+  z-index: unset!important;
+}
+
 .card-footer.code-display .info-box {
   @include border-radius(0);
 }

@@ -95,14 +95,6 @@ module_html <- function(){
                                  ),
                                  shiny::conditionalPanel("input.plot_customizer_select == 'By Electrode'",
                                                          shiny::p("By Electrode Panel")),
-                                 # shiny::conditionalPanel("input.plot_customizer_select == 'Over Time'",
-                                 #                         shiny::selectInput(ns('ot_condition_switch'), label='Plot type',
-                                 #                                            selected = 'Combine conditions',
-                                 #                                            choices = c('Combine conditions',
-                                 #                                                        'Combine events',
-                                 #                                                        'Combine all',
-                                 #                                                        'Separate all'))
-                                 # ),
                                  shiny::conditionalPanel("input.plot_customizer_select == 'By Frequency'",
                                                          shiny::p("By Frequency Panel")),
                                  shiny::conditionalPanel("input.plot_customizer_select == 'By Trial'",
@@ -176,15 +168,17 @@ module_html <- function(){
           class = "row screen-height overflow-y-scroll output-wrapper",
           shiny::column(
             width = 12L,
-            shidashi::card_tabset(inputId=ns('brain_viewers'), title = 'Brain Viewers',
-                                  tools = list(
-                                    shidashi::card_tool(widget = "maximize"),
-                                    shidashi::card_tool(widget = "collapse")
-                                  ),
-                                  `Results Viewer` = threeBrain::threejsBrainOutput(ns("brain_viewer"), height = "40vh"),
-                                  `Movie Maker` = threeBrain::threejsBrainOutput(ns("brain_viewer_movies"), height = "40vh")
+            ravedash::output_cardset(
+              inputId=ns('brain_viewers'), title = 'Brain Viewers',
+              class_body = "no-padding min-height-400 height-400 resize-vertical",
+              `Results Viewer` =
+                ravedash::output_gadget_container(
+                  threeBrain::threejsBrainOutput(ns("brain_viewer"), height = "100%")
+                )
+              ,
+              `Movie Maker` = threeBrain::threejsBrainOutput(ns("brain_viewer_movies"), height = "100%")
             ),
-            shidashi::card_tabset(
+            ravedash::output_cardset(
               inputId = ns('by_electrode_output'),
               title = "Univariate statistics",
               class_body = "no-padding fill-width resize-vertical",
@@ -192,77 +186,114 @@ module_html <- function(){
                 shidashi::card_tool(
                   widget = "custom", icon = ravedash::shiny_icons$puzzle,
                   inputId = ns("by_electrode_tabset_config")
+                )
+              ), append_tools = FALSE,
+              `Graphical results` = shiny::div(
+                id = 'makeinline',
+                shiny::conditionalPanel(
+                  "input['power_explorer-by_electrode_tabset_config']%2 == 1",
+                  shiny::fluidRow(
+                    style = 'margin-left:20px; margin-top: 5px; margin-bottom:5px',
+                    shiny::column(
+                      width = 3,
+                      offset = 0,
+                      shiny::selectInput(
+                        ns('per_electrode_statistics_chooser'),
+                        label = 'Data group to display',
+                        choices = c('No groups available')
+                      )
+                    ),
+                    # shiny::column(width = 3, offset = 0,
+                    #               shiny::actionLink(ns('clear_pes_annotations'),
+                    #                                 label = 'Clear labels', icon = ravedash::shiny_icons$trash)
+                    # ),
+                    shiny::column(
+                      width = 3,
+                      offset = 0,
+                      shiny::selectInput(
+                        ns('pes_select_mode'),
+                        label = 'Select mode',
+                        choices = c(
+                          'Label maker',
+                          'Threshold |v| > x',
+                          'Threshold v > x',
+                          'Threshold v < x',
+                          'Manual threshold',
+                          'Invert selection',
+                          'Clear labels'
+                        )
+                      )
+                    ),
+                    shiny::column(
+                      width = 3,
+                      offset = 0,
+                      shiny::selectInput(
+                        ns('pes_label_type'),
+                        label = 'Label type',
+                        choices = c('number',
+                                    'name',
+                                    'color',
+                                    'showcase')
+                      )
+                    ),
+                    # shiny::column(width = 2, offset = 0,
+                    #               shiny::selectInput(ns('pes_magic_thresholding'), multiple = TRUE,
+                    #                                  label = 'Auto-threshold', selected = character(0),
+                    #                                  choices=c('p < 0.05','v > x','v < x'))
+                    # ),
+                    shiny::column(
+                      width = 3,
+                      offset = 0,
+                      shiny::selectInput(
+                        ns('pes_selected_action'),
+                        multiple = FALSE,
+                        label = 'Actions',
+                        selected = character(0),
+                        choices =
+                          c(
+                            'Click for choices',
+                            'Analyze selection',
+                            'Send selection to export'
+                            # 'Select nearby electrodes'
+                          )
+                      )
+                    )
+                  ),
+                  shiny::fluidRow(
+                    shiny::div(
+                      class = 'makeinline',
+                      style = 'margin-top:-15px; margin-bottom:-2px; margin-left:40px;font-size:11pt',
+                      shiny::textOutput(outputId = ns('pes_threshold_string'))
+                    )
+                  )
                 ),
-                shidashi::card_tool(widget = "maximize"),shidashi::card_tool(widget = "collapse")#,
-                # shidashi::card_tool(widget = "flip")
-              ),
-              `Graphical results` = shiny::div(id='makeinline',
-                                               shiny::conditionalPanel("input['power_explorer-by_electrode_tabset_config']%2 == 1",
-                                                                       shiny::fluidRow(style='margin-left:20px; margin-top: 5px; margin-bottom:5px',
-                                                                                       shiny::column(width = 3, offset = 0,
-                                                                                                     shiny::selectInput(ns('per_electrode_statistics_chooser'),
-                                                                                                                        label = 'Data group to display', choices = c('No groups available'))
-                                                                                       ),
-                                                                                       # shiny::column(width = 3, offset = 0,
-                                                                                       #               shiny::actionLink(ns('clear_pes_annotations'),
-                                                                                       #                                 label = 'Clear labels', icon = ravedash::shiny_icons$trash)
-                                                                                       # ),
-                                                                                       shiny::column(width = 3, offset = 0,
-                                                                                                     shiny::selectInput(ns('pes_select_mode'),
-                                                                                                                        label = 'Select mode', choices=c('Label maker',
-                                                                                                                                                         'Threshold |v| > x',
-                                                                                                                                                         'Threshold v > x',
-                                                                                                                                                         'Threshold v < x',
-                                                                                                                                                         'Manual threshold',
-                                                                                                                                                         'Invert selection',
-                                                                                                                                                         'Clear labels'))
-                                                                                       ),
-                                                                                       shiny::column(width = 3, offset = 0,
-                                                                                                     shiny::selectInput(ns('pes_label_type'),
-                                                                                                                        label = 'Label type', choices=c('number',
-                                                                                                                                                        'name',
-                                                                                                                                                        'color',
-                                                                                                                                                        'showcase')
-                                                                                                     )),
-                                                                                       # shiny::column(width = 2, offset = 0,
-                                                                                       #               shiny::selectInput(ns('pes_magic_thresholding'), multiple = TRUE,
-                                                                                       #                                  label = 'Auto-threshold', selected = character(0),
-                                                                                       #                                  choices=c('p < 0.05','v > x','v < x'))
-                                                                                       # ),
-                                                                                       shiny::column(width = 3, offset = 0,
-                                                                                                     shiny::selectInput(ns('pes_selected_action'), multiple = FALSE,
-                                                                                                                        label = 'Actions', selected = character(0),
-                                                                                                                        choices=c('Click for choices',
-                                                                                                                                  'Analyze selection',
-                                                                                                                                  'Send selection to export'
-                                                                                                                                  # 'Select nearby electrodes'
-                                                                                                                                  ))
-                                                                                       )
-                                                                       ),
-                                                                       shiny::fluidRow(shiny::div(class='makeinline', style='margin-top:-15px; margin-bottom:-2px; margin-left:40px;font-size:11pt',
-                                                                                                  shiny::textOutput(outputId = ns('pes_threshold_string'))))
-                                               ),
-                                               shiny::fluidRow(
-                                                 shiny::column(width = 4, shiny::plotOutput(ns('per_electrode_statistics_mean'),
-                                                                                            # hover = ns('pes_hover'),
-                                                                                            click = ns('pes_click_m'))),
-                                                 shiny::column(width = 4, shiny::plotOutput(ns('per_electrode_statistics_tstat'),
-                                                                                            # hover = ns('pes_hover'),
-                                                                                            click = ns('pes_click_t'))),
-                                                 shiny::column(width = 4, shiny::plotOutput(ns('per_electrode_statistics_fdrp'),
-                                                                                            # hover = ns('pes_hover'),
-                                                                                            click = ns('pes_click_p')))
-                                               )
+                shiny::fluidRow(
+                  shiny::column(width = 4, shiny::plotOutput(
+                    ns('per_electrode_statistics_mean'),
+                    # hover = ns('pes_hover'),
+                    click = ns('pes_click_m')
+                  )),
+                  shiny::column(width = 4, shiny::plotOutput(
+                    ns('per_electrode_statistics_tstat'),
+                    # hover = ns('pes_hover'),
+                    click = ns('pes_click_t')
+                  )),
+                  shiny::column(width = 4, shiny::plotOutput(
+                    ns('per_electrode_statistics_fdrp'),
+                    # hover = ns('pes_hover'),
+                    click = ns('pes_click_p')
+                  ))
+                )
               ),
               `Tabular Results` = DT::dataTableOutput(ns('per_electrode_results_table'))
             ),
             shidashi::card_tabset(inputId = ns('by_frequency_output'),
                                   title='By Frequency',
-                                  class_body = "no-padding fill-width height-450 min-height-450 resize-vertical",
+                                  class_body = "no-padding fill-width height-400 min-height-400 resize-vertical",
                                   tools = list(shidashi::card_tool(widget = "maximize"),
                                                shidashi::card_tool(widget = "collapse")),
-                                  `Over time` = shiny::plotOutput(ns("activity_over_time_by_frequency")),
-                                  `Correlations` = shiny::plotOutput(ns("frequency_correlation_plot"))
+                                  `Over time` = shiny::plotOutput(ns("by_frequency_over_time")),
+                                  `Correlation` = shiny::plotOutput(ns("by_frequency_correlation"))
             ),
             shidashi::card_tabset(inputId = ns('over_time_tabset'),
                                   title='Over Time',
@@ -283,7 +314,7 @@ module_html <- function(){
                                                               shiny::fluidRow(style='margin-left:20px; margin-top: 5px; margin-bottom:5px',
                                                                               shiny::column(width=3,
                                                                                             shiny::conditionalPanel("input['power_explorer-over_time_tabset_config']%2 == 1",
-                                                                                                                    shiny::selectInput(ns('ot_condition_switch'), label='Plot type',
+                                                                                                                    shiny::selectInput(ns('over_time_by_condition_switch'), label='Plot type',
                                                                                                                                        selected = 'Combine conditions',
                                                                                                                                        choices = c('Combine conditions',
                                                                                                                                                    'Combine events',
@@ -292,16 +323,16 @@ module_html <- function(){
                                                                                             )
                                                                               )
                                                               ), shiny::fluidRow(style='margin-left:5px;',
-                                                                shiny::plotOutput(ns('over_time_with_switch'))
+                                                                shiny::plotOutput(ns('over_time_by_condition'))
                                                               )),
-                                  `By Electrode` = shiny::plotOutput(ns('activity_over_time_by_electrode')),
-                                  `By Trial` = shiny::plotOutput(ns('activity_over_time_by_trial'))
+                                  `By Electrode` = shiny::plotOutput(ns('over_time_by_electrode')),
+                                  `By Trial` = shiny::plotOutput(ns('over_time_by_trial'))
             ),
             shidashi::card_tabset(inputId = ns('by_condition_tabset'),
                                   title='By Trial',
                                   class_body='',
                                   tools = list(shidashi::card_tool(widget = "maximize"),shidashi::card_tool(widget = "collapse")),
-                                  `Grouped Plot` = shiny::plotOutput(ns('by_condition_grouped_plot'))
+                                  `By Condition` = shiny::plotOutput(ns('by_trial_by_condition'))
             )
 
             #   `card with flip` = shidashi::flip_box(

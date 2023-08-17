@@ -6,10 +6,10 @@ analysis_settings:
     event: Trial Onset
     time:
     - 0
-    - 1.8
+    - 0.5
     frequency:
-    - 75
-    - 149
+    - 78
+    - 152
 custom_roi_groupings:
   '1':
     label: ''
@@ -20,23 +20,42 @@ enable_custom_ROI: no
 enable_second_condition_groupings: no
 second_condition_groupings:
   '1':
-    label: ''
-    conditions: []
+    label: MouthLeading
+    conditions:
+    - drive_a
+    - last_a
+    - drive_av
+    - last_av
   '2':
-    label: ''
-    conditions: []
+    label: VoiceLeading
+    conditions:
+    - known_a
+    - meant_a
+    - known_av
+    - meant_av
 first_condition_groupings:
   '1':
     label: Ao
-    conditions: drive_av
+    conditions:
+    - last_a
+    - drive_a
+    - known_a
+    - meant_a
   '2':
-    label: Vo
-    conditions: drive_v
-analysis_electrodes: '14'
+    label: ''
+    conditions: []
+  '3':
+    label: AV
+    conditions:
+    - last_av
+    - drive_av
+    - known_av
+    - meant_av
+analysis_electrodes: '16 '
 baseline_settings:
   window:
-  - - -1.01
-    - -0.52
+  - - -1.0
+    - -0.5
   scope: Per frequency, trial, and electrode
   unit_of_analysis: '% Change Power'
 reference_name: default
