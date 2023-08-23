@@ -213,8 +213,32 @@ module_server <- function(input, output, session, ...){
       local_data$plan_list <- NULL
     }
     table <- raveio::safe_read_csv(plan_file)
+    if(!"Interpolation" %in% names(table)) {
+      table$Interpolation <- "default"
+    }
+
     plan_list <- split(table, ~ LabelPrefix + Dimension + LocationType)
     plan_list <- plan_list[vapply(plan_list, function(x){ nrow(x) > 0 }, FALSE)]
+    # calculate layout
+    plan_list <- structure(
+      lapply(plan_list, function(sub) {
+        if(!grepl("^[0-9,x. ]+$", sub$Interpolation[[1]])) {
+          sub$Interpolation <- as.character(max(tryCatch({
+            dim <- as.integer(dipsaus::parse_svec(sub$Dimension[[1]], sep = "[,x]", unique = FALSE))
+            dim <- dim[!is.na(dim)]
+            if(length(dim) > 1) {
+              dim[[1]] - 2L
+            } else {
+              nrow(sub) - 2L
+            }
+          }, error = function(e){
+            nrow(sub) - 2L
+          }), 1))
+        }
+        sub
+      }),
+      names = names(plan_list)
+    )
 
     local_data$plan_list <- plan_list[order(vapply(plan_list, function(x){ as.integer(min(x$Electrode)) }, FUN.VALUE = 1L))]
     local_data$plan_list
@@ -438,22 +462,30 @@ module_server <- function(input, output, session, ...){
     }
 
     ct_exists <- isTRUE(component_container$data$ct_exists)
-    brain_proxy$set_controllers(list(
-      `Edit Mode` = ifelse(ct_exists, "CT/volume", "MRI slice")
-    ))
+
+    # We want to set `Edit Mode` only when it was "disabled", "refine", do not
+    # change "CT/volume" <-> "MRI slice" as users might want that
+    if( isTRUE(shiny::isolate(brain_proxy$controllers[["Edit Mode"]]) %in% c("disabled", "refine")) ||
+        !isTRUE(local_data$edit_mode_initialized) ) {
+      brain_proxy$set_controllers(list(
+        `Edit Mode` = ifelse(ct_exists, "CT/volume", "MRI slice")
+      ))
+      local_data$edit_mode_initialized <- TRUE
+    }
 
     brain_proxy$set_controllers(list(
-      `Interpolate Size` = max(1, tryCatch({
-        dim <- as.integer(dipsaus::parse_svec(group_table$Dimension[[1]], sep = "[,x]", unique = FALSE))
-        dim <- dim[!is.na(dim)]
-        if(length(dim) > 1) {
-          dim[[1]] - 2L
-        } else {
-          nrow(group_table) - 2L
-        }
-      }, error = function(e){
-        nrow(group_table) - 2L
-      }))
+      `Interp Size` = group_table$Interpolation[[1]]
+      # `Interp Size` = max(1, tryCatch({
+      #   dim <- as.integer(dipsaus::parse_svec(group_table$Dimension[[1]], sep = "[,x]", unique = FALSE))
+      #   dim <- dim[!is.na(dim)]
+      #   if(length(dim) > 1) {
+      #     dim[[1]] - 2L
+      #   } else {
+      #     nrow(group_table) - 2L
+      #   }
+      # }, error = function(e){
+      #   nrow(group_table) - 2L
+      # }))
     ))
 
     # check if brain shift is needed
@@ -485,8 +517,7 @@ module_server <- function(input, output, session, ...){
       ))
     }
 
-
-    print(group_table)
+    # print(group_table)
 
     return(list(
       current_id = ii,
@@ -513,12 +544,17 @@ module_server <- function(input, output, session, ...){
     }, error = function(e){
       nrow(group_table)
     })
+    interpolation_string <- as.character(batch_size - 2L)
+    if( length(group_table$Interpolation) && grepl("^[0-9x,. ]+$", group_table$Interpolation[[1]] ) ) {
+      interpolation_string <- group_table$Interpolation[[1]]
+    }
 
     return(list(
       group_id = group_id,
       group_table = group_table,
       batch_size = batch_size,
-      label_prefix = group_table$LabelPrefix[[1]]
+      label_prefix = group_table$LabelPrefix[[1]],
+      interpolation_string = interpolation_string
     ))
   })
 
@@ -722,6 +758,7 @@ module_server <- function(input, output, session, ...){
 
     label_prefix <- ginfo$label_prefix
     batch_size <- ginfo$batch_size
+    interpolation_string <- ginfo$interpolation_string
 
     shiny::div(
       shiny::p("Example instruction to localize electrode ", dipsaus::deparse_svec(ginfo$group_table$Electrode), ":"),
@@ -745,14 +782,15 @@ module_server <- function(input, output, session, ...){
           "Set ",
           shiny::pre(class="pre-compact no-padding display-inline", "3D Viewer"), " > ",
           shiny::pre(class="pre-compact no-padding display-inline", "Electrode Localization"), " > ",
-          shiny::pre(class="pre-compact no-padding display-inline", "Interpolate Size"),
-          " to ", batch_size - 2L
+          shiny::pre(class="pre-compact no-padding display-inline", "Interp Size"),
+          " to ", batch_size - 2L, ", or enter the electrode spacing."
         ),
         shiny::tags$li(
           "Click on ",
           shiny::pre(class="pre-compact no-padding display-inline", "3D Viewer"), " > ",
           shiny::pre(class="pre-compact no-padding display-inline", "Electrode Localization"), " > ",
-          shiny::pre(class="pre-compact no-padding display-inline", "Interpolate from Recently Added"),
+          shiny::pre(class="pre-compact no-padding display-inline", "Interpolate"),
+          " to automatically register the electrode contacts."
         )
       ),
       shiny::hr(),
@@ -820,6 +858,7 @@ module_server <- function(input, output, session, ...){
   shiny::bindEvent(
     ravedash::safe_observe({
       table <- brain_proxy$localization_table
+      interpolation <- brain_proxy$controllers[["Interp Size"]]
 
       # local_data$flag_relocalize <- list(
       #   group_id = group_id,
@@ -893,6 +932,34 @@ module_server <- function(input, output, session, ...){
       group_table$Sphere_y[idx2] <- table$Sphere_y[idx1]
       group_table$Sphere_z[idx2] <- table$Sphere_z[idx1]
 
+      # update interpolation settings
+      if(length(interpolation) == 1) {
+        n_interp <- NA
+        interpolation <- trimws(interpolation)
+        if( grepl("^[0-9]+$", interpolation) ) {
+          n_interp <- as.integer(interpolation)
+        } else {
+          n_interp <- unlist(lapply(trimws(strsplit(interpolation, ",")[[1]]), function(item) {
+            if(grepl("^[0-9]+$", item)) {
+              return(as.integer(item))
+            }
+            item <- as.numeric(strsplit(item, "x")[[1]])
+            if( length(item) == 0 || anyNA(item) ) { return(NA) }
+            if( length(item) == 1 ) {
+              if( item <= 0 ) { return(NA) }
+              return( 1L )
+            }
+            if( item[[2]] < 0 ) { return(NA) }
+            if( item[[2]] < 1 ) { return(0) }
+            if( item[[1]] <= 0 ) { return(NA) }
+            return(as.integer(item[[2]]))
+          }))
+          n_interp <- sum(c(n_interp, 0))
+        }
+        if( !is.na(n_interp) && n_interp > 0 ) {
+          group_table$Interpolation <- interpolation
+        }
+      }
 
       local_data$plan_list[[group_id]] <- group_table
 

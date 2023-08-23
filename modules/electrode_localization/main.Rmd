@@ -127,7 +127,7 @@ if(length(plan_table)) {
         "FSLabel_aparc_DKTatlas_aseg", "FSLabel_aseg", 
         "OrigCoord_x", "OrigCoord_y", "OrigCoord_z", "SurfaceElectrode", 
         "DistanceShifted", "DistanceToPial", 
-        "Sphere_x", "Sphere_y", "Sphere_z"
+        "Sphere_x", "Sphere_y", "Sphere_z", "Interpolation"
       )
       if(all(tname1 %in% names(electrode_table))) {
         tname2 <- tname2[tname2 %in% names(electrode_table)]
@@ -156,6 +156,8 @@ if(length(plan_table)) {
   plan_table$Coord_y %?<-% 0
   plan_table$Coord_z %?<-% 0
   
+  plan_table$Interpolation %?<-% "default"
+  
   plan_table$MNI305_x %?<-% 0
   plan_table$MNI305_y %?<-% 0
   plan_table$MNI305_z %?<-% 0
@@ -164,9 +166,9 @@ if(length(plan_table)) {
   plan_table$Sphere_y %?<-% 0
   plan_table$Sphere_z %?<-% 0
   
-  plan_table$OrigCoord_x %?<-% 0
-  plan_table$OrigCoord_y %?<-% 0
-  plan_table$OrigCoord_z %?<-% 0
+  plan_table$OrigCoord_x %?<-% plan_table$Coord_x
+  plan_table$OrigCoord_y %?<-% plan_table$Coord_y
+  plan_table$OrigCoord_z %?<-% plan_table$Coord_z
   
   # make sure no NA is in Coord_xyz
   has_NA <- is.na(plan_table$Coord_x) | is.na(plan_table$Coord_y) | is.na(plan_table$Coord_z)
@@ -433,12 +435,14 @@ re <- lapply(localization_list, function(item) {
   item$DistanceShifted %?<-% NA
   item$DistanceToPial %?<-% NA
   item$SurfaceElectrode %?<-% FALSE
+  item$Interpolation %?<-% "default"
   
   tbl <- data.frame(
     Electrode = item$Electrode,
     Coord_x = item$Coord_x, Coord_y = item$Coord_y, Coord_z = item$Coord_z,
     Label = item$Label, LabelPrefix = item$LabelPrefix,
     Dimension = item$Dimension, 
+    Interpolation = item$Interpolation,
     LocationType = item$LocationType, Radius = item$Radius, 
     Hemisphere = item$Hemisphere,
     MNI305_x = item$MNI305_x, MNI305_y = item$MNI305_y, MNI305_z = item$MNI305_z,

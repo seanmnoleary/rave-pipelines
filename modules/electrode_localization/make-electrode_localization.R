@@ -16,40 +16,40 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_nonlinear_morphing = targets::tar_target_raw("nonlinear_morphing", 
-        quote({
-            settings[["nonlinear_morphing"]]
-        }), deps = "settings"), input_path_ct = targets::tar_target_raw("path_ct", 
-        quote({
-            settings[["path_ct"]]
-        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
-        quote({
-            settings[["subject_code"]]
-        }), deps = "settings"), input_path_mri = targets::tar_target_raw("path_mri", 
-        quote({
-            settings[["path_mri"]]
-        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
-        quote({
-            settings[["project_name"]]
-        }), deps = "settings"), input_path_transform = targets::tar_target_raw("path_transform", 
-        quote({
-            settings[["path_transform"]]
-        }), deps = "settings"), input_transform_space = targets::tar_target_raw("transform_space", 
-        quote({
-            settings[["transform_space"]]
-        }), deps = "settings"), `__extern_path_localization_list` = targets::tar_target_raw("settings_path._localization_list_", 
-        "./data/localization_list.json", format = "file"), input_localization_list = targets::tar_target_raw("localization_list", 
-        quote({
-            asNamespace("raveio")$pipeline_load_extdata(name = "localization_list", 
-                format = "json", error_if_missing = FALSE, default_if_missing = structure(list(), 
-                  class = "key_missing"), pipe_dir = ".")
-        }), deps = "settings_path._localization_list_"), `__extern_path_localization_plan` = targets::tar_target_raw("settings_path._localization_plan_", 
+    `__extern_path_localization_plan` = targets::tar_target_raw("settings_path._localization_plan_", 
         "./data/localization_plan.json", format = "file"), input_localization_plan = targets::tar_target_raw("localization_plan", 
         quote({
             asNamespace("raveio")$pipeline_load_extdata(name = "localization_plan", 
                 format = "json", error_if_missing = FALSE, default_if_missing = structure(list(), 
                   class = "key_missing"), pipe_dir = ".")
-        }), deps = "settings_path._localization_plan_"), load_FreeSurfer_LUT = targets::tar_target_raw(name = "fslut", 
+        }), deps = "settings_path._localization_plan_"), `__extern_path_localization_list` = targets::tar_target_raw("settings_path._localization_list_", 
+        "./data/localization_list.json", format = "file"), input_localization_list = targets::tar_target_raw("localization_list", 
+        quote({
+            asNamespace("raveio")$pipeline_load_extdata(name = "localization_list", 
+                format = "json", error_if_missing = FALSE, default_if_missing = structure(list(), 
+                  class = "key_missing"), pipe_dir = ".")
+        }), deps = "settings_path._localization_list_"), input_transform_space = targets::tar_target_raw("transform_space", 
+        quote({
+            settings[["transform_space"]]
+        }), deps = "settings"), input_path_transform = targets::tar_target_raw("path_transform", 
+        quote({
+            settings[["path_transform"]]
+        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
+        quote({
+            settings[["project_name"]]
+        }), deps = "settings"), input_path_mri = targets::tar_target_raw("path_mri", 
+        quote({
+            settings[["path_mri"]]
+        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
+        quote({
+            settings[["subject_code"]]
+        }), deps = "settings"), input_path_ct = targets::tar_target_raw("path_ct", 
+        quote({
+            settings[["path_ct"]]
+        }), deps = "settings"), input_nonlinear_morphing = targets::tar_target_raw("nonlinear_morphing", 
+        quote({
+            settings[["nonlinear_morphing"]]
+        }), deps = "settings"), load_FreeSurfer_LUT = targets::tar_target_raw(name = "fslut", 
         command = quote({
             .__target_expr__. <- quote({
                 fslut_path <- system.file("palettes", "datacube2", 
@@ -225,7 +225,7 @@ rm(._._env_._.)
                         "FSLabel_aseg", "OrigCoord_x", "OrigCoord_y", 
                         "OrigCoord_z", "SurfaceElectrode", "DistanceShifted", 
                         "DistanceToPial", "Sphere_x", "Sphere_y", 
-                        "Sphere_z")
+                        "Sphere_z", "Interpolation")
                       if (all(tname1 %in% names(electrode_table))) {
                         tname2 <- tname2[tname2 %in% names(electrode_table)]
                         electrode_table <- electrode_table[, 
@@ -245,15 +245,16 @@ rm(._._env_._.)
                   plan_table$Coord_x %?<-% 0
                   plan_table$Coord_y %?<-% 0
                   plan_table$Coord_z %?<-% 0
+                  plan_table$Interpolation %?<-% "default"
                   plan_table$MNI305_x %?<-% 0
                   plan_table$MNI305_y %?<-% 0
                   plan_table$MNI305_z %?<-% 0
                   plan_table$Sphere_x %?<-% 0
                   plan_table$Sphere_y %?<-% 0
                   plan_table$Sphere_z %?<-% 0
-                  plan_table$OrigCoord_x %?<-% 0
-                  plan_table$OrigCoord_y %?<-% 0
-                  plan_table$OrigCoord_z %?<-% 0
+                  plan_table$OrigCoord_x %?<-% plan_table$Coord_x
+                  plan_table$OrigCoord_y %?<-% plan_table$Coord_y
+                  plan_table$OrigCoord_z %?<-% plan_table$Coord_z
                   has_NA <- is.na(plan_table$Coord_x) | is.na(plan_table$Coord_y) | 
                     is.na(plan_table$Coord_z)
                   if (any(has_NA)) {
@@ -405,7 +406,8 @@ rm(._._env_._.)
                           "FSLabel_aseg", "OrigCoord_x", "OrigCoord_y", 
                           "OrigCoord_z", "SurfaceElectrode", 
                           "DistanceShifted", "DistanceToPial", 
-                          "Sphere_x", "Sphere_y", "Sphere_z")
+                          "Sphere_x", "Sphere_y", "Sphere_z", 
+                          "Interpolation")
                         if (all(tname1 %in% names(electrode_table))) {
                           tname2 <- tname2[tname2 %in% names(electrode_table)]
                           electrode_table <- electrode_table[, 
@@ -425,15 +427,16 @@ rm(._._env_._.)
                     plan_table$Coord_x %?<-% 0
                     plan_table$Coord_y %?<-% 0
                     plan_table$Coord_z %?<-% 0
+                    plan_table$Interpolation %?<-% "default"
                     plan_table$MNI305_x %?<-% 0
                     plan_table$MNI305_y %?<-% 0
                     plan_table$MNI305_z %?<-% 0
                     plan_table$Sphere_x %?<-% 0
                     plan_table$Sphere_y %?<-% 0
                     plan_table$Sphere_z %?<-% 0
-                    plan_table$OrigCoord_x %?<-% 0
-                    plan_table$OrigCoord_y %?<-% 0
-                    plan_table$OrigCoord_z %?<-% 0
+                    plan_table$OrigCoord_x %?<-% plan_table$Coord_x
+                    plan_table$OrigCoord_y %?<-% plan_table$Coord_y
+                    plan_table$OrigCoord_z %?<-% plan_table$Coord_z
                     has_NA <- is.na(plan_table$Coord_x) | is.na(plan_table$Coord_y) | 
                       is.na(plan_table$Coord_z)
                     if (any(has_NA)) {
@@ -853,15 +856,16 @@ rm(._._env_._.)
                   item$DistanceShifted %?<-% NA
                   item$DistanceToPial %?<-% NA
                   item$SurfaceElectrode %?<-% FALSE
+                  item$Interpolation %?<-% "default"
                   tbl <- data.frame(Electrode = item$Electrode, 
                     Coord_x = item$Coord_x, Coord_y = item$Coord_y, 
                     Coord_z = item$Coord_z, Label = item$Label, 
                     LabelPrefix = item$LabelPrefix, Dimension = item$Dimension, 
-                    LocationType = item$LocationType, Radius = item$Radius, 
-                    Hemisphere = item$Hemisphere, MNI305_x = item$MNI305_x, 
-                    MNI305_y = item$MNI305_y, MNI305_z = item$MNI305_z, 
-                    FSIndex = item$FSIndex, FSLabel = item$FSLabel, 
-                    FSLabel_aparc_a2009s_aseg = item$FSLabel_aparc_a2009s_aseg, 
+                    Interpolation = item$Interpolation, LocationType = item$LocationType, 
+                    Radius = item$Radius, Hemisphere = item$Hemisphere, 
+                    MNI305_x = item$MNI305_x, MNI305_y = item$MNI305_y, 
+                    MNI305_z = item$MNI305_z, FSIndex = item$FSIndex, 
+                    FSLabel = item$FSLabel, FSLabel_aparc_a2009s_aseg = item$FSLabel_aparc_a2009s_aseg, 
                     FSLabel_aparc_aseg = item$FSLabel_aparc_aseg, 
                     FSLabel_aparc_DKTatlas_aseg = item$FSLabel_aparc_DKTatlas_aseg, 
                     FSLabel_aseg = item$FSLabel_aseg, OrigCoord_x = item$OrigCoord_x, 
@@ -941,15 +945,16 @@ rm(._._env_._.)
                     item$DistanceShifted %?<-% NA
                     item$DistanceToPial %?<-% NA
                     item$SurfaceElectrode %?<-% FALSE
+                    item$Interpolation %?<-% "default"
                     tbl <- data.frame(Electrode = item$Electrode, 
                       Coord_x = item$Coord_x, Coord_y = item$Coord_y, 
                       Coord_z = item$Coord_z, Label = item$Label, 
                       LabelPrefix = item$LabelPrefix, Dimension = item$Dimension, 
-                      LocationType = item$LocationType, Radius = item$Radius, 
-                      Hemisphere = item$Hemisphere, MNI305_x = item$MNI305_x, 
-                      MNI305_y = item$MNI305_y, MNI305_z = item$MNI305_z, 
-                      FSIndex = item$FSIndex, FSLabel = item$FSLabel, 
-                      FSLabel_aparc_a2009s_aseg = item$FSLabel_aparc_a2009s_aseg, 
+                      Interpolation = item$Interpolation, LocationType = item$LocationType, 
+                      Radius = item$Radius, Hemisphere = item$Hemisphere, 
+                      MNI305_x = item$MNI305_x, MNI305_y = item$MNI305_y, 
+                      MNI305_z = item$MNI305_z, FSIndex = item$FSIndex, 
+                      FSLabel = item$FSLabel, FSLabel_aparc_a2009s_aseg = item$FSLabel_aparc_a2009s_aseg, 
                       FSLabel_aparc_aseg = item$FSLabel_aparc_aseg, 
                       FSLabel_aparc_DKTatlas_aseg = item$FSLabel_aparc_DKTatlas_aseg, 
                       FSLabel_aseg = item$FSLabel_aseg, OrigCoord_x = item$OrigCoord_x, 
