@@ -465,7 +465,7 @@ module_server <- function(input, output, session, ...){
 
     # We want to set `Edit Mode` only when it was "disabled", "refine", do not
     # change "CT/volume" <-> "MRI slice" as users might want that
-    if( isTRUE(shiny::isolate(brain_proxy$controllers[["Edit Mode"]]) %in% c("disabled", "refine")) &&
+    if( isTRUE(shiny::isolate(brain_proxy$controllers[["Edit Mode"]]) %in% c("disabled", "refine")) ||
         !isTRUE(local_data$edit_mode_initialized) ) {
       brain_proxy$set_controllers(list(
         `Edit Mode` = ifelse(ct_exists, "CT/volume", "MRI slice")
