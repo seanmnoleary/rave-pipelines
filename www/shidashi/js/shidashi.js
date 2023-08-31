@@ -4987,7 +4987,7 @@ class Shidashi {
 
   constructor (Shiny){
     // Insert build version here
-    this.build = { version: '1.0', date: '2023-08-17 14:53:36 EDT' };
+    this.build = { version: '1.0', date: '2023-08-31 14:28:24 EDT' };
     this._keep_alive = true;
     this._moduleId = undefined;
     this._raveId = undefined;
@@ -6141,6 +6141,10 @@ class Shidashi {
 
     jquery__WEBPACK_IMPORTED_MODULE_0___default()('.rave-button').click(function(evt){
       let el = this;
+      try {
+        // If the rave-button is removed from classlist, then do nothing
+        if( !el.classList.contains("rave-button") ) { return; }
+      } catch (e) {}
       let action = el.getAttribute("rave-action");
       if(typeof action === "string"){
         try {
