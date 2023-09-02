@@ -501,7 +501,12 @@ module_server <- function(input, output, session, ...){
       DT::datatable(tbl)
     }),
     outputId = "kernel_table",
-    export_type = "csv"
+    output_type = "data",
+    extensions = list("CSV" = "csv"),
+    download_function = function(con, params, ...) {
+      tbl <- kernel_params()
+      utils::write.csv(tbl, file = con, row.names = FALSE)
+    }
   )
 
   output$download_kernel_table <- shiny::downloadHandler(
@@ -562,11 +567,7 @@ module_server <- function(input, output, session, ...){
       )
       plot(kernel, cex = 1.4, mai = c(1.02,0.82,0.82,0.42))
     }),
-    outputId = "kernel_plot",
-    export_type = "pdf",
-    export_settings = list(
-      width = 24, height = 13.6
-    )
+    outputId = "kernel_plot"
   )
 
 }

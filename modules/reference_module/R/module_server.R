@@ -823,11 +823,7 @@ module_server <- function(input, output, session, ...){
       return()
 
     }),
-    outputId = "reference_plot_signals",
-    export_type = "pdf",
-    export_settings = list(
-      width = 13.5, height = 24
-    )
+    outputId = "reference_plot_signals"
   )
 
   ravedash::register_output(
@@ -917,8 +913,7 @@ module_server <- function(input, output, session, ...){
       )
 
     }),
-    outputId = "reference_plot_electrode",
-    export_type = "pdf"
+    outputId = "reference_plot_electrode"
   )
 
 
@@ -1092,8 +1087,7 @@ module_server <- function(input, output, session, ...){
            labels = c(zlim_str, 0, sprintf("-%s", zlim_str)))
 
     }),
-    outputId = "reference_plot_heatmap",
-    export_type = "pdf"
+    outputId = "reference_plot_heatmap"
   )
 
 

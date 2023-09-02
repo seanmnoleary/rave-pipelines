@@ -111,7 +111,7 @@ module_server <- function(input, output, session, ...){
         "Left Opacity", "Right Opacity", "Surface Color", "Blend Factor",
         "Sigma", "Decay", "Range Limit", "Visibility", "Voxel Label",
         "Display Data", "Display Range", "Threshold Data", "Threshold Range",
-        "Threshold Method", "Video Mode", "Show Legend", "Show Time",
+        "Threshold Method", "Video Mode", "Show Legend", "Show Time", "Time",
         "Highlight Box", "Info Text"
       )
 
@@ -660,7 +660,7 @@ module_server <- function(input, output, session, ...){
 
       local_reactives$brain_widget
     }),
-    export_type = "3dviewer"
+    output_type = "threeBrain"
   )
 
 

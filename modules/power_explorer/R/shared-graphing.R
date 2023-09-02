@@ -93,10 +93,11 @@ draw_many_heat_maps <- function (hmaps,
                                  max_zlim = 0, percentile_range = FALSE, log_scale = FALSE,
                                  show_color_bar = TRUE, useRaster = TRUE, PANEL.FIRST = NULL,
                                  PANEL.LAST = NULL, PANEL.COLOR_BAR = NULL,
-                                 axes = c(TRUE, TRUE), plot_time_range = NULL, special_case_first_plot = FALSE,
+                                 axes = c(TRUE, TRUE), plot_time_range = NULL,
                                  max_columns = 3, decorate_all_plots = FALSE, center_multipanel_title = FALSE,
                                  ignore_time_range = NULL,
-                                 marginal_text_fields = c("Subject", "Electrodes"), extra_plot_parameters = NULL,
+                                 # marginal_text_fields = c("Subject", "Electrodes"),
+                                 extra_plot_parameters = NULL,
                                  do_layout = TRUE, byrow=TRUE, ...)
 {
 
@@ -121,6 +122,8 @@ draw_many_heat_maps <- function (hmaps,
 
     ## if you want us to do layout, then I assume you want us to setup colors too
     apply_current_theme()
+
+
   }
   #some people were passing in NULL for max_zlim
   max_zlim %?<-% 0
@@ -331,6 +334,15 @@ layout_heat_maps <- function(k, max_col, ratio=4, byrow=TRUE,
     mat <- cbind(mat, k+1)
     widths <- c(widths, lcm(colorbar_cm))
   }
+
+  if(k > 1) {
+    newmar = par('mar')
+    if(newmar[4] == 2.1) {
+      newmar[4] = 0.1
+      par('mar' = newmar)
+    }
+  }
+
   layout(mat, widths=widths)
 }
 
@@ -454,12 +466,22 @@ get_currently_active_heatmap <- function() {
   pe_graphics_settings_cache$get('current_heatmap_palette')
 }
 
-..get_nearest_i <- function(from,to, lower_only=FALSE) {
 
-  if(lower_only) {
+..get_nearest_i <- function(from,to, condition=c('equal', 'less', 'greater')) {
+
+  condition = match.arg(condition)
+
+  if(condition == 'less') {
     res <- sapply(from, function(.x) {
-      to2 = to[to<= .x]
+      ind <- (to<= .x)
+      to2 = to[ind]
       which.min(abs(.x-to2))
+    })
+  } else if (condition == 'greater') {
+    res <- sapply(from, function(.x) {
+      ind = to>= .x
+      to2 = to[ind]
+      which.min(abs(.x-to2)) + (which(ind)[1] - 1)
     })
   } else {
     res <- sapply(from, function(.x) {
@@ -469,6 +491,16 @@ get_currently_active_heatmap <- function() {
 
   return(res)
 }
+
+find_index_of_nearest <- ..get_nearest_i
+
+map_indices_within <- function(from, to) {
+  mapply(find_index_of_nearest,
+         from, condition=list('greater', 'less'),
+         MoreArgs = list(to=to)
+  )
+}
+
 
 ..get_nearest <- function(from, to) {
   approxfun(to, seq_along(to))(from)
@@ -1436,8 +1468,6 @@ plot_grouped_data <- function(mat, xvar, yvar='y', gvar=NULL, ...,
                               names.pos = c('none', 'bottom', 'top'),
                               plot_options = NULL, jitter_seed=NULL, cex_multifigure_scale=TRUE) {
 
-  apply_current_theme()
-
   # here we need to know about grouping var, x-axis
   if(is.null(plot_options)) {
     plot_options <- list()
@@ -1847,6 +1877,8 @@ density_jitter <- function(x, around=0, max.r=.2, n=length(x), seed=NULL) {
 
 build_heatmap_analysis_window_decorator <- function(...,  type=c('line', 'box'),
                                                     lwd=2, lty=2,
+                                                    active_adjust=0.5,
+                                                    tmp_lty=4,
                                                     show_top_label=FALSE) {
   force(lwd); force(lty); force(show_top_label)
   type = match.arg(type)
@@ -1854,18 +1886,39 @@ build_heatmap_analysis_window_decorator <- function(...,  type=c('line', 'box'),
   # make sure we have enough space to write into
   par('oma' = pmax(c(1,0,0,0), par('oma')))
 
+  if(! active_adjust %within% 0:1) {
+    active_adjust = 0.5
+  }
+
+  tmp_color = (1/255) * c(active_adjust * col2rgb(par('fg')) +
+                  (1-active_adjust) * col2rgb(par('bg')))
+  tmp_color <- do.call(rgb, as.list(tmp_color))
+
   hawd <- function(data, Xmap, Ymap, ...) {
     # label analysis event
     mtext(data$analysis_event, side = 1, at=Xmap(0),
           line=2.5, cex=(7/8)*get_cex_for_multifigure(), col = par('fg'))
 
     # label analysis window
-    xx <- Xmap(data$analysis_window)
-    if(type == 'box') {
-      yy <- Ymap(data$analysis_frequency)
+    xx <- c(-0.5, .5) + map_indices_within(data$analysis_window, data$x)
 
-      polygon(c(xx,rev(xx)), rep(yy, each=2),
-              lty=lty, lwd=lwd,border='black')
+    if(type == 'box') {
+      yy <- c(-0.5, 0.5) + map_indices_within(data$analysis_frequency, data$y)
+
+      if(!is.null(data$analysis_window_tmp) && !is.null(data$analysis_frequency_tmp)) {
+        polygon(c(xx,rev(xx)), rep(yy, each=2),
+                lty=lty, lwd=lwd,border=tmp_color)
+
+        xxnew <- c(-0.5, .5) + map_indices_within(data$analysis_window_tmp, data$x)
+        yynew <- c(-0.5, .5) + map_indices_within(data$analysis_frequency_tmp, data$y)
+
+        polygon(c(xxnew,rev(xxnew)), rep(yynew, each=2),
+                lwd=lwd,border=par('fg'), lty=3)
+      } else {
+        polygon(c(xx,rev(xx)), rep(yy, each=2),
+                lty=lty, lwd=lwd,border=par('fg'))
+      }
+
 
     } else {
       abline(v=xx, lty=2, col=par('fg'), xpd=FALSE, lwd=2)
@@ -1874,11 +1927,11 @@ build_heatmap_analysis_window_decorator <- function(...,  type=c('line', 'box'),
               cex=get_cex_for_multifigure()*9/8)
     }
   }
-
   return (hawd)
 }
 
-build_axis_label_decorator <- function(..., doX=TRUE, doY=TRUE, push_X=0, push_Y=0) {
+build_axis_label_decorator <- function(..., doX=TRUE, doY=TRUE,
+                                       push_X=0, push_Y=0) {
   doX = force(doX)
   doY = force(doY)
 
@@ -1906,7 +1959,6 @@ build_axis_label_decorator <- function(..., doX=TRUE, doY=TRUE, push_X=0, push_Y
 
   return(ald)
 }
-
 
 stack_decorators <- function(...) {
   decorators <- lapply(list(...), match.fun)
@@ -1958,6 +2010,8 @@ build_heatmap_condition_label_decorator <- function(all_maps, ...) {
 }
 
 plot_over_time_by_electrode <- function(by_electrode_tf_data) {
+  apply_current_theme()
+
   decorators <- stack_decorators(
     build_heatmap_analysis_window_decorator(),
     build_axis_label_decorator(push_X=3),
@@ -2038,7 +2092,7 @@ plot_by_frequency_over_time <- function(by_frequency_over_time_data) {
     build_title_decorator()
   )
 
-draw_many_heat_maps(by_frequency_over_time_data, show_color_bar = FALSE)
+
   draw_many_heat_maps(
     by_frequency_over_time_data,
     PANEL.LAST = decorators
@@ -2060,3 +2114,25 @@ plot_over_time_by_trial <- function(over_time_by_trial_data) {
   )
 
 }
+
+
+plot_by_trial_look_for_outliers <- function(by_trial_look_for_outliers_data) {
+
+}
+
+plot_by_trial_assess_normality <- function(by_trial_look_for_outliers_data) {
+
+}
+
+plot_by_trial_assess_stationarity <- function(by_trial_assess_stationarity_data) {
+
+  # by_trial_assess_stationarity_data$
+
+}
+
+plot_by_trial_electrode_similarity <- function(by_trial_electrode_similarity_data) {
+
+  # by_trial_assess_stationarity_data$
+
+}
+

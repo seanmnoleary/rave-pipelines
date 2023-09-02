@@ -290,6 +290,7 @@ for(gg in seq_along(pluriform_power)) {
 ```{rave build_overall_tf_data, language="R", export ="by_frequency_over_time_data"}
 build_data <- function(data, analysis_settings, condition_group, baseline_settings, ...) {
   dn <- dimnames(data)
+  
   stopifnot(c('Time', 'Frequency') == names(dn)[2:1])
   
   res <- list(
@@ -317,6 +318,7 @@ by_frequency_over_time_data <- data_builder(pluriform_power = pluriform_power,
                                             condition_group = analysis_groups, 
                                             baseline_settings = baseline_settings,
                                             build_data, data_type = 'shifted_clean_data')
+
 ```
 
 ```{rave build_tf_correlation_data, language="R", export = "by_frequency_correlation_data"}
@@ -622,7 +624,6 @@ analysis_data$datatype <- baseline_settings$unit_of_analysis
 
 
 ```{rave build_over_time_by_electrode_dataframe, language='R', export='over_time_by_electrode_dataframe'}
-over_time_by_electrode_dataframe <- NULL
 # building data for the movie viewer
 # first baseline all the electrodes
 raveio::power_baseline(
@@ -869,7 +870,7 @@ while(rn %in% names(all_data)) {
 all_data[[rn]] = all_data$Electrode %in% requested_electrodes
 
 # collapsed_data <- cbind_list(sapply(by_condition_group, 
-                                    # get_list_elements, 'collapsed', use_sapply=FALSE))
+# get_list_elements, 'collapsed', use_sapply=FALSE))
 
 # for the stats, we need to figure out the factors involved and then build 
 # the appropriate model
@@ -954,6 +955,27 @@ omnibus_results = list(
   'data' = all_data,
   'stats' = stats
 )
+```
+
+
+```{rave build_by_trial_electrode_similarity_data, language="R", export="by_trial_electrode_similarity_data"}
+dd <- omnibus_results$data
+if(enable_second_condition_groupings) {
+  
+} else {
+  # for each condition group, correlate the electrode responses across trials
+  by_trial_electrode_similarity_data <- 
+    lapply(split(dd, list(dd$AnalysisLabel, dd$Factor1)),
+           function(bb) {
+             bb <- bb[order(bb$Electrode, bb$Trial),]
+             
+             mat <- matrix(c(bb$y), nrow=length(unique(bb$Trial)),
+                           dimnames = list(NULL, unique(bb$Electrode)))
+             
+             cor(mat)
+           })
+}
+
 ```
 
 ```{rave build_data_for_export, language="R", export='data_for_export', cue = "always"}

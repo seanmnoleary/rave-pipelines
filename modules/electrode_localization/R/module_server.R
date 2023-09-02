@@ -333,7 +333,8 @@ module_server <- function(input, output, session, ...){
 
   # output$localization_viewer <-
   ravedash::register_output(
-    outputId = "localization_viewer", export_type = "3dviewer",
+    outputId = "localization_viewer",
+    output_type = "threeBrain",
     render_function = threeBrain::renderBrain({
       local_reactives$refresh
 

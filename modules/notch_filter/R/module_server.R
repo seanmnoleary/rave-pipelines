@@ -422,8 +422,7 @@ module_server <- function(input, output, session, ...){
 
 
     }),
-    outputId = "signal_plot",
-    export_type = "pdf"
+    outputId = "signal_plot"
   )
 
   output$download_as_pdf <- shiny::downloadHandler(

@@ -998,7 +998,7 @@ module_server <- function(input, output, session, ...){
 
   ravedash::register_output(
     outputId = "3dviewer",
-    export_type = "3dviewer",
+    output_type = "threeBrain",
     render_function = threeBrain::renderBrain({
       wg <- local_reactives$brain_widget
       shiny::validate(

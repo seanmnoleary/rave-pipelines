@@ -167,7 +167,6 @@ module_html <- function(){
               shiny::div(
                 class = 'position-relative fill',
                 ravedash::output_gadget_container(
-                  gadgets = "download",
                   threeBrain::threejsBrainOutput(
                     outputId = ns("viewer"),
                     height = "100%"

@@ -16,3 +16,35 @@ get_pretty_digits <- function(x, allow_negative_round=FALSE) {
 
   dig
 }
+
+
+pretty.character <- function(x, ...,  upper=c('first', 'all', 'none')) {
+
+  cap_first_letter <- function(s) {
+    paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)), collapse='')
+  }
+
+  upper = match.arg(upper)
+
+  str <- stringr::str_split(x, '_')[[1]]
+
+  if(upper == 'first') {
+    str[1] %<>% cap_first_letter
+  } else if (upper == 'all') {
+    str %<>% sapply(cap_first_letter)
+  }
+
+  return(paste(str, collapse=" "))
+}
+
+unpretty <- function(str, ...) {
+  UseMethod('unpretty')
+}
+
+unpretty.default <- function(str, ...) {
+  return(str)
+}
+
+unpretty.character <- function(str, ...) {
+  tolower(stringr::str_replace_all(str, " ", '_'))
+}
