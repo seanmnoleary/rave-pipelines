@@ -22,4 +22,5 @@ Imports:
     stringi,
     data.table,
     ravedash,
-    lmtest
+    lmtest,
+    lmerTest
