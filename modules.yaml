@@ -18,10 +18,11 @@ modules:
     label: Power Explorer
     order: 13
     badge: Alpha-testing|badge-danger
+    hidden: yes
   jupyterlab:
     label: JupyterLab
     order: 100
-    badge: Experimental|badge-warning
+    badge: Local|badge-warning
   notch_filter:
     label: Notch Filter
     order: 3
