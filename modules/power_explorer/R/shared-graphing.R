@@ -1,3 +1,4 @@
+
 get_line_palette <- function(pname, get_palettes=FALSE, get_palette_names=FALSE) {
   # from: http://colorbrewer2.org/ or in R or from unknown
 
@@ -67,8 +68,8 @@ build_palettes_and_ranges_for_omnibus_data <- function(omnidata) {
   .colors = pe_graphics_settings_cache$get('heatmap_color_palette')
   if(is.list(.colors)) .colors = .colors[[1]]
 
-  pal = expand_heatmap(.colors, ncolors=128)
-  pval_pal = expand_heatmap(
+  pal = ravebuiltins::expand_heatmap(.colors, ncolors=128)
+  pval_pal = ravebuiltins::expand_heatmap(
     rev(tail(.colors, ceiling(length(.colors)/2))),
     ncolors=128, bias=10)
   pals = list(pal)
@@ -93,11 +94,10 @@ draw_many_heat_maps <- function (hmaps,
                                  max_zlim = 0, percentile_range = FALSE, log_scale = FALSE,
                                  show_color_bar = TRUE, useRaster = TRUE, PANEL.FIRST = NULL,
                                  PANEL.LAST = NULL, PANEL.COLOR_BAR = NULL,
-                                 axes = c(TRUE, TRUE), plot_time_range = NULL,
+                                 axes = c(TRUE, TRUE), plot_time_range = NULL, special_case_first_plot = FALSE,
                                  max_columns = 3, decorate_all_plots = FALSE, center_multipanel_title = FALSE,
                                  ignore_time_range = NULL,
-                                 # marginal_text_fields = c("Subject", "Electrodes"),
-                                 extra_plot_parameters = NULL,
+                                 marginal_text_fields = c("Subject", "Electrodes"), extra_plot_parameters = NULL,
                                  do_layout = TRUE, byrow=TRUE, ...)
 {
 
@@ -122,8 +122,6 @@ draw_many_heat_maps <- function (hmaps,
 
     ## if you want us to do layout, then I assume you want us to setup colors too
     apply_current_theme()
-
-
   }
   #some people were passing in NULL for max_zlim
   max_zlim %?<-% 0
@@ -143,7 +141,7 @@ draw_many_heat_maps <- function (hmaps,
   #   }
   # }
 
-  actual_lim = get_data_range(hmaps)
+  actual_lim = rutabaga::get_data_range(hmaps)
   if (max_zlim <= 0) {
     max_zlim <- max(abs(actual_lim), na.rm = TRUE)
   } else if (percentile_range) {
@@ -334,15 +332,6 @@ layout_heat_maps <- function(k, max_col, ratio=4, byrow=TRUE,
     mat <- cbind(mat, k+1)
     widths <- c(widths, lcm(colorbar_cm))
   }
-
-  if(k > 1) {
-    newmar = par('mar')
-    if(newmar[4] == 2.1) {
-      newmar[4] = 0.1
-      par('mar' = newmar)
-    }
-  }
-
   layout(mat, widths=widths)
 }
 
@@ -384,7 +373,8 @@ make_image <- function(mat, x, y, zlim, col=NULL, log='', useRaster=TRUE, clip_t
     # if zlim is missing, then the zlim will be set symmetrically based on the range
     # of the data (in the 'if' block above), so we only have to worry about clipping if the range is passed in
     if(clip_to_zlim) {
-      mat %<>% clip_x(zlim)
+      # mat %<>% clip_x(zlim)
+      mat <- rutabaga::clip_x(mat, zlim)
     }
   }
 
@@ -454,11 +444,18 @@ get_heatmap_palette <- function(pname, get_palettes=FALSE, get_palette_names=FAL
   return (pal)
 }
 
+set_currently_active_line_palette <- function(pal_name) {
+  pal_name <- pal_name %OF% get_line_palette(get_palette_names = TRUE)
+  pe_graphics_settings_cache$set(key='line_color_palette',
+                                 signature = pal_name,
+                                 value = pal_name)
+}
+
 get_currently_active_heatmap <- function() {
   if(!('current_heatmap_palette' %in% pe_graphics_settings_cache$keys())) {
     pe_graphics_settings_cache$set(
       key = 'current_heatmap_palette',
-      value = expand_heatmap(get_heatmap_palette('BlueWhiteRed'), ncolors = 101),
+      value = ravebuiltins::expand_heatmap(ravebuiltins::get_heatmap_palette('BlueWhiteRed'), ncolors = 101),
       signature = paste0('BlueWhiteRed', 101)
     )
   }
@@ -466,22 +463,30 @@ get_currently_active_heatmap <- function() {
   pe_graphics_settings_cache$get('current_heatmap_palette')
 }
 
+set_currently_active_heatmap <- function( pal_name, n_colors = 101 ) {
+  pal_name <- pal_name %OF% get_heatmap_palette(get_palette_names = TRUE)
 
-..get_nearest_i <- function(from,to, condition=c('equal', 'less', 'greater')) {
+  pal <- ravebuiltins::expand_heatmap(
+    ravebuiltins::get_heatmap_palette(pal_name),
+    ncolors = 101
+  )
 
-  condition = match.arg(condition)
+  pe_graphics_settings_cache$set(key='heatmap_color_palette',
+                                 signature = pal_name,
+                                 value = pal_name)
+  pe_graphics_settings_cache$set(
+    key = 'current_heatmap_palette',
+    value = pal,
+    signature = paste0(pal_name, n_colors)
+  )
+}
 
-  if(condition == 'less') {
+..get_nearest_i <- function(from,to, lower_only=FALSE) {
+
+  if(lower_only) {
     res <- sapply(from, function(.x) {
-      ind <- (to<= .x)
-      to2 = to[ind]
+      to2 = to[to<= .x]
       which.min(abs(.x-to2))
-    })
-  } else if (condition == 'greater') {
-    res <- sapply(from, function(.x) {
-      ind = to>= .x
-      to2 = to[ind]
-      which.min(abs(.x-to2)) + (which(ind)[1] - 1)
     })
   } else {
     res <- sapply(from, function(.x) {
@@ -491,16 +496,6 @@ get_currently_active_heatmap <- function() {
 
   return(res)
 }
-
-find_index_of_nearest <- ..get_nearest_i
-
-map_indices_within <- function(from, to) {
-  mapply(find_index_of_nearest,
-         from, condition=list('greater', 'less'),
-         MoreArgs = list(to=to)
-  )
-}
-
 
 ..get_nearest <- function(from, to) {
   approxfun(to, seq_along(to))(from)
@@ -1029,7 +1024,7 @@ plot_over_time_by_condition <- function(over_time_by_condition_data,
   }) %>% range
   ylim <- sapply(over_time_by_condition_data, function(otd) {
     range(sapply(otd, function(dd) {
-      plus_minus(dd$data)
+      rutabaga::plus_minus(dd$data)
     }))
   }) %>% pretty %>% range
 
@@ -1079,7 +1074,7 @@ plot_over_time_by_condition <- function(over_time_by_condition_data,
   # many situations merge into a 1,1 plot type, so have an function for that
   plot_all_in_one <- function() {
     par(mfrow=c(1,1), oma=c(2, 2.25, 0, 0), mar=c(2,2,2,1))
-    plot_clean(xlim, ylim)
+    rutabaga::plot_clean(xlim, ylim)
     draw_axis_labels()
     dy = .075*diff(par('usr')[3:4])
 
@@ -1095,7 +1090,7 @@ plot_over_time_by_condition <- function(over_time_by_condition_data,
                       window_label = (ii==1)
         )
 
-        ebar_polygon(dd$x, dd$data[,1], dd$data[,2], col=graph_num)
+        rutabaga::ebar_polygon(dd$x, dd$data[,1], dd$data[,2], col=graph_num)
 
         yy = max(axTicks(2)) - dy*graph_num
 
@@ -1114,7 +1109,7 @@ plot_over_time_by_condition <- function(over_time_by_condition_data,
 
     #loop over events
     for(ei in seq_along(over_time_by_condition_data[[1]])) {
-      plot_clean(xlim, ylim)
+      rutabaga::plot_clean(xlim, ylim)
       draw_axis_labels()
       with(over_time_by_condition_data[[1]][[ei]],
            rave_title(time_window_label)
@@ -1140,7 +1135,7 @@ plot_over_time_by_condition <- function(over_time_by_condition_data,
         decorate_plot(graph_data = dd, graph_num = graph_num,
                       window_type = 'lines', axes=(graph_num==1))
 
-        ebar_polygon(dd$x, dd$data[,1], dd$data[,2], col=graph_num)
+        rutabaga::ebar_polygon(dd$x, dd$data[,1], dd$data[,2], col=graph_num)
       }
 
     }
@@ -1149,7 +1144,7 @@ plot_over_time_by_condition <- function(over_time_by_condition_data,
   plot_combined_over_events <- function(nr,nc) {
     par(mfrow=c(nr,nc), oma=c(2, 2.25, 0, 0), mar=c(2,2,2,1))
     for(ii in seq_along(over_time_by_condition_data)) {
-      plot_clean(xlim, ylim)
+      rutabaga::plot_clean(xlim, ylim)
       draw_axis_labels()
       rave_title(over_time_by_condition_data[[ii]][[1]]$data_label)
 
@@ -1173,7 +1168,7 @@ plot_over_time_by_condition <- function(over_time_by_condition_data,
         decorate_plot(graph_data = dd, graph_num = graph_num,
                       window_type = 'lines', axes=(graph_num==1))
 
-        ebar_polygon(dd$x, dd$data[,1], dd$data[,2], col=graph_num)
+        rutabaga::ebar_polygon(dd$x, dd$data[,1], dd$data[,2], col=graph_num)
       }
     }
     # show a warning if the events have a different origin
@@ -1231,7 +1226,7 @@ plot_over_time_by_condition <- function(over_time_by_condition_data,
     par(mfcol=c(nr,nc), oma=c(2, 2.25, 0, 0), mar=c(2,2,2,1))
     for(ii in seq_along(over_time_by_condition_data)) {
       for(jj in seq_along(over_time_by_condition_data[[ii]])) {
-        plot_clean(xlim, ylim)
+        rutabaga::plot_clean(xlim, ylim)
         draw_axis_labels()
         dd <- over_time_by_condition_data[[ii]][[jj]]
         rave_title(paste(sep=' | ', dd$data_label, dd$time_window_label))
@@ -1241,7 +1236,7 @@ plot_over_time_by_condition <- function(over_time_by_condition_data,
         # put the decorations behind the data
         decorate_plot(graph_data = dd, graph_num = graph_num)
 
-        ebar_polygon(dd$x, dd$data[,1], dd$data[,2], col=graph_num)
+        rutabaga::ebar_polygon(dd$x, dd$data[,1], dd$data[,2], col=graph_num)
       }
     }
   }
@@ -1337,14 +1332,14 @@ plot_per_electrode_statistics <- function(stats, requested_stat, show0=c('smart'
     if(show0 == 'always') {
       ylim = c(0, yy)
     } else if(show0 == 'smart') {
-      if(any(str_detect(cn, ' - '), str_detect(ylab, '(p-value|t-score)'))) {
+      if(any(stringr::str_detect(cn, ' - '), stringr::str_detect(ylab, '(p-value|t-score)'))) {
         ylim = c(0,yy)
       }
     }
-    plot_clean(seq_along(electrode_numbers), pretty(ylim))
+    rutabaga::plot_clean(seq_along(electrode_numbers), pretty(ylim))
     el_axis()
 
-    if(str_detect(ylab, 'p-value')) {
+    if(stringr::str_detect(ylab, 'p-value')) {
       for(ax in axTicks(2)) {
         rave_axis(2, at=ax, labels=bquote(10**.(-ax)), tcl=0, cex.axis = 1)
       }
@@ -1412,54 +1407,6 @@ plot_per_electrode_statistics <- function(stats, requested_stat, show0=c('smart'
 }
 
 
-pe_graphics_settings_cache <- dipsaus::rds_map(path = file.path(ravedash:::temp_dir(persist = "app-session"),
-                                                                "graphics_settings")
-)
-
-default_pegs <- {list(
-  rave_cex.main = 1.5,
-  rave_cex.axis = 1.3,
-  # putting this to 1.4 because 1.5 causes some clipping of the axis(2) label, we could also try to increase
-  # the (outer) left margin to compensate
-  rave_cex.lab = 1.4,
-  rave_axis_tcl = -0.3,
-  plot_time_range = c(-Inf,Inf),
-  draw_decorator_labels = FALSE,
-  plot_title_options = c('Subject ID', 'Electrode #', 'Condition', 'Frequency Range',
-                         'Sample Size', 'Baseline Window', 'Analysis Window'),
-
-
-  ## this is now managed through ravedash theme
-  background_plot_color_hint = 'white',
-  champions_tunic = '#009edd',
-
-  line_color_palette = 'Beautiful Field',
-  invert_colors_in_palette = FALSE,
-  reverse_colors_in_palette = FALSE,
-
-  analysis_window.shade.color = 'gray70',
-  analysis_window.stroke.color = 'match',
-
-  heatmap_color_palette = get_heatmap_palette(get_palette_names = TRUE)[[1]],
-  heatmap_number_color_values = 101,
-  invert_colors_in_heatmap_palette = FALSE,
-  reverse_colors_in_heatmap_palette = FALSE,
-
-  show_outliers_on_plots = TRUE,
-
-  log_scale = FALSE,
-  max_zlim = 0,
-  percentile_range = TRUE,
-  sort_trials_by_type = 'Trial Number',
-
-  max_columns_in_figure = 3
-
-)}
-
-nm <- names(default_pegs) [!pe_graphics_settings_cache$has(names(default_pegs))]
-if(length(nm)) {
-  pe_graphics_settings_cache$mset(.list = default_pegs[nm])
-}
 
 plot_grouped_data <- function(mat, xvar, yvar='y', gvar=NULL, ...,
                               types = c('jitter points', 'means', 'ebar polygons'),
@@ -1467,6 +1414,8 @@ plot_grouped_data <- function(mat, xvar, yvar='y', gvar=NULL, ...,
                               ylim=NULL, col=NULL, do_axes=TRUE,
                               names.pos = c('none', 'bottom', 'top'),
                               plot_options = NULL, jitter_seed=NULL, cex_multifigure_scale=TRUE) {
+
+  apply_current_theme()
 
   # here we need to know about grouping var, x-axis
   if(is.null(plot_options)) {
@@ -1571,7 +1520,7 @@ plot_grouped_data <- function(mat, xvar, yvar='y', gvar=NULL, ...,
   tmp_y <- ylim
   if(is.null(tmp_y)) {
     tmp_y <- if(any(c('ebar polygons', 'ebars') %in% types)) {
-      range(plus_minus(agg$y, agg$se))
+      range(rutabaga::plus_minus(agg$y, agg$se))
     } else {
       range(agg$y)
     }
@@ -1795,15 +1744,18 @@ plot_grouped_data <- function(mat, xvar, yvar='y', gvar=NULL, ...,
     #   ebars.x(...)
     #} else {
 
-    ebars(bars.x, agg$y, sem = agg$se, code=0, col=col, lwd=2)
+    rutabaga::ebars(bars.x, agg$y, sem = agg$se, code=0, col=col, lwd=2)
     #}
   }
 
   if('ebar polygons' %in% types) {
     for(ii in 1:nrow(agg)) {
-      do_poly(bars.x[ii] %>% plus_minus(r),
-              y = agg$y[ii] %>% plus_minus(agg$se[ii]),
-              col = long_col[ii], alpha = .3*255)
+      rutabaga::do_poly(
+        rutabaga::plus_minus(x = bars.x[ii], d = r),
+        # bars.x[ii] %>% plus_minus(r),
+        rutabaga::plus_minus(x = agg$y[ii], d = agg$se[ii]),
+        # y = agg$y[ii] %>% plus_minus(agg$se[ii]),
+        col = long_col[ii], alpha = .3*255)
     }
   }
 
@@ -1877,8 +1829,6 @@ density_jitter <- function(x, around=0, max.r=.2, n=length(x), seed=NULL) {
 
 build_heatmap_analysis_window_decorator <- function(...,  type=c('line', 'box'),
                                                     lwd=2, lty=2,
-                                                    active_adjust=0.5,
-                                                    tmp_lty=4,
                                                     show_top_label=FALSE) {
   force(lwd); force(lty); force(show_top_label)
   type = match.arg(type)
@@ -1886,39 +1836,18 @@ build_heatmap_analysis_window_decorator <- function(...,  type=c('line', 'box'),
   # make sure we have enough space to write into
   par('oma' = pmax(c(1,0,0,0), par('oma')))
 
-  if(! active_adjust %within% 0:1) {
-    active_adjust = 0.5
-  }
-
-  tmp_color = (1/255) * c(active_adjust * col2rgb(par('fg')) +
-                  (1-active_adjust) * col2rgb(par('bg')))
-  tmp_color <- do.call(rgb, as.list(tmp_color))
-
   hawd <- function(data, Xmap, Ymap, ...) {
     # label analysis event
     mtext(data$analysis_event, side = 1, at=Xmap(0),
           line=2.5, cex=(7/8)*get_cex_for_multifigure(), col = par('fg'))
 
     # label analysis window
-    xx <- c(-0.5, .5) + map_indices_within(data$analysis_window, data$x)
-
+    xx <- Xmap(data$analysis_window)
     if(type == 'box') {
-      yy <- c(-0.5, 0.5) + map_indices_within(data$analysis_frequency, data$y)
+      yy <- Ymap(data$analysis_frequency)
 
-      if(!is.null(data$analysis_window_tmp) && !is.null(data$analysis_frequency_tmp)) {
-        polygon(c(xx,rev(xx)), rep(yy, each=2),
-                lty=lty, lwd=lwd,border=tmp_color)
-
-        xxnew <- c(-0.5, .5) + map_indices_within(data$analysis_window_tmp, data$x)
-        yynew <- c(-0.5, .5) + map_indices_within(data$analysis_frequency_tmp, data$y)
-
-        polygon(c(xxnew,rev(xxnew)), rep(yynew, each=2),
-                lwd=lwd,border=par('fg'), lty=3)
-      } else {
-        polygon(c(xx,rev(xx)), rep(yy, each=2),
-                lty=lty, lwd=lwd,border=par('fg'))
-      }
-
+      polygon(c(xx,rev(xx)), rep(yy, each=2),
+              lty=lty, lwd=lwd,border='black')
 
     } else {
       abline(v=xx, lty=2, col=par('fg'), xpd=FALSE, lwd=2)
@@ -1927,11 +1856,11 @@ build_heatmap_analysis_window_decorator <- function(...,  type=c('line', 'box'),
               cex=get_cex_for_multifigure()*9/8)
     }
   }
+
   return (hawd)
 }
 
-build_axis_label_decorator <- function(..., doX=TRUE, doY=TRUE,
-                                       push_X=0, push_Y=0) {
+build_axis_label_decorator <- function(..., doX=TRUE, doY=TRUE, push_X=0, push_Y=0) {
   doX = force(doX)
   doY = force(doY)
 
@@ -1959,6 +1888,7 @@ build_axis_label_decorator <- function(..., doX=TRUE, doY=TRUE,
 
   return(ald)
 }
+
 
 stack_decorators <- function(...) {
   decorators <- lapply(list(...), match.fun)
@@ -2010,8 +1940,6 @@ build_heatmap_condition_label_decorator <- function(all_maps, ...) {
 }
 
 plot_over_time_by_electrode <- function(by_electrode_tf_data) {
-  apply_current_theme()
-
   decorators <- stack_decorators(
     build_heatmap_analysis_window_decorator(),
     build_axis_label_decorator(push_X=3),
@@ -2092,7 +2020,7 @@ plot_by_frequency_over_time <- function(by_frequency_over_time_data) {
     build_title_decorator()
   )
 
-
+draw_many_heat_maps(by_frequency_over_time_data, show_color_bar = FALSE)
   draw_many_heat_maps(
     by_frequency_over_time_data,
     PANEL.LAST = decorators
@@ -2116,23 +2044,53 @@ plot_over_time_by_trial <- function(over_time_by_trial_data) {
 }
 
 
-plot_by_trial_look_for_outliers <- function(by_trial_look_for_outliers_data) {
+# chdir = TRUE, current working directory is this folder
+pipeline <- raveio::pipeline(pipeline_name = "power_explorer", paths = "../..")
+pe_graphics_settings_cache <- dipsaus::rds_map(file.path(pipeline$preference_path, "graphics"))
 
+default_pegs <- {list(
+  rave_cex.main = 1.5,
+  rave_cex.axis = 1.3,
+  # putting this to 1.4 because 1.5 causes some clipping of the axis(2) label, we could also try to increase
+  # the (outer) left margin to compensate
+  rave_cex.lab = 1.4,
+  rave_axis_tcl = -0.3,
+  plot_time_range = c(-Inf,Inf),
+  draw_decorator_labels = FALSE,
+  plot_title_options = c('Subject ID', 'Electrode #', 'Condition', 'Frequency Range',
+                         'Sample Size', 'Baseline Window', 'Analysis Window'),
+
+
+  ## this is now managed through ravedash theme
+  background_plot_color_hint = 'white',
+  champions_tunic = '#009edd',
+
+  line_color_palette = 'Beautiful Field',
+  invert_colors_in_palette = FALSE,
+  reverse_colors_in_palette = FALSE,
+
+  analysis_window.shade.color = 'gray70',
+  analysis_window.stroke.color = 'match',
+
+  heatmap_color_palette = get_heatmap_palette(get_palette_names = TRUE)[[1]],
+  heatmap_number_color_values = 101,
+  invert_colors_in_heatmap_palette = FALSE,
+  reverse_colors_in_heatmap_palette = FALSE,
+
+  show_outliers_on_plots = TRUE,
+
+  log_scale = FALSE,
+  max_zlim = 0,
+  percentile_range = TRUE,
+  sort_trials_by_type = 'Trial Number',
+
+  max_columns_in_figure = 3
+
+)}
+
+nm <- names(default_pegs) [!pe_graphics_settings_cache$has(names(default_pegs))]
+if(length(nm)) {
+  pe_graphics_settings_cache$mset(.list = default_pegs[nm])
 }
 
-plot_by_trial_assess_normality <- function(by_trial_look_for_outliers_data) {
-
-}
-
-plot_by_trial_assess_stationarity <- function(by_trial_assess_stationarity_data) {
-
-  # by_trial_assess_stationarity_data$
-
-}
-
-plot_by_trial_electrode_similarity <- function(by_trial_electrode_similarity_data) {
-
-  # by_trial_assess_stationarity_data$
-
-}
 

@@ -4,6 +4,7 @@ module_server <- function(input, output, session, ...){
   local_reactives <- shiny::reactiveValues(
     update_outputs = NULL,
     update_line_plots = NULL,
+    update_heatmap_plots = NULL,
     update_3dviewer = NULL,
     update_by_trial_plot = NULL,
     update_over_time_plot = NULL,
@@ -23,8 +24,6 @@ module_server <- function(input, output, session, ...){
   # Local non-reactive values, used to store static variables
   local_data <- dipsaus::fastmap2()
 
-  local_data$brain <- NULL
-  local_data$brain_movies <- NULL
   local_data$available_electrodes = integer()
 
   local_data$download_plot_info <- list(
@@ -48,7 +47,7 @@ module_server <- function(input, output, session, ...){
   local_data$electrode_meta_data <- NULL
 
   # get server tools to tweak
-  server_tools <- get_default_handlers(session = session)
+  server_tools <- ravedash::get_default_handlers(session = session)
 
   # Run analysis once the following input IDs are changed
   # This is used by auto-recalculation feature
@@ -173,14 +172,6 @@ module_server <- function(input, output, session, ...){
     local_data$results[eval_names] <- as.list(pipeline$eval(names = eval_names))[eval_names]
     progress$inc("Done pipeline eval")
 
-    ### bring down the univariate stats to a more convenient place
-    # so they fit the data/plotting naming convention
-    local_data$results$univariate_statistics_graphical_results_data <-
-      local_data$results$omnibus_results$stats
-
-    local_data$results$by_trial_by_condition_data <-
-      local_data$results$omnibus_results$data
-
     or <- rownames(local_data$results$omnibus_results$stats)
     choices_list <- unique(stringr::str_remove_all(or, '(m+\\(|t+\\(|p+\\(|p_fdr\\(|\\))'))
 
@@ -189,6 +180,7 @@ module_server <- function(input, output, session, ...){
     current_choice <- input$per_electrode_statistics_chooser
     shiny::updateSelectInput(inputId = 'per_electrode_statistics_chooser',
                              choices = choices_list, selected = current_choice %OF% choices_list)
+
 
     #### this is where we add Factor 2 to the analysis
     if(is.null(local_data$results$omnibus_results$data$Factor2)) {
@@ -211,10 +203,6 @@ module_server <- function(input, output, session, ...){
     }
 
     local_reactives$update_outputs <- Sys.time()
-
-    # also update the current analysis settings reactive
-    local_reactives$current_analysis_settings <- pipeline$get_settings('analysis_settings')
-
     if(trigger_3dviewer) {
       local_reactives$update_3dviewer <- Sys.time()
     }
@@ -483,9 +471,7 @@ module_server <- function(input, output, session, ...){
       )
 
       # grab new brain
-      local_data$brain = raveio::rave_brain(new_repository$subject$subject_id)
-      local_data$brain_movies = raveio::rave_brain(new_repository$subject$subject_id)
-
+      brain <- raveio::rave_brain(new_repository$subject$subject_id)
       local_data$available_electrodes = new_repository$power$dimnames$Electrode
 
 
@@ -501,8 +487,20 @@ module_server <- function(input, output, session, ...){
 
 
       # Reset outputs
-      shidashi::reset_output("collapse_over_trial")
-      shidashi::reset_output("over_time_by_electrode_data")
+      # shidashi::reset_output("collapse_over_trial")
+      # shidashi::reset_output("over_time_by_electrode_data")
+      if(is.null(brain)) {
+        # no 3D brain available, collapse the first cardset
+        shidashi::card_operate(title = "Brain Viewers", method = "collapse")
+      } else {
+        shidashi::card_operate(title = "Brain Viewers", method = "expand")
+      }
+      local_reactives$update_outputs <- NULL
+      local_reactives$update_line_plots <- NULL
+      local_reactives$update_heatmap_plots <- NULL
+      local_reactives$update_3dviewer <- NULL
+      local_reactives$update_by_trial_plot <- NULL
+      local_reactives$update_over_time_plot <- NULL
 
 
       #TODO update UI selectors to possibly cached values
@@ -514,49 +512,54 @@ module_server <- function(input, output, session, ...){
 
 
   #### tracking clicks on 3dViewer
-  shiny::bindEvent(
-    ravedash::safe_observe({
-      ravedash::logger('3dBrain double click')
-      ravedash::clear_notifications(class=ns('threedviewer'))
+  track_3dviewer_clicks <- function(proxy) {
+    shiny::bindEvent(
+      ravedash::safe_observe({
+        ravedash::logger('3dBrain double click')
+        ravedash::clear_notifications(class=ns('threedviewer'))
 
-      info <- as.list(brain_proxy$mouse_event_double_click)
-      if(!isTRUE(info$is_electrode)) {
-        return()
-      }
+        info <- as.list(proxy$mouse_event_double_click)
+        if(!isTRUE(info$is_electrode)) {
+          return()
+        }
 
-      if(! (info$electrode_number %in% local_data$available_electrodes)) {
-        ravedash::show_notification(
-          sprintf("Selected electrode (%s) not loaded", info$electrode_number),
-          title='3dViewer Info',
-          type='warning', class=ns('threedviewer_no'),
-          delay=2000
+        if(! (info$electrode_number %in% local_data$available_electrodes)) {
+          ravedash::show_notification(
+            sprintf("Selected electrode (%s) not loaded", info$electrode_number),
+            title='3dViewer Info',
+            type='warning', class=ns('threedviewer_no'),
+            delay=2000
+          )
+          return()
+        } else {
+          ravedash::show_notification(paste0("Trying to load data for electrode: ",
+                                             info$electrode_number),
+                                      class=ns('threedviewer_yes'),
+                                      title='3dViewer Info', delay=2000,
+                                      type = 'info')
+
+          on.exit(add=TRUE, {
+            ravedash::clear_notifications(ns('threedviewer_yes'))
+          })
+        }
+
+        # ravedash::logger(str(info))
+        id <- electrode_selector$get_sub_element_id(with_namespace = FALSE)
+
+        shiny::updateTextInput(inputId=id, value=paste0(info$electrode_number))
+
+        run_analysis(trigger_3dviewer = FALSE,
+                     force_settings=list(electrode_text = info$electrode_number)
         )
-        return()
-      } else {
-        ravedash::show_notification(paste0("Trying to load data for electrode: ",
-                                           info$electrode_number),
-                                    class=ns('threedviewer_yes'),
-                                    title='3dViewer Info', delay=2000,
-                                    type = 'info')
+      }),
 
-        on.exit(add=TRUE, {
-          ravedash::clear_notifications(ns('threedviewer_yes'))
-        })
-      }
-
-      # ravedash::logger(str(info))
-      id <- electrode_selector$get_sub_element_id(with_namespace = FALSE)
-
-      shiny::updateTextInput(inputId=id, value=paste0(info$electrode_number))
-
-      run_analysis(trigger_3dviewer = FALSE,
-                   force_settings=list(electrode_text = info$electrode_number)
-      )
-    }),
-
-    brain_proxy$mouse_event_double_click,
-    ignoreNULL = TRUE, ignoreInit = TRUE
-  )
+      proxy$mouse_event_double_click,
+      # brain_proxy_movies$mouse_event_double_click,
+      ignoreNULL = TRUE, ignoreInit = TRUE
+    )
+  }
+  track_3dviewer_clicks(brain_proxy)
+  track_3dviewer_clicks(brain_proxy_movies)
 
   # shiny::bindEvent(
   #   ravedash::safe_observe(
@@ -718,6 +721,7 @@ module_server <- function(input, output, session, ...){
   shiny::bindEvent(
     ravedash::safe_observe({
       shiny::req(local_data$results)
+
       local_data$download_plot_info$id =
         paste0("over_time_", unpretty(input$over_time_tabset))
 
@@ -727,47 +731,13 @@ module_server <- function(input, output, session, ...){
   )
 
 
-  shiny::bindEvent(
-    ravedash::safe_observe({
-      shiny::req(local_data$results)
-      local_data$download_plot_info$id =
-        paste0("univariate_statistics_", unpretty(input$univariate_statistics_tabset))
 
-      build_modal_plot_download(local_data$download_plot_info)
-    }),
-    input$univariate_statistics_tabset_camera, ignoreNULL = TRUE, ignoreInit = TRUE
-  )
-
-  shiny::bindEvent(
-    ravedash::safe_observe({
-      shiny::req(local_data$results)
-      local_data$download_plot_info$id =
-        paste0("by_trial_", unpretty(input$by_trial_tabset))
-      build_modal_plot_download(local_data$download_plot_info)
-    }),
-    input$by_trial_tabset_camera, ignoreNULL = TRUE, ignoreInit = TRUE
-  )
-
-  # listen to camera on the by_frequency tabset
-  shiny::bindEvent(
-    ravedash::safe_observe({
-      shiny::req(local_data$results)
-      local_data$download_plot_info$id =
-        paste0("by_frequency_", unpretty(input$by_frequency_tabset))
-
-      build_modal_plot_download(local_data$download_plot_info)
-    }),
-    input$by_frequency_tabset_camera, ignoreNULL = TRUE, ignoreInit = TRUE
-  )
-
-
-
-  # shiny::bindEvent(
-  #   ravedash::safe_observe({
-  #     print("test test test")
-  #   }),
-  #   input$test, ignoreNULL = TRUE, ignoreInit = TRUE
-  # )
+# shiny::bindEvent(
+#   ravedash::safe_observe({
+#     print("test test test")
+#   }),
+#   input$test, ignoreNULL = TRUE, ignoreInit = TRUE
+# )
 
   # shiny::bindEvent(
   #   ravedash::safe_observe({
@@ -784,7 +754,7 @@ module_server <- function(input, output, session, ...){
       'overall'
     })
 
-    ind <- which(str_detect(rownames(omni_stats), pesc))
+    ind <- which(stringr::str_detect(rownames(omni_stats), pesc))
 
     if(row[1] %within% seq_along(ind)) {
       return(omni_stats[ind[row[1]],])
@@ -912,13 +882,21 @@ module_server <- function(input, output, session, ...){
   ### tracking changes to global plot options
   shiny::bindEvent(
     ravedash::safe_observe({
-      pe_graphics_settings_cache$set(key='line_color_palette',
-                                     signature=input$gpo_lines_palette,
-                                     value = input$gpo_lines_palette)
+
+      set_currently_active_line_palette( input$gpo_lines_palette )
 
       local_reactives$update_line_plots = Sys.time()
 
-    }), input$gpo_lines_palette, ignoreNULL = TRUE, ignoreInit = TRUE
+    }), input$gpo_lines_palette, ignoreNULL = TRUE, ignoreInit = FALSE
+  )
+
+  shiny::bindEvent(
+    ravedash::safe_observe({
+
+      set_currently_active_heatmap( input$gpo_heatmap_palette )
+      local_reactives$update_heatmap_plots = Sys.time()
+
+    }), input$gpo_heatmap_palette, ignoreNULL = TRUE, ignoreInit = FALSE
   )
 
 
@@ -932,7 +910,9 @@ module_server <- function(input, output, session, ...){
   )
 
   basic_checks <- function(flag) {
-    shiny::validate(shiny::need(flag, 'Results not yet available, please click RAVE!'))
+    cond <- !is.null(flag)
+    shiny::validate(shiny::need(cond, 'Results not yet available, please click RAVE!'))
+    cond
   }
 
   # Register outputs
@@ -940,50 +920,75 @@ module_server <- function(input, output, session, ...){
   #### 3d brain viewer
   ravedash::register_output(
     outputId = "brain_viewer",
+    output_type = "threeBrain",
     render_function = threeBrain::renderBrain({
-      basic_checks(local_reactives$update_3dviewer)
+      cond <- basic_checks(local_reactives$update_3dviewer)
+
+      brain <- raveio::rave_brain(component_container$data$repository$subject)
+
+      if(!cond || is.null(brain)) {
+        return(threeBrain::threejs_brain(title = "No 3D model found"))
+      }
 
       df <- data.frame(t(local_data$results$omnibus_results$stats))
 
       # fix some column names
-      names(df) = str_replace_all(names(df), '\\.\\.\\.', ' vs ')
+      # Avoid changing `df` multiple times
+      # names(df) = stringr::str_replace_all(names(df), '\\.\\.\\.', ' vs ')
+      cnames <- stringr::str_replace_all(names(df), '\\.\\.\\.', ' vs ')
 
-      names(df) = str_replace_all(names(df), '\\.', ' ')
+      # names(df) = stringr::str_replace_all(names(df), '\\.', ' ')
+      cnames <- stringr::str_replace_all(cnames, '\\.', ' ')
 
-      names(df) = str_replace_all(names(df), '\\ $', '')
+      # names(df) = stringr::str_replace_all(names(df), '\\ $', '')
+      cnames <- stringr::str_replace_all(cnames, '\\ $', '')
+      names(df) <- cnames
+
+      if("currently_selected" %in% cnames) {
+        df$currently_selected <- factor(
+          c("Yes", "No")[ 2L - as.integer(df$currently_selected) ],
+          levels = c("Yes", "No")
+        )
+      }
 
       df$Electrode = as.integer(rownames(df))
 
       res <- build_palettes_and_ranges_for_omnibus_data(df)
 
-      local_data$brain$set_electrode_values(df)
-      local_data$brain$render(outputId = "brain_viewer", session = session,
+      brain$set_electrode_values(df)
+
+      brain$render(outputId = "brain_viewer", session = session,
                               palettes=res$palettes, value_ranges=res$val_ranges,
                               control_display = FALSE, side_display=FALSE,
                               timestamp=FALSE)
-    }),
-    output_type = "threeBrain"
+    })
   )
 
   ravedash::register_output(
     outputId = "brain_viewer_movies",
+    output_type = "threeBrain",
     render_function = threeBrain::renderBrain({
+      cond <- basic_checks(local_reactives$update_3dviewer)
 
-      basic_checks(local_reactives$update_3dviewer)
+      brain <- raveio::rave_brain(component_container$data$repository$subject)
 
-      df <- as.data.frame(local_data$results$over_time_by_electrode_dataframe)
+      if(!cond || is.null(brain)) {
+        return(threeBrain::threejs_brain(title = "No 3D model found"))
+      }
 
-      local_data$brain_movies$set_electrode_values(df)
+      df <- local_data$results$over_time_by_electrode_dataframe
 
+      brain$set_electrode_values(df)
       res <- build_palettes_and_ranges_for_omnibus_data(df)
-      local_data$brain_movies$plot(palettes = res$palettes)
-
-      local_data$brain_movies$render(outputId = "brain_viewer_movies",
-                                     session = session,
-                                     control_display = FALSE, side_display=FALSE,
-                                     palettes = res$palettes)
-    }), output_type = 'threeBrain'
+      brain$render(
+        outputId = "brain_viewer_movies",
+        session = session,
+        palettes = res$palettes,
+        title = 'Click "Play/Pause" to start animation'
+      )
+    })
   )
+
   ### export button download handler
 
   shiny::bindEvent(
@@ -1235,17 +1240,14 @@ module_server <- function(input, output, session, ...){
   output$do_download_plot <- shiny::downloadHandler(
     filename = function() {
       type = input$download_plot_type
-      if(type == 'tiff (lzw)') {
-        type = 'tiff'
-      }
-      nm = local_data$download_plot_info$id
+      nm = local_data$download_plot$id
 
-      paste(paste("plot", nm, Sys.Date(), sep="_"), type, sep='.')
+      paste(paste("plot", nm, Sys.Date(), type, sep="_"), type, sep='.')
     },
     content = function(file) {
-      type = input$download_plot_type
 
-      nm = unpretty(local_data$download_plot_info$id)
+      type = input$download_plot_type
+      nm = local_data$download_plot$id
 
       FUN = get(
         paste0('plot_', local_data$download_plot_info$id)
@@ -1260,44 +1262,9 @@ module_server <- function(input, output, session, ...){
         args$condition_switch = input$over_time_by_condition_switch
       }
 
-      ### open up the proper plotting device
-      OPEN_FILE <- switch(input$download_plot_type,
-                          'pdf' = function() {
-                            pdf(file, width=input$download_plot_width,
-                                height=input$download_plot_height,
-                                useDingbats = FALSE,
-                                title = 'RAVE Plot Export')
-                          },
-                          'png' = function() {
-                            scl = 1
-                            png(file, width=scl*input$download_plot_width,
-                                height=scl*input$download_plot_height,
-                                units = 'in', res=72*4)
-                          },
-                          'jpeg' = function(){
-                            jpeg(file,width=input$download_plot_width,
-                                 height=input$download_plot_height,
-                                 units = 'in', quality = 90, , res=72*4)
-
-                          },
-                          'bmp' = function(){
-                            bmp(file,width=input$download_plot_width,
-                                height=input$download_plot_height,
-                                units = 'in', res=72*4)
-
-                          },
-                          'tiff (lzw)' = function(){
-                            tiff(file,compression='lzw',
-                                 width=input$download_plot_width,
-                                 height=input$download_plot_height,
-                                 units = 'in', res=72*4)
-
-                          }
-      )
-
-      OPEN_FILE()
+      pdf(file, width=input$download_plot_width, height=input$download_plot_height,
+          useDingbats = FALSE)
       on.exit(dev.off())
-
       do.call(FUN, args)
     })
 
@@ -1341,7 +1308,7 @@ module_server <- function(input, output, session, ...){
 
     df <- data.frame(mat)
 
-    pcols <- str_detect(colnames(mat), 'p\\(|p_fdr\\(')
+    pcols <- stringr::str_detect(colnames(mat), 'p\\(|p_fdr\\(')
     df[pcols] %<>% lapply(function(v)as.numeric(round_pval(v)))
 
     dt <- DT::datatable(df, colnames=colnames(mat), rownames = FALSE,
@@ -1368,137 +1335,106 @@ module_server <- function(input, output, session, ...){
     return (dt)
   })
 
-  plot_by_trial_by_condition <- function(by_trial_by_condition_data) {
-    apply_current_theme()
-
-    po <- local_data$grouped_plot_options
-
-    # based on shiny input, change xvar/yvar
-    count=function(x) {
-      if(is.null(x)) return (1)
-      length(unique(x))
-    }
-
-    k = 10 + 2.5*(count(by_trial_by_condition_data$Factor1)*count(by_trial_by_condition_data$AnalysisLabel)-1)
-    if(!is.null(by_trial_by_condition_data$Factor2)) {
-      k = k + 2.5 * (count(by_trial_by_condition_data$Factor2)-1)
-    }
-
-    MAX = 30
-    layout(matrix(c(0,1,0), nrow=1), widths = c(1,lcm(min(k, MAX)),1))
-    oom <- get_order_of_magnitude(median(abs(pretty(by_trial_by_condition_data$y))))
-
-    line = 2.75 + oom
-
-    #read in group label posision
-    label_position = 'top' #c('none', 'bottom', 'top')
-
-    ### if there is a panel var, split the data and do multiple plots
-    po$panelvar = NULL
-
-    # fix the names of xvar and gvar
-    for(nm in c('xvar', 'gvar')) {
-      if(po[[nm]] == 'First Factor') po[[nm]] = 'Factor1'
-      if(po[[nm]] == 'Second Factor') po[[nm]] = 'Factor2'
-      if(po[[nm]] == 'First:Second') po[[nm]] = 'Factor1Factor2'
-      if(po[[nm]] == 'Analysis Group') po[[nm]] = 'AnalysisLabel'
-    }
-
-    # we need to collapse over electrode, but first
-    # select out the electrodes that are requested for analysis.
-    # by default, omnibus has all (omni) of the data
-    nms <- names(by_trial_by_condition_data)
-    nms <- nms[!(nms %in% c('y', 'Electrode'))]
-    mat = data.table::data.table(by_trial_by_condition_data)
-    mat = mat[by_trial_by_condition_data$currently_selected, list(y=mean(get('y'))), keyby=nms]
-
-    par('mar'=c(4, 4.5+oom, ifelse(label_position=='top',3.5,2), 2)+.1)
-    do.call(plot_grouped_data,
-            append(po, list(mat=as.data.frame(mat),
-                            do_axes=TRUE, names.pos=label_position))
-    )
-
-    uoa = local_data$results$baseline_settings$unit_of_analysis
-    rave_axis_labels(ylab=uoa, outer=FALSE, yline=line, xpd=TRUE)
-
-  }
-
-
   ravedash::register_output(
     outputId = "by_trial_by_condition",
-    title = "By Trial By Condition Plot",
     render_function = shiny::renderPlot({
       basic_checks(local_reactives$update_outputs)
 
       force(local_reactives$update_by_trial_plot)
       force(local_reactives$update_line_plots)
 
-      plot_by_trial_by_condition(
-        local_data$results$by_trial_by_condition_data
+      data <- local_data$results$omnibus_results$data
+
+      po <- local_data$grouped_plot_options
+
+      # based on shiny input, change xvar/yvar
+      count=function(x) {
+        if(is.null(x)) return (1)
+        length(unique(x))
+      }
+
+      k = 10 + 2.5*(count(data$Factor1)*count(data$AnalysisLabel)-1)
+      if(!is.null(data$Factor2)) {
+        k = k + 2.5 * (count(data$Factor2)-1)
+      }
+
+      MAX = 30
+      layout(matrix(c(0,1,0), nrow=1), widths = c(1,lcm(min(k, MAX)),1))
+      oom <- get_order_of_magnitude(median(abs(pretty(data$y))))
+
+      line = 2.75 + oom
+
+      #read in group label posision
+      label_position = 'top' #c('none', 'bottom', 'top')
+
+
+      ### if there is a panel var, split the data and do multiple plots
+      po$panelvar = NULL
+
+      # fix the names of xvar and gvar
+      for(nm in c('xvar', 'gvar')) {
+        if(po[[nm]] == 'First Factor') po[[nm]] = 'Factor1'
+        if(po[[nm]] == 'Second Factor') po[[nm]] = 'Factor2'
+        if(po[[nm]] == 'First:Second') po[[nm]] = 'Factor1Factor2'
+        if(po[[nm]] == 'Analysis Group') po[[nm]] = 'AnalysisLabel'
+      }
+
+      # we need to collapse over electrode, but first
+      # select out the electrodes that are requested for analysis.
+      # by default, omnibus has all (omni) of the data
+      nms <- names(data)
+      nms <- nms[!(nms %in% c('y', 'Electrode'))]
+      mat = data.table::data.table(data)
+
+      mat = mat[data$currently_selected, list(y=mean(get('y'))), keyby=nms]
+
+      par('mar'=c(4, 4.5+oom, ifelse(label_position=='top',3.5,2), 2)+.1)
+      do.call(plot_grouped_data,
+              append(po, list(mat=as.data.frame(mat),
+                              do_axes=TRUE, names.pos=label_position))
       )
+
+      uoa = local_data$results$settings$baseline_settings$unit_of_analysis
+      rave_axis_labels(ylab=uoa, outer=FALSE, yline=line, xpd=TRUE)
+    })
+  )
+
+
+  ravedash::register_output(
+    outputId = "over_time_by_electrode",
+    shiny::renderPlot({
+      basic_checks(local_reactives$update_outputs)
+      force(local_reactives$update_heatmap_plots)
+
+      plot_over_time_by_electrode(local_data$results$over_time_by_electrode_data)
+    })
+  )
+
+  ravedash::register_output(
+    outputId = "by_frequency_over_time",
+    render_function = shiny::renderPlot({
+      # req(FALSE)
+
+      basic_checks(local_reactives$update_outputs)
+      force(local_reactives$update_heatmap_plots)
+
+      plot_by_frequency_over_time(local_data$results$by_frequency_over_time_data)
 
     })
   )
-  # output$by_trial_by_condition <- shiny::renderPlot({
-  #   basic_checks(local_reactives$update_outputs)
-  #
-  #   force(local_reactives$update_by_trial_plot)
-  #   force(local_reactives$update_line_plots)
-  #
-  #   plot_by_trial_by_condition(
-  #     local_data$results$by_trial_by_condition_data
-  #   )
-  #
-  # })
 
-  output$over_time_by_electrode <- shiny::renderPlot({
-    basic_checks(local_reactives$update_outputs)
+  ravedash::register_output(
+    outputId = "by_frequency_correlation",
+    render_function = shiny::renderPlot({
+      basic_checks(local_reactives$update_outputs)
+      force(local_reactives$update_heatmap_plots)
 
-    plot_over_time_by_electrode(local_data$results$over_time_by_electrode_data)
-  })
+      plot_by_frequency_correlation(
+        local_data$results$by_frequency_correlation_data
+      )
+    })
+  )
 
-  output$by_frequency_over_time <- shiny::renderPlot({
-    # req(FALSE)
-
-    basic_checks(local_reactives$update_outputs)
-    basic_checks(local_reactives$current_analysis_settings)
-
-
-    by_frequency_over_time_data = local_data$results$by_frequency_over_time_data
-
-
-    # if there are any changes to the analysis window, we want to highlight
-    # them on the graph
-    for(ii in seq_along(local_reactives$current_analysis_settings)) {
-      ss <- local_reactives$current_analysis_settings[[ii]]
-
-      new_time = unlist(ss$time)
-      new_freq = unlist(ss$frequency)
-
-      jj = which(endsWith(names(by_frequency_over_time_data), ss$label))
-
-      for(curr_map in jj) {
-        if(any(new_time != by_frequency_over_time_data[[curr_map]]$analysis_window,
-               new_freq != by_frequency_over_time_data[[curr_map]]$analysis_frequency)) {
-          by_frequency_over_time_data[[curr_map]]$analysis_window_tmp = new_time
-          by_frequency_over_time_data[[curr_map]]$analysis_frequency_tmp = new_freq
-        }
-      }
-    }
-
-    plot_by_frequency_over_time(by_frequency_over_time_data)
-
-  })
-
-
-
-  output$by_frequency_correlation <- shiny::renderPlot({
-    basic_checks(local_reactives$update_outputs)
-
-    plot_by_frequency_correlation(
-      local_data$results$by_frequency_correlation_data
-    )
-  })
 
   # output$per_electrode_statistics <- shiny::renderPlot({
   #   basic_checks(local_reactives$update_outputs)
@@ -1526,109 +1462,105 @@ module_server <- function(input, output, session, ...){
     return(th)
   }
 
-  output$per_electrode_statistics_mean <- shiny::renderPlot({
-    basic_checks(local_reactives$update_outputs)
+  ravedash::register_output(
+    outputId = "per_electrode_statistics_mean",
+    render_function = shiny::renderPlot({
+      basic_checks(local_reactives$update_outputs)
 
-    stats <- local_data$results$omnibus_results$stats
+      stats <- local_data$results$omnibus_results$stats
 
-    lbl_elecs = NULL
-    requested_stat = NULL
+      lbl_elecs = NULL
+      requested_stat = NULL
 
-    if(!is.null(local_reactives$per_electrode_statistics_chooser)) {
-      requested_stat = local_reactives$per_electrode_statistics_chooser
+      if(!is.null(local_reactives$per_electrode_statistics_chooser)) {
+        requested_stat = local_reactives$per_electrode_statistics_chooser
 
-      if(!is.null(local_reactives$pes_selected_electrodes)) {
-        lbl_elecs <- local_reactives$pes_selected_electrodes
+        if(!is.null(local_reactives$pes_selected_electrodes)) {
+          lbl_elecs <- local_reactives$pes_selected_electrodes
+        }
+
+
       }
-    }
-    plot_per_electrode_statistics(stats, requested_stat, which_plots = 'm',
-                                  draw_threshold=get_threshold('m'),
-                                  label_electrodes=lbl_elecs, label_type = input$pes_label_type)
-  })
-  output$per_electrode_statistics_tstat <- shiny::renderPlot({
-    basic_checks(local_reactives$update_outputs)
-
-    stats <- local_data$results$omnibus_results$stats
-
-    lbl_elecs = NULL
-    requested_stat = NULL
-
-    if(exists('local_reactives') && !is.null(local_reactives$per_electrode_statistics_chooser)) {
-      requested_stat = local_reactives$per_electrode_statistics_chooser
-
-      if(!is.null(local_reactives$pes_selected_electrodes)) {
-        lbl_elecs <- local_reactives$pes_selected_electrodes
-      }
-    }
-
-    plot_per_electrode_statistics(stats, requested_stat, which_plots = 't',
-                                  draw_threshold=get_threshold('t'),
-                                  label_electrodes = lbl_elecs, label_type = input$pes_label_type)
-  })
-  output$per_electrode_statistics_fdrp <- shiny::renderPlot({
-    basic_checks(local_reactives$update_outputs)
-
-    stats <- local_data$results$omnibus_results$stats
-
-    lbl_elecs = NULL
-    requested_stat = NULL
-    if(exists('local_reactives') && !is.null(local_reactives$per_electrode_statistics_chooser)) {
-      requested_stat = local_reactives$per_electrode_statistics_chooser
-
-      if(!is.null(local_reactives$pes_selected_electrodes)) {
-        lbl_elecs <- local_reactives$pes_selected_electrodes
-      }
-    }
-    plot_per_electrode_statistics(stats, requested_stat, which_plots = 'p',
-                                  draw_threshold = get_threshold('p'),
-                                  label_electrodes = lbl_elecs, label_type = input$pes_label_type)
-  })
-
-  # special function used by the downloader to get all 3 plots in one
-  plot_univariate_statistics_graphical_results <- function(
-    univariate_statistics_graphical_results_data) {
-
-    par(mfrow=c(1,3))
-
-    lbl_elecs = NULL
-    requested_stat = NULL
-
-    if(!is.null(local_reactives$per_electrode_statistics_chooser)) {
-      requested_stat = local_reactives$per_electrode_statistics_chooser
-
-      if(!is.null(local_reactives$pes_selected_electrodes)) {
-        lbl_elecs <- local_reactives$pes_selected_electrodes
-      }
-    }
-
-    sapply(c('m', 't', 'p'), function(st) {
-      plot_per_electrode_statistics(univariate_statistics_graphical_results_data,
-                                    requested_stat, which_plots = st,
-                                    draw_threshold=get_threshold(st),
+      plot_per_electrode_statistics(stats, requested_stat, which_plots = 'm',
+                                    draw_threshold=get_threshold('m'),
                                     label_electrodes=lbl_elecs, label_type = input$pes_label_type)
     })
-  }
+  )
+
+  ravedash::register_output(
+    outputId = "per_electrode_statistics_tstat",
+    render_function = shiny::renderPlot({
+      basic_checks(local_reactives$update_outputs)
+
+      stats <- local_data$results$omnibus_results$stats
+
+      lbl_elecs = NULL
+      requested_stat = NULL
+
+      if(exists('local_reactives') && !is.null(local_reactives$per_electrode_statistics_chooser)) {
+        requested_stat = local_reactives$per_electrode_statistics_chooser
+
+        if(!is.null(local_reactives$pes_selected_electrodes)) {
+          lbl_elecs <- local_reactives$pes_selected_electrodes
+        }
+      }
+
+      plot_per_electrode_statistics(stats, requested_stat, which_plots = 't',
+                                    draw_threshold=get_threshold('t'),
+                                    label_electrodes = lbl_elecs, label_type = input$pes_label_type)
+    })
+  )
+
+  ravedash::register_output(
+    outputId = "per_electrode_statistics_fdrp",
+    render_function = shiny::renderPlot({
+      basic_checks(local_reactives$update_outputs)
+
+      stats <- local_data$results$omnibus_results$stats
+
+      lbl_elecs = NULL
+      requested_stat = NULL
+      if(exists('local_reactives') && !is.null(local_reactives$per_electrode_statistics_chooser)) {
+        requested_stat = local_reactives$per_electrode_statistics_chooser
+
+        if(!is.null(local_reactives$pes_selected_electrodes)) {
+          lbl_elecs <- local_reactives$pes_selected_electrodes
+        }
+      }
+      plot_per_electrode_statistics(stats, requested_stat, which_plots = 'p',
+                                    draw_threshold = get_threshold('p'),
+                                    label_electrodes = lbl_elecs, label_type = input$pes_label_type)
+    })
+  )
 
   ### by trial over time plot
-  output$over_time_by_trial <- shiny::renderPlot({
-    basic_checks(local_reactives$update_outputs)
 
-    # check if we are in a multiple event situation
-    plot_over_time_by_trial(
-      local_data$results$over_time_by_trial_data
-    )
-  })
+  ravedash::register_output(
+    outputId = "over_time_by_trial",
+    render_function = shiny::renderPlot({
+      basic_checks(local_reactives$update_outputs)
+      force(local_reactives$update_heatmap_plots)
 
-  output$over_time_by_condition <- shiny::renderPlot({
-    basic_checks(local_reactives$update_outputs)
-    force(local_reactives$update_line_plots)
-    force(local_reactives$update_over_time_plot)
+      # check if we are in a multiple event situation
+      plot_over_time_by_trial(
+        local_data$results$over_time_by_trial_data
+      )
+    })
+  )
 
-    plot_over_time_by_condition(
-      local_data$results$over_time_by_condition_data,
-      condition_switch=input$over_time_by_condition_switch
-    )
-  })
+  ravedash::register_output(
+    outputId = "over_time_by_condition",
+    render_function = shiny::renderPlot({
+      basic_checks(local_reactives$update_outputs)
+      force(local_reactives$update_line_plots)
+      force(local_reactives$update_over_time_plot)
+
+      plot_over_time_by_condition(
+        local_data$results$over_time_by_condition_data,
+        condition_switch=input$over_time_by_condition_switch
+      )
+    })
+  )
 }
 
 

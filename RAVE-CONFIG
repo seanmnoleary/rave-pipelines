@@ -54,6 +54,7 @@ SubPipelines:
     modules/block_explorer,
     modules/import_bids,
     modules/ants_preprocessing
+    modules/power_explorer
 InteractiveModules:
     modules/import_lfp_native,
     modules/notch_filter,
@@ -68,4 +69,5 @@ InteractiveModules:
     modules/custom_3d_viewer
     modules/block_explorer,
     modules/import_bids,
-    modules/configure_rave
+    modules/configure_rave,
+    modules/power_explorer

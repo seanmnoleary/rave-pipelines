@@ -1,13 +1,57 @@
-require(dipsaus)
-require(rutabaga)
-require(ravebuiltins)
-require(magrittr)
-require(stringr)
-require(stringi)
-require(data.table)
-require(ravedash)
-require(lmtest)
-require(magrittr)
+# require(dipsaus)
+# require(rutabaga)
+# require(ravebuiltins)
+# require(magrittr)
+# require(stringr)
+# require(stringi)
+# require(data.table)
+# require(ravedash)
+# require(lmtest)
+`%$%` <- magrittr::`%$%`
+`%<>%` <- magrittr::`%<>%`
+`%>%` <- magrittr::`%>%`
+`%within%` <- rutabaga::`%within%`
+`%&%` <- rutabaga::`%&%`
+`%OF%` <- dipsaus::`%OF%`
+`%?<-%` <- dipsaus::`%?<-%`
+str_collapse <- rutabaga::str_collapse
+which.equal <- rutabaga::which.equal
+
+
+rand_string <- raveio:::rand_string
+
+stopifnot2 <- raveio:::stopifnot2
+
+pretty.character <- function(x, ...,  upper=c('first', 'all', 'none')) {
+
+  cap_first_letter <- function(s) {
+    paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)), collapse='')
+  }
+
+  upper = match.arg(upper)
+
+  str <- stringr::str_split(x, '_')[[1]]
+
+  if(upper == 'first') {
+    str[1] %<>% cap_first_letter
+  } else if (upper == 'all') {
+    str %<>% sapply(cap_first_letter)
+  }
+
+  return(paste(str, collapse=" "))
+}
+
+unpretty <- function(str, ...) {
+  UseMethod('unpretty')
+}
+
+unpretty.default <- function(str, ...) {
+  return(str)
+}
+
+unpretty.character <- function(str, ...) {
+  tolower(stringr::str_replace_all(str, " ", '_'))
+}
 
 
 get_from_arr <- function(x, v, FUN=`%in%`) {
@@ -80,11 +124,10 @@ determine_relative_shift_amount <- function(available_shift, event_time, sample_
   return(new_0_ind - new_range_ind[1])
 }
 
-get_pluriform_power <- function(baselined_data, trial_indices, events, epoch_event_types,
-  event_of_interest, trial_outliers_list,
-  final_data_only=FALSE, sample_rate,
-  logger=function(...){dipsaus::cat2(..., level='CAT',
-    pal=list('CAT'='dodgerblue3'))}) {
+get_pluriform_power <- function(
+    baselined_data, trial_indices, events, epoch_event_types,
+    event_of_interest, trial_outliers_list, sample_rate,
+    final_data_only = FALSE) {
 
   res <- list()
 
@@ -92,8 +135,9 @@ get_pluriform_power <- function(baselined_data, trial_indices, events, epoch_eve
   #   data = subset(baselined_data, Trial ~ Trial %in% trial_indices)
   # )
 
-  ti <- as.numeric(dimnames(baselined_data)$Trial) %in% trial_indices
   stopifnot(which(names(dimnames(baselined_data)) == 'Trial')==3)
+  ti <- as.numeric(dimnames(baselined_data)$Trial) %in% trial_indices
+
   res <- list(
     data = baselined_data[,,ti,,drop=FALSE]
   )
@@ -105,7 +149,7 @@ get_pluriform_power <- function(baselined_data, trial_indices, events, epoch_eve
   # event_of_interest = 'Lag_1'
   if(event_of_interest != epoch_event_types[1]) {
     # stop("shifting data not supported yet!")
-    logger('Shifting data to: ' %&% event_of_interest)
+    ravedash::logger('Shifting data to: ' %&% event_of_interest)
 
     event_of_interest = paste0('Event_', event_of_interest)
     event_offsets = events[[event_of_interest]][ti] - events$Time[ti]
@@ -117,7 +161,7 @@ get_pluriform_power <- function(baselined_data, trial_indices, events, epoch_eve
       sample_rate = sample_rate
     )
 
-    logger('available shift: ' %&% paste0(new_range, collapse=':'))
+    ravedash::logger('available shift: ' %&% paste0(new_range, collapse=':'))
 
     shift_amount = determine_relative_shift_amount(
       event_time = event_offsets,
@@ -126,7 +170,7 @@ get_pluriform_power <- function(baselined_data, trial_indices, events, epoch_eve
       sample_rate = sample_rate
     )
 
-    logger('dispaus::shift')
+    ravedash::logger('dispaus::shift')
 
     stopifnot('Trial' == names(dimnames(res$data))[3])
     stopifnot('Time' == names(dimnames(res$data))[2])
@@ -149,18 +193,19 @@ get_pluriform_power <- function(baselined_data, trial_indices, events, epoch_eve
     dimnames(res$shifted_data)$Time = new_time[new_time %within% new_range]
 
     # alright, now that we've shifted the data we also need to shift the events dataset, so that future sorts on the event_of_interest don't do anything
-    logger('updating events file')
+    ravedash::logger('updating events file')
     nms <- paste0('Event_', epoch_event_types[-1])
     events[nms] <- events[nms] - events[[event_of_interest]]
-    logger('done with shifting')
+    ravedash::logger('done with shifting')
   }
 
   # handle outliers
   if(length(trial_outliers_list) == 0) {
-    res$clean_data <- data
+    res$clean_data <- res$data
     res$shifted_clean_data <- res$shifted_data
   } else {
-    logger('Handling outliers...')
+    # FIXME: res$data is not a filearray now so res$data$subset is not a function!
+    ravedash::logger('Handling outliers...')
     res$clean_data <- res$data$subset(Trial = !(Trial %in% trial_outliers_list))
     res$shifted_clean_data <- res$shifted_data$subset(Trial = !(Trial %in% trial_outliers_list))
   }
@@ -346,9 +391,9 @@ build_over_time_data <- function(data, data_wrapper, analysis_settings, ...) {
 
   # we want to make a special range for the line plot data that takes into account mean +/- SE
   if(analysis_settings$do_censor && !is.null(analysis_settings$censor_window)) {
-    otd$range <- .fast_range(plus_minus(otd$data[!(otd$x %within% analysis_settings$censor_window),]))
+    otd$range <- .fast_range(rutabaga::plus_minus(otd$data[!(otd$x %within% analysis_settings$censor_window),]))
   } else {
-    otd$range <- .fast_range(plus_minus(otd$data))
+    otd$range <- .fast_range(rutabaga::plus_minus(otd$data))
   }
 
   if(!all(is.finite(otd$range))) {
@@ -802,13 +847,13 @@ new_shift_array <- function() {
       baselined <- repository$power$baselined
       n_electrodes <- dim(baselined)[[4]]
 
-      dipsaus::lapply_async2(seq_len(n_electrodes), function(ii) {
+      raveio::lapply_async(seq_len(n_electrodes), function(ii) {
         subarr <- baselined[,,,ii, drop = FALSE]
 
         # trial is now at 3rd margin, time is at 2nd margin
         shifted_array <- ravetools::shift_array(subarr, along_margin = 2L, shift_amount = shift_amount, unit_margin = 3L)
         arr[,,,ii] <- shifted_array
-      }, plan = FALSE)
+      })
     }
   )
 
@@ -851,8 +896,7 @@ build_modal_plot_download <- function(download_plot_info, outputId='do_download_
       )
     ),
       shiny::fluidRow(
-        shiny::column(4, shiny::p(shiny::strong("Plot name:"),
-                                  pretty(download_plot_info$id, upper='all'))),
+        shiny::column(4, shiny::p(shiny::strong("Plot name:"), pretty(download_plot_info$id))),
         shiny::column(3, shiny::numericInput(ns('download_plot_width'), 'Width (in)',
                                                  min = 0.1, max=100, value = 7, step=.25)
         ),
@@ -863,6 +907,7 @@ build_modal_plot_download <- function(download_plot_info, outputId='do_download_
                                             choices = c('pdf', 'png', 'jpeg', 'bmp', 'tiff (lzw)')))
       )
   ))
+
 }
 
 get_order_of_magnitude <- function(x) {
