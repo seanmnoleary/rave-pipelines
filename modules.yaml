@@ -57,7 +57,7 @@ modules:
     label: Subject 3D Viewer
     order: 11
   configure_rave:
-    label: Configure
+    label: Configurations
     order: 10001
   stimulation_explorer:
     label: Stimulation Explorer
