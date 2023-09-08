@@ -55,6 +55,7 @@ module_server <- function(input, output, session, ...){
 
       # There is not too many interaction, so update everytime
       check_result <- pipeline$read(var_names = "check_result")
+      print(check_result)
       cmd_tools <- pipeline$read(var_names = "cmd_tools")
       local_reactives$project_name <- check_result$project_name
       local_reactives$subject_code <- check_result$subject_code
@@ -1000,8 +1001,9 @@ module_server <- function(input, output, session, ...){
       shidashi::clear_notifications(class = ns("error_notif"))
 
       res <- pipeline$eval(
-        names = c("settings", 'subject', "params", "import_T1",
-                  "import_CT", "image_segmentation", "morphmri_ants",
+        names = c("settings", "params", 'subject', "check_result",
+                  "import_T1", "import_CT", "image_segmentation",
+                  "morphmri_ants",
                   "coreg_flirt", "coreg_niftyreg", "coreg_ants",
                   "coreg_3dallineate", "coreg_nipy"),
         env = local_env, clean = FALSE
