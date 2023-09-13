@@ -17,8 +17,7 @@ modules:
   power_explorer:
     label: Power Explorer
     order: 13
-    badge: Alpha-testing|badge-danger
-    hidden: yes
+    badge: Under-testing|badge-danger
   jupyterlab:
     label: JupyterLab
     order: 100
