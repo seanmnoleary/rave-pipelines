@@ -399,8 +399,12 @@ module_server <- function(input, output, session, ...){
 
       # loaded_data <- pipeline$read("loaded_brain")
       loaded_data <- component_container$data$loaded_brain
+      subject_code <- loaded_data$subject_code
       electrode_table <- loaded_data$electrode_table
       if(!is.data.frame(electrode_table)) { return(NULL) }
+      if(length(subject_code) != 1) {
+        subject_code <- "N27"
+      }
 
       electrodes <- electrode_table$Electrode
       nelec <- length(electrodes)
@@ -409,12 +413,14 @@ module_server <- function(input, output, session, ...){
         input$download_template_type,
         "Simple property" = {
           data.frame(
+            Subject = subject_code,
             Electrode = electrodes,
             tValue = round(rnorm(nelec), 2)
           )
         },
         "Multiple properties" = {
           re <- data.frame(
+            Subject = subject_code,
             Electrode = electrodes,
             MyDiscreteValue = sample(LETTERS, size = nelec, replace = TRUE),
             MyContinuousValue = round(rnorm(nelec), 2)
@@ -424,6 +430,7 @@ module_server <- function(input, output, session, ...){
         },
         "Animation" = {
           data.frame(
+            Subject = subject_code,
             Electrode = rep(electrodes, each = 3),
             Time = rep(c(0.1, 0.2, 0.5), nelec),
             Amplitude = round(rnorm(nelec * 3), 2)
