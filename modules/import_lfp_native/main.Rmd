@@ -52,6 +52,8 @@ if(!is.numeric(format)) {
   format <- which(startsWith(names(raveio::IMPORT_FORMATS), trimws(format)))
 }
 
+clean_compose_setup(compose_setup = compose_setup, electrodes = electrodes)
+
 if(isTRUE(skip_validation)) {
   ravedash::logger("`skip_validation` is on.", level = "warn")
   validation_result <- TRUE
@@ -133,6 +135,20 @@ raveio::rave_import(
   skip_validation = TRUE
 )
 
+compose_params <- clean_compose_setup(compose_setup = compose_setup, electrodes = electrodes)
+
+if(length(compose_params)) {
+  raveio::lapply_async(compose_params, function(item) {
+    raveio::compose_channel(
+      subject = subject$subject_id,
+      number = item$number,
+      from = item$from,
+      weights = item$weights,
+      normalize = item$normalize,
+      force = TRUE
+    )
+  })
+}
 
 module_id <- "import_lfp_native"
 subject$set_default(
@@ -143,6 +159,7 @@ subject$set_default(
     subject_code = subject$subject_code,
     blocks = blocks,
     electrodes = dipsaus::deparse_svec(electrodes),
+    composed_electrodes = compose_params,
     sample_rate = sample_rate,
     format = format,
     format_readable = names(raveio::IMPORT_FORMATS)[[format]],

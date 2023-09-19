@@ -2048,9 +2048,10 @@ plot_over_time_by_trial <- function(over_time_by_trial_data) {
 
 # chdir = TRUE, current working directory is this folder
 pipeline <- raveio::pipeline(pipeline_name = "power_explorer", paths = "../..")
-pe_graphics_settings_cache <- dipsaus::rds_map(file.path(pipeline$preference_path, "graphics"))
+pe_graphics_settings_cache <- pipeline$load_preferences(
+  name = "graphics",
+  .overwrite = FALSE,
 
-default_pegs <- {list(
   rave_cex.main = 1.5,
   rave_cex.axis = 1.3,
   # putting this to 1.4 because 1.5 causes some clipping of the axis(2) label, we could also try to increase
@@ -2087,12 +2088,4 @@ default_pegs <- {list(
   sort_trials_by_type = 'Trial Number',
 
   max_columns_in_figure = 3
-
-)}
-
-nm <- names(default_pegs) [!pe_graphics_settings_cache$has(names(default_pegs))]
-if(length(nm)) {
-  pe_graphics_settings_cache$mset(.list = default_pegs[nm])
-}
-
-
+)
