@@ -97,6 +97,28 @@ module_server <- function(input, output, session, ...){
     custom_path <- raveio::dir_create2(custom_path)
     raveio::save_fst(table, path = file.path(custom_path, sprintf("%s-electrodes.fst", subject$project_name)))
 
+    # Save BIDS-compatible
+    bids <- raveio::convert_electrode_table_to_bids(subject)
+
+    # sub-<label>[_ses-<label>][_acq-<label>][_space-<label>]_coordsystem.json
+    bids_prefix <- sprintf("sub-%s_space-%s", subject$subject_code, bids$meta$iEEGCoordinateSystem)
+    utils::write.table(
+      x = bids$table,
+      file = file.path(subject$meta_path, sprintf("%s_electrodes.tsv", bids_prefix)),
+      sep = "\t",
+      na = "n/a",
+      row.names = FALSE
+    )
+    raveio::save_json(
+      x = bids$meta,
+      serialize = FALSE,
+      auto_unbox = TRUE,
+      con = file.path(
+        subject$meta_path,
+        sprintf("%s_coordsystem.json", bids_prefix)
+      )
+    )
+
     dipsaus::shiny_alert2(
       title = "Success!",
       icon = 'success',
@@ -183,16 +205,17 @@ module_server <- function(input, output, session, ...){
         ),
         footer = shiny::tagList(
           shiny::modalButton("Dismiss"),
-          local({
-            if( morph_mri_exists ) {
-              shiny::tagList(
-                shiny::actionButton(ns("save_btn"), "Save to subject"),
-                dipsaus::actionButtonStyled(ns("save_btn2"), "Morph to template & Save to subject")
-              )
-            } else {
-              dipsaus::actionButtonStyled(ns("save_btn"), "Save to subject")
-            }
-          })
+          dipsaus::actionButtonStyled(ns("save_btn"), "Save to subject")
+          # local({
+          #   if( morph_mri_exists ) {
+          #     shiny::tagList(
+          #       shiny::actionButton(ns("save_btn"), "Save to subject"),
+          #       dipsaus::actionButtonStyled(ns("save_btn2"), "Morph to template & Save to subject")
+          #     )
+          #   } else {
+          #     dipsaus::actionButtonStyled(ns("save_btn"), "Save to subject")
+          #   }
+          # })
         )
       ))
 
