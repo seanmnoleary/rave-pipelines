@@ -62,6 +62,8 @@ modules:
     label: Stimulation Explorer
   phase_explorer:
     label: Phase Explorer
+  multitaper_explorer:
+    label: Multitaper Explorer
 divider:
   Preprocess:
     order: 0

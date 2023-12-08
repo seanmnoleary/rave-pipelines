@@ -1,0 +1,143 @@
+---
+title: "RAVE Pipeline Markdown Template"
+output:
+  html_document: default
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include = FALSE}
+# This code block sets up the engine environment
+# Please do not remove me
+raveio::pipeline_setup_rmd("multitaper_explorer")
+```
+
+## Introduction
+
+A RAVE pipeline markdown is an interactive notebook that can keep your notes, code blocks, and corresponding results together, generating reports in various formats such as `PDF`, `html`, `Word`, `PowerPoint`. 
+
+The note parts are simply `markdown`s - the same as `jupyter notebook`, or github documentations. The code blocks support `R`, `python`, `c++`. When you hit the `Knit` button in this code editor panel, the r-markdown file will be compiled, generating reproducible documentation.
+
+With carefully designed structures, this r-markdown file will automatically generate `RAVE` pipeline scripts during the compilation. The pipeline script can be used by `RAVE` to convert your pipeline into interactive dashboard application. (This feature is currently under development)
+
+## "RAVE" Pipeline Code Block
+
+A `RAVE` pipeline markdown code block starts with ` ```{rave ... `. The block label following `rave` informative description of the target. After the target, the following RAVE-specific parameters configures how the block should be treated:
+
+* `language`: specifies the programming language used; choices are: `R`, `python`
+* `export`: variable name to be exported that will be available to the rest chunks
+* `depends`: indicates current block depends on variables generated from other blocks; this helps `RAVE` to build non-interactive pipeline scripts internally. For blocks written in `R`, the dependence can be automatically determined.
+
+Other parameters are available at [this `rmarkdown` book](https://bookdown.org/yihui/rmarkdown/)
+
+## Beta power Heatmaps
+
+#### Step 1: Create `RAVE` subject's instances
+
+Noting that all the items in the `settings.yaml` are available as variables.
+
+```{rave load_subject, language = "R", export = "subject", cue = "always", format = "rave-subject"}
+# Load subject instance
+subject <- raveio::RAVESubject$new(project_name = project_name, subject_code = subject_code)
+```
+
+With `export="subject"`, the subject variable will be registered for the following chunks to use. Be aware that all other variables created in this block will not be exposed.
+
+#### Step 2: Initialize and load voltage data
+
+```{rave load_voltage, language = "R", cue = "always", export = "repository", format = "rave_prepare_subject_voltage_with_epoch"}
+repository <- raveio::prepare_subject_voltage_with_epoch(
+  subject = subject,
+  epoch_name = epoch_file_name,
+  electrodes = load_electrodes,
+  time_windows = time_window,
+  reference = reference_name
+  
+)
+```
+
+#### Step 3: Run Beta Heatmaps on Electrodes
+
+```{rave find_beta_heatmap, language = "R", export = "heatmapbetacol"}
+heatmapbetacol <- generate_heatmap(
+  #RAVE
+  repository = repository, 
+  load_electrodes = load_electrodes, 
+  window_params = window_params,
+  time_window = time_window,
+  sampling_frequency = sampling_frequency,
+  frequency_range = frequency_range,
+  #Multitaper 
+  num_tapers = num_tapers,
+  min_nfft = min_nfft,
+  weighting = weighting,
+  detrend_opt = detrend_opt,
+  parallel = parallel,
+  num_workers = num_workers,
+  plot_on = plot_on,
+  verbose = verbose,
+  xyflip = xyflip,
+  epoch = epoch,
+  time_bandwidth = time_bandwidth
+)
+```
+
+#### Step 4: Visualize Beta Heatmap
+
+```{r}
+plot <- plot_heatmap(heatmapbetacol)
+print(plot)
+```
+
+#### Step 5: Save file for 3D brain display
+
+```{rave electrode_powertime, language = "R", export = "YAEL_data"}
+YAEL_data <- electrode_powertime(
+  heatmapbetacol, 
+  subject_code = subject_code 
+)
+```
+
+#### Step 6: Generate Matrix of quantile data for ML training
+
+```{rave quantile_data, language = "R", export = "quantile_data"}
+quantile_data <- generate_quantile_data(
+  SOZ_string = SOZ_string, 
+  load_electrodes = load_electrodes, 
+  time_window = time_window, 
+  num_windows = num_windows, 
+  heatmapbetacol = heatmapbetacol
+)
+```
+
+#### Step 7: Visualize Quantile Heatmap
+
+```{r}
+plot <- plot_quantile_data(quantile_data)
+print(plot)
+```
+
+
+## Build, Visualize, & Run
+
+Please make sure the following code block is at the end of your pipeline file. This block will build the pipeline and generate a `make-multitaper_explorer.R` script with your pipeline markdown file. `RAVE` will use the generated pipeline script to execute the pipeline in the dashboard application, or in massive production mode.
+
+```{r build, echo=FALSE, results='hide'}
+build_pipeline(make_file = "make-multitaper_explorer.R")
+```
+
+
+Once the pipeline script `make-multitaper_explorer.R` is built, you can visualize and execute the pipeline without the need of re-knit this document. Notice we use `r` block instead of `rave`. (This is because the code blocks are not part of pipeline targets.)
+
+```{r visualize, echo=FALSE}
+# Fixed usage, show pipeline graph
+try({
+  asNamespace("raveio")$pipeline_dependency_graph(
+    pipeline_path = ".", glimpse = TRUE)
+}, silent = TRUE)
+```
+
+
+
+

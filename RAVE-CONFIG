@@ -16,29 +16,13 @@ BugReports: https://github.com/rave-ieeg/rave-pipelines/issues
 URL: https://github.com/beauchamplab/rave-pipelines
 Depends: R (>= 4.1.0)
 Imports:
-    graphics,
-    grDevices,
-    utils,
-    dipsaus,
-    DT,
-    filearray,
-    future,
-    jsonlite,
-    raveio,
-    ravetools,
-    ravedash,
-    readNSx,
-    rpyANTs,
-    rpymat,
-    shidashi,
-    shiny,
-    shinyvalidate,
-    shinyWidgets,
-    stringr,
-    targets,
-    threeBrain,
-    checkmate,
-    yaml
+    pracma,
+    ggplot2,
+    fields,
+    multitaper,
+    png,
+    viridis,
+    reshape2
 Suggests:
     rstudioapi,
     knitr,
@@ -53,8 +37,9 @@ SubPipelines:
     modules/custom_3d_viewer,
     modules/block_explorer,
     modules/import_bids,
-    modules/ants_preprocessing
-    modules/power_explorer
+    modules/ants_preprocessing,
+    modules/power_explorer,
+    modules/multitaper_explorer
 InteractiveModules:
     modules/import_lfp_native,
     modules/notch_filter,
@@ -70,4 +55,5 @@ InteractiveModules:
     modules/block_explorer,
     modules/import_bids,
     modules/configure_rave,
-    modules/power_explorer
+    modules/power_explorer,
+    modules/multitaper_explorer
