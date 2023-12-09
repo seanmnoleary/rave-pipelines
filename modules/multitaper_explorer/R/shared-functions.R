@@ -13,8 +13,8 @@ generate_heatmap <- function(repository, load_electrodes, window_params, time_wi
                              num_tapers, min_nfft, weighting, detrend_opt, parallel,
                              num_workers, plot_on, verbose, xyflip, epoch, time_bandwidth) {
 
-  sample_rate <- repository$sample_rate
-  fs <- sampling_frequency # sample freq
+  fs <- repository$sample_rate
+  # fs <- sampling_frequency # sample freq
   results <- parse_electrodes(load_electrodes)
   nel <- results$nel
   elecn <-results$elecn
@@ -41,8 +41,13 @@ generate_heatmap <- function(repository, load_electrodes, window_params, time_wi
 
     #collapse voltage for selected condition
     selector <- repository$epoch_table$Condition %in% c(epoch)
+
+    if(!any(selector)) {
+      stop("No condition selected.")
+    }
+
     trial_list <- repository$epoch_table$Trial[selector]
-    selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
+    selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list, drop = FALSE)
     collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
 
     # Compute the multitaper spectrogram
@@ -50,15 +55,9 @@ generate_heatmap <- function(repository, load_electrodes, window_params, time_wi
                                        plot_on, verbose, xyflip)
 
     spect = results[[1]]
-    specta = spect[1:20,]
     spectb = spect[21:88,]
-    spectc = spect[89:329,]
     betaie=colMeans(spectb)
-    alphaie=colMeans(specta)
-    gammaie=colMeans(spectc)
     heatmapbeta[cnt,1:nwt]=betaie[1:nwt]
-    heatmapgamma[cnt,1:nwt]=gammaie[1:nwt]
-    heatmapalpha[cnt,1:nwt]=alphaie[1:nwt]
 
     cnt <- cnt + 1
 

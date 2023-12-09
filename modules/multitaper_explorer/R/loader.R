@@ -79,10 +79,18 @@ loader_server <- function(input, output, session, ...){
           "loader_reference_name"
         )
       )
-      # TODO: add your own input values to the settings file
-
       # Save the variables into pipeline settings file
-      pipeline$set_settings(.list = settings)
+      pipeline$set_settings(
+        project_name = settings$project_name,
+        subject_code = settings$subject_code,
+        epoch_file_name = settings$epoch_choice,
+        time_window = c(
+          settings$epoch_choice__trial_starts,
+          settings$epoch_choice__trial_ends
+        ),
+        reference_name = settings$reference_name,
+        load_electrodes = settings$loaded_electrodes
+      )
 
       # Check if user has asked to set the epoch & reference to be the default
       default_epoch <- isTRUE(loader_epoch$get_sub_element_input("default"))

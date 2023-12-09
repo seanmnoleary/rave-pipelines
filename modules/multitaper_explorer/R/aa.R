@@ -19,8 +19,10 @@ debug <- TRUE
 #' resulting in calling function \code{loader_html}.
 #' @returns Logical variable of length one.
 check_data_loaded <- function(first_time = FALSE){
+  # if(first_time) { return(FALSE) }
   # Always use loading screen
-  FALSE
+  repository <- pipeline$read("repository")
+  return(inherits(repository, "rave_repository"))
 }
 
 

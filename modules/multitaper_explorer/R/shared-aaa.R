@@ -10,3 +10,7 @@ library(readxl)
 library(ggplot2)
 library(viridis)
 library(reshape2)
+
+
+turbo <- viridis::turbo
+`%OF%` <- dipsaus::`%OF%`
