@@ -1,29 +1,31 @@
+subject_code: subHUP064
+project_name: fingerprinting
+epoch_file_name: subHUP064_seizure
+load_electrodes: 3-87
+reference_name: noref
+time_window:
+- -60
+- 60
+epoch: sz2
 num_windows: 100
 SOZ_string: 12-13,17-21,25-29,31,33-37,39,42-43,51-52
-project: fingerprinting
 time_bandwidth: 3
-epoch: 60s before sz1
 xyflip: no
 verbose: no
 plot_on: no
-num_workers: 3
+num_workers: 7
 parallel: yes
 detrend_opt: linear
 weighting: unity
 min_nfft: 0
-num_tapers: 5
+num_tapers: ~
 frequency_range:
-- 8
-- 90
+- 1
+- 200
 sampling_frequency: 1024
 window_params:
-- 2.5
+- 2.0
 - 0.5
-epoch_file_name: subHUP064_seizure
-time_window:
-- 1
-- 120
-reference_name: bipolar
 baseline_method: decibel
 baseline:
 - - -1
@@ -33,7 +35,4 @@ intervals:
 - - -1.0
   - 2.0
 reference: default
-load_electrodes: 3-87
 save_pipeline: yes
-subject_code: subHUP064
-project_name: fingerprinting

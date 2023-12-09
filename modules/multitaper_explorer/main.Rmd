@@ -64,11 +64,11 @@ heatmapbetacol <- generate_heatmap(
   #RAVE
   repository = repository, 
   load_electrodes = load_electrodes, 
-  window_params = window_params,
   time_window = time_window,
   sampling_frequency = sampling_frequency,
-  frequency_range = frequency_range,
   #Multitaper 
+  window_params = window_params,
+  frequency_range = frequency_range,
   num_tapers = num_tapers,
   min_nfft = min_nfft,
   weighting = weighting,
