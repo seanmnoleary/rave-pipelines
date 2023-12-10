@@ -162,15 +162,15 @@ module_html <- function(){
                   dipsaus::compoundInput2(
                     inputId = ns("analysis_settings"),
                     label = "Group",
-                    initial_ncomp = 1, min_ncomp = 1, max_ncomp = 10,
+                    initial_ncomp = 1, min_ncomp = 1, max_ncomp = 4,
                     components = shiny::div(
 
                       shiny::sliderInput(
                         inputId = "frequency_range",
                         label = "Frequency range (Hz)",
                         min = 0,
-                        max = 20000,
-                        value = c(0, 20000),
+                        max = 2000,
+                        value = c(0, 2000),
                         step = 0.1,
                         post = " Hz",
                         width = "100%",

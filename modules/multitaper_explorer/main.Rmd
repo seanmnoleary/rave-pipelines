@@ -57,67 +57,36 @@ repository <- raveio::prepare_subject_voltage_with_epoch(
 )
 ```
 
-#### Step 3: Run Beta Heatmaps on Electrodes
-
-```{rave find_beta_heatmap, language = "R", export = "heatmapbetacol"}
-heatmapbetacol <- generate_heatmap(
-  #RAVE
-  repository = repository, 
-  load_electrodes = load_electrodes, 
-  time_window = time_window,
-  sampling_frequency = sampling_frequency,
-  #Multitaper 
-  window_params = window_params,
-  frequency_range = frequency_range,
-  num_tapers = num_tapers,
-  min_nfft = min_nfft,
-  weighting = weighting,
-  detrend_opt = detrend_opt,
-  parallel = parallel,
-  num_workers = num_workers,
-  plot_on = plot_on,
-  verbose = verbose,
-  xyflip = xyflip,
-  epoch = epoch,
-  time_bandwidth = time_bandwidth
-)
+###@ Step 3: Run multitaper and get result
+```{rave find_multitaper, language = "R", export = "multitaper_result"}
+multitaper_result <- generate_multitaper(repository, load_electrodes, frequency_range, 
+                                         time_bandwidth, num_tapers, window_params, min_nfft, 
+                                         weighting, detrend_opt, parallel, epoch)
 ```
+  
+  ###@ Step 4: getheatmap data from multitaper result for each spectral range
+```{rave find_heatmap, language = "R", export = "heatmap_result"}
+heatmap_result <- generate_heatmap(repository, multitaper_result, time_window,  freq_list, 
+                                   load_electrodes, window_params) 
 
-#### Step 4: Visualize Beta Heatmap
-
+```
+  
+  #### Step 5: Visualize Heatmaps for all the generated spectral ranges
 ```{r}
-plot <- plot_heatmap(heatmapbetacol)
-print(plot)
+for(i in 1:length(heatmap_result)) {
+  p <- plot_heatmap(heatmap_result[[i]])
+  print(p)
+}
 ```
 
-#### Step 5: Save file for 3D brain display
-
+  #### Step 6: Save file for 3D brain display for each spectral result
 ```{rave electrode_powertime, language = "R", export = "YAEL_data"}
 YAEL_data <- electrode_powertime(
-  heatmapbetacol, 
-  subject_code = subject_code 
+  heatmap_result, 
+  subject_code = subject_code ,
+  freq_list
 )
 ```
-
-#### Step 6: Generate Matrix of quantile data for ML training
-
-```{rave quantile_data, language = "R", export = "quantile_data"}
-quantile_data <- generate_quantile_data(
-  SOZ_string = SOZ_string, 
-  load_electrodes = load_electrodes, 
-  time_window = time_window, 
-  num_windows = num_windows, 
-  heatmapbetacol = heatmapbetacol
-)
-```
-
-#### Step 7: Visualize Quantile Heatmap
-
-```{r}
-plot <- plot_quantile_data(quantile_data)
-print(plot)
-```
-
 
 ## Build, Visualize, & Run
 

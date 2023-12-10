@@ -4,16 +4,14 @@ epoch_file_name: subHUP064_seizure
 load_electrodes: 3-87
 reference_name: noref
 time_window:
-- -60
-- 60
+- -20
+- 20
 epoch: sz2
-num_windows: 100
-SOZ_string: 12-13,17-21,25-29,31,33-37,39,42-43,51-52
 time_bandwidth: 3
 xyflip: no
 verbose: no
 plot_on: no
-num_workers: 7
+num_workers: 31.0
 parallel: yes
 detrend_opt: linear
 weighting: unity
@@ -36,3 +34,7 @@ intervals:
   - 2.0
 reference: default
 save_pipeline: yes
+freq_list:
+  f1:
+  - 32
+  - 150

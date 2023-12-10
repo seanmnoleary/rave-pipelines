@@ -16,18 +16,11 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_project_name = targets::tar_target_raw("project_name", 
-        quote({
-            settings[["project_name"]]
-        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
-        quote({
-            settings[["subject_code"]]
-        }), deps = "settings"), input_save_pipeline = targets::tar_target_raw("save_pipeline", 
+    input_freq_list = targets::tar_target_raw("freq_list", quote({
+        settings[["freq_list"]]
+    }), deps = "settings"), input_save_pipeline = targets::tar_target_raw("save_pipeline", 
         quote({
             settings[["save_pipeline"]]
-        }), deps = "settings"), input_load_electrodes = targets::tar_target_raw("load_electrodes", 
-        quote({
-            settings[["load_electrodes"]]
         }), deps = "settings"), input_reference = targets::tar_target_raw("reference", 
         quote({
             settings[["reference"]]
@@ -43,15 +36,6 @@ rm(._._env_._.)
         }), deps = "settings"), input_baseline_method = targets::tar_target_raw("baseline_method", 
         quote({
             settings[["baseline_method"]]
-        }), deps = "settings"), input_reference_name = targets::tar_target_raw("reference_name", 
-        quote({
-            settings[["reference_name"]]
-        }), deps = "settings"), input_time_window = targets::tar_target_raw("time_window", 
-        quote({
-            settings[["time_window"]]
-        }), deps = "settings"), input_epoch_file_name = targets::tar_target_raw("epoch_file_name", 
-        quote({
-            settings[["epoch_file_name"]]
         }), deps = "settings"), input_window_params = targets::tar_target_raw("window_params", 
         quote({
             settings[["window_params"]]
@@ -88,21 +72,30 @@ rm(._._env_._.)
         }), deps = "settings"), input_xyflip = targets::tar_target_raw("xyflip", 
         quote({
             settings[["xyflip"]]
-        }), deps = "settings"), input_epoch = targets::tar_target_raw("epoch", 
-        quote({
-            settings[["epoch"]]
         }), deps = "settings"), input_time_bandwidth = targets::tar_target_raw("time_bandwidth", 
         quote({
             settings[["time_bandwidth"]]
-        }), deps = "settings"), input_project = targets::tar_target_raw("project", 
+        }), deps = "settings"), input_epoch = targets::tar_target_raw("epoch", 
         quote({
-            settings[["project"]]
-        }), deps = "settings"), input_SOZ_string = targets::tar_target_raw("SOZ_string", 
+            settings[["epoch"]]
+        }), deps = "settings"), input_time_window = targets::tar_target_raw("time_window", 
         quote({
-            settings[["SOZ_string"]]
-        }), deps = "settings"), input_num_windows = targets::tar_target_raw("num_windows", 
+            settings[["time_window"]]
+        }), deps = "settings"), input_reference_name = targets::tar_target_raw("reference_name", 
         quote({
-            settings[["num_windows"]]
+            settings[["reference_name"]]
+        }), deps = "settings"), input_load_electrodes = targets::tar_target_raw("load_electrodes", 
+        quote({
+            settings[["load_electrodes"]]
+        }), deps = "settings"), input_epoch_file_name = targets::tar_target_raw("epoch_file_name", 
+        quote({
+            settings[["epoch_file_name"]]
+        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
+        quote({
+            settings[["project_name"]]
+        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
+        quote({
+            settings[["subject_code"]]
         }), deps = "settings"), load_subject = targets::tar_target_raw(name = "subject", 
         command = quote({
             .__target_expr__. <- quote({
@@ -151,55 +144,68 @@ rm(._._env_._.)
             "load_electrodes", "time_window", "reference_name"
             )), deps = c("subject", "epoch_file_name", "load_electrodes", 
         "time_window", "reference_name"), cue = targets::tar_cue("always"), 
-        pattern = NULL, iteration = "list"), find_beta_heatmap = targets::tar_target_raw(name = "heatmapbetacol", 
+        pattern = NULL, iteration = "list"), find_multitaper = targets::tar_target_raw(name = "multitaper_result", 
         command = quote({
             .__target_expr__. <- quote({
-                heatmapbetacol <- generate_heatmap(repository = repository, 
-                  load_electrodes = load_electrodes, window_params = window_params, 
-                  time_window = time_window, sampling_frequency = sampling_frequency, 
-                  frequency_range = frequency_range, num_tapers = num_tapers, 
-                  min_nfft = min_nfft, weighting = weighting, 
-                  detrend_opt = detrend_opt, parallel = parallel, 
-                  num_workers = num_workers, plot_on = plot_on, 
-                  verbose = verbose, xyflip = xyflip, epoch = epoch, 
-                  time_bandwidth = time_bandwidth)
+                multitaper_result <- generate_multitaper(repository, 
+                  load_electrodes, frequency_range, time_bandwidth, 
+                  num_tapers, window_params, min_nfft, weighting, 
+                  detrend_opt, parallel, epoch)
             })
             tryCatch({
                 eval(.__target_expr__.)
-                return(heatmapbetacol)
+                return(multitaper_result)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "heatmapbetacol", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "multitaper_result", 
                   condition = e, expr = .__target_expr__.)
             })
         }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
-            target_export = "heatmapbetacol", target_expr = quote({
+            target_export = "multitaper_result", target_expr = quote({
                 {
-                  heatmapbetacol <- generate_heatmap(repository = repository, 
-                    load_electrodes = load_electrodes, window_params = window_params, 
-                    time_window = time_window, sampling_frequency = sampling_frequency, 
-                    frequency_range = frequency_range, num_tapers = num_tapers, 
-                    min_nfft = min_nfft, weighting = weighting, 
-                    detrend_opt = detrend_opt, parallel = parallel, 
-                    num_workers = num_workers, plot_on = plot_on, 
-                    verbose = verbose, xyflip = xyflip, epoch = epoch, 
-                    time_bandwidth = time_bandwidth)
+                  multitaper_result <- generate_multitaper(repository, 
+                    load_electrodes, frequency_range, time_bandwidth, 
+                    num_tapers, window_params, min_nfft, weighting, 
+                    detrend_opt, parallel, epoch)
                 }
-                heatmapbetacol
+                multitaper_result
             }), target_depends = c("repository", "load_electrodes", 
-            "window_params", "time_window", "sampling_frequency", 
-            "frequency_range", "num_tapers", "min_nfft", "weighting", 
-            "detrend_opt", "parallel", "num_workers", "plot_on", 
-            "verbose", "xyflip", "epoch", "time_bandwidth")), 
-        deps = c("repository", "load_electrodes", "window_params", 
-        "time_window", "sampling_frequency", "frequency_range", 
-        "num_tapers", "min_nfft", "weighting", "detrend_opt", 
-        "parallel", "num_workers", "plot_on", "verbose", "xyflip", 
-        "epoch", "time_bandwidth"), cue = targets::tar_cue("thorough"), 
+            "frequency_range", "time_bandwidth", "num_tapers", 
+            "window_params", "min_nfft", "weighting", "detrend_opt", 
+            "parallel", "epoch")), deps = c("repository", "load_electrodes", 
+        "frequency_range", "time_bandwidth", "num_tapers", "window_params", 
+        "min_nfft", "weighting", "detrend_opt", "parallel", "epoch"
+        ), cue = targets::tar_cue("thorough"), pattern = NULL, 
+        iteration = "list"), find_heatmap = targets::tar_target_raw(name = "heatmap_result", 
+        command = quote({
+            .__target_expr__. <- quote({
+                heatmap_result <- generate_heatmap(repository, 
+                  multitaper_result, time_window, freq_list, 
+                  load_electrodes, window_params)
+            })
+            tryCatch({
+                eval(.__target_expr__.)
+                return(heatmap_result)
+            }, error = function(e) {
+                asNamespace("raveio")$resolve_pipeline_error(name = "heatmap_result", 
+                  condition = e, expr = .__target_expr__.)
+            })
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+            target_export = "heatmap_result", target_expr = quote({
+                {
+                  heatmap_result <- generate_heatmap(repository, 
+                    multitaper_result, time_window, freq_list, 
+                    load_electrodes, window_params)
+                }
+                heatmap_result
+            }), target_depends = c("repository", "multitaper_result", 
+            "time_window", "freq_list", "load_electrodes", "window_params"
+            )), deps = c("repository", "multitaper_result", "time_window", 
+        "freq_list", "load_electrodes", "window_params"), cue = targets::tar_cue("thorough"), 
         pattern = NULL, iteration = "list"), electrode_powertime = targets::tar_target_raw(name = "YAEL_data", 
         command = quote({
             .__target_expr__. <- quote({
-                YAEL_data <- electrode_powertime(heatmapbetacol, 
-                  subject_code = subject_code)
+                YAEL_data <- electrode_powertime(heatmap_result, 
+                  subject_code = subject_code, freq_list)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -211,36 +217,11 @@ rm(._._env_._.)
         }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
             target_export = "YAEL_data", target_expr = quote({
                 {
-                  YAEL_data <- electrode_powertime(heatmapbetacol, 
-                    subject_code = subject_code)
+                  YAEL_data <- electrode_powertime(heatmap_result, 
+                    subject_code = subject_code, freq_list)
                 }
                 YAEL_data
-            }), target_depends = c("heatmapbetacol", "subject_code"
-            )), deps = c("heatmapbetacol", "subject_code"), cue = targets::tar_cue("thorough"), 
-        pattern = NULL, iteration = "list"), quantile_data = targets::tar_target_raw(name = "quantile_data", 
-        command = quote({
-            .__target_expr__. <- quote({
-                quantile_data <- generate_quantile_data(SOZ_string = SOZ_string, 
-                  load_electrodes = load_electrodes, time_window = time_window, 
-                  num_windows = num_windows, heatmapbetacol = heatmapbetacol)
-            })
-            tryCatch({
-                eval(.__target_expr__.)
-                return(quantile_data)
-            }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "quantile_data", 
-                  condition = e, expr = .__target_expr__.)
-            })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
-            target_export = "quantile_data", target_expr = quote({
-                {
-                  quantile_data <- generate_quantile_data(SOZ_string = SOZ_string, 
-                    load_electrodes = load_electrodes, time_window = time_window, 
-                    num_windows = num_windows, heatmapbetacol = heatmapbetacol)
-                }
-                quantile_data
-            }), target_depends = c("SOZ_string", "load_electrodes", 
-            "time_window", "num_windows", "heatmapbetacol")), 
-        deps = c("SOZ_string", "load_electrodes", "time_window", 
-        "num_windows", "heatmapbetacol"), cue = targets::tar_cue("thorough"), 
-        pattern = NULL, iteration = "list"))
+            }), target_depends = c("heatmap_result", "subject_code", 
+            "freq_list")), deps = c("heatmap_result", "subject_code", 
+        "freq_list"), cue = targets::tar_cue("thorough"), pattern = NULL, 
+        iteration = "list"))

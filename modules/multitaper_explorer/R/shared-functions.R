@@ -9,12 +9,10 @@ get_default_cores <- function(round = TRUE) {
 }
 
 # Code for computing beta power matrix
-generate_heatmap <- function(repository, load_electrodes, window_params, time_window, sampling_frequency, frequency_range,
-                             num_tapers, min_nfft, weighting, detrend_opt, parallel,
-                             num_workers, plot_on, verbose, xyflip, epoch, time_bandwidth) {
-
+generate_multitaper <- function (repository, load_electrodes, frequency_range,
+                                 time_bandwidth, num_tapers, window_params, min_nfft,
+                                 weighting, detrend_opt, parallel, epoch) {
   fs <- repository$sample_rate
-  # fs <- sampling_frequency # sample freq
   results <- parse_electrodes(load_electrodes)
   nel <- results$nel
   elecn <-results$elecn
@@ -22,18 +20,9 @@ generate_heatmap <- function(repository, load_electrodes, window_params, time_wi
   #nwt <- length(elect)
   voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
 
-  time_dimnames <- dimnames(voltage_for_analysis)$Time
-  nt <- length(time_dimnames)
-  nwt <- floor((nt/fs-as.numeric(window_params[1]))/as.numeric(window_params[2]))+1
-  elect <- seq(as.numeric(time_window[1]), as.numeric(time_window[2]), length.out = nwt)
-
-
-  heatmapbeta=zeros(nel,nwt)
-  heatmapalpha=zeros(nel,nwt)
-  heatmapgamma=zeros(nel,nwt)
+  spectrogram_list <- vector("list", length(elecn))
 
   cnt <- 1
-
 
   for(e in elecn) {
     #Get voltage data
@@ -51,54 +40,93 @@ generate_heatmap <- function(repository, load_electrodes, window_params, time_wi
     collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
 
     # Compute the multitaper spectrogram
-    results = multitaper_spectrogram_R(collapsed_trial, fs, frequency_range, time_bandwidth, num_tapers, window_params, min_nfft, weighting, detrend_opt, parallel, num_workers,
-                                       plot_on, verbose, xyflip)
+    results = multitaper_spectrogram_R(collapsed_trial, fs, frequency_range, time_bandwidth, num_tapers, window_params,
+                                       min_nfft, weighting, detrend_opt, parallel, num_workers,
+                                       plot_on=FALSE, verbose=FALSE, xyflip=FALSE)
 
-    spect = results[[1]]
-    spectb = spect[21:88,]
-    betaie=colMeans(spectb)
-    heatmapbeta[cnt,1:nwt]=betaie[1:nwt]
-
+    spect <- results[[1]]
+    spectrogram_list[[cnt]] <- spect
     cnt <- cnt + 1
-
   }
+  return(spectrogram_list)
+}
 
-  # normalize by max for the whole heatmap
-  maxheatBeta=max(heatmapbeta)
-  heatmapbetan=heatmapbeta/maxheatBeta
+## Code for computing beta power matrix
+generate_heatmap <- function(repository, spectrogram_list, time_window,  freq_list, load_electrodes, window_params) {
 
-  maxcolbetap=apply(heatmapbeta,2,max)
+  results <- parse_electrodes(load_electrodes)
+  nel <- results$nel
+  elecn <-results$elecn
 
-  heatmapbetacol=zeros(nel,nwt)
+  voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
+  fs <- repository$sample_rate
+  time_dimnames <- dimnames(voltage_for_analysis)$Time
+  nt <- length(time_dimnames)
+  nwt <- floor((nt/fs-as.numeric(window_params[1]))/as.numeric(window_params[2]))+1
+  t1 <- as.numeric(time_window[1])
+  t2 <- as.numeric(time_window[2])
+  elect <- seq(t1, t2, length.out = nwt)
 
-  for(it in 1:nwt){
-    for(ie in 1:nel){
-      heatmapbetacol[ie,it]=heatmapbeta[ie,it]/maxcolbetap[it]
+  heatmap_freq_list <- vector("list", length(freq_list))
+
+
+  for (i in seq_along(freq_list)) {
+
+    freq_temp <- freq_list[[i]]
+    freq_start <- freq_temp[1]
+    freq_end <- freq_temp[2]
+
+    heatmapbeta=zeros(nel,nwt)
+
+    cnt <- 1
+
+    for(e in elecn) {
+      spec <- spectrogram_list[[cnt]]
+      spectb = spec[freq_start:freq_end,]
+      betaie=colMeans(spectb)
+      heatmapbeta[cnt,1:nwt]=betaie[1:nwt]
+      cnt <- cnt + 1
     }
-  }
 
-  maxcolbetap=apply(heatmapbeta,2,max)
+    # normalize by max for the whole heatmap
+    maxheatBeta=max(heatmapbeta)
+    heatmapbetan=heatmapbeta/maxheatBeta
 
-  heatmapbetacol=zeros(nel,nwt)
+    maxcolbetap=apply(heatmapbeta,2,max)
 
-  for(it in 1:nwt){
-    for(ie in 1:nel){
-      heatmapbetacol[ie,it]=heatmapbeta[ie,it]/maxcolbetap[it]
+    heatmapbetacol=zeros(nel,nwt)
+
+    for(it in 1:nwt){
+      for(ie in 1:nel){
+        heatmapbetacol[ie,it]=heatmapbeta[ie,it]/maxcolbetap[it]
+      }
     }
+
+    maxcolbetap=apply(heatmapbeta,2,max)
+
+    heatmapbetacol=zeros(nel,nwt)
+
+    for(it in 1:nwt){
+      for(ie in 1:nel){
+        heatmapbetacol[ie,it]=heatmapbeta[ie,it]/maxcolbetap[it]
+      }
+    }
+
+    #Prepare Data ----
+    heatmapbetacol <- cbind(elecn, heatmapbetacol)
+    heatmapbetacol <- t(heatmapbetacol)
+    # Extract the first row as column names
+    colnames(heatmapbetacol) <- heatmapbetacol[1, ]
+    # Remove the first row
+    heatmapbetacol <- heatmapbetacol[-1, ]
+    # Add the times column
+    heatmapbetacol <- cbind(elect, heatmapbetacol)
+    colnames(heatmapbetacol)[1] <- "stimes"
+
+    heatmap_freq_list[[i]] <- heatmapbetacol
   }
 
-  #Prepare Data ----
-  heatmapbetacol <- cbind(elecn, heatmapbetacol)
-  heatmapbetacol <- t(heatmapbetacol)
-  # Extract the first row as column names
-  colnames(heatmapbetacol) <- heatmapbetacol[1, ]
-  # Remove the first row
-  heatmapbetacol <- heatmapbetacol[-1, ]
-  # Add the times column
-  heatmapbetacol <- cbind(elect, heatmapbetacol)
-  colnames(heatmapbetacol)[1] <- "stimes"
-
-  return(heatmapbetacol)
+  return(heatmap_freq_list)
 
 }
 
@@ -121,7 +149,7 @@ plot_heatmap <- function(heatmapbetacol) {
     scale_fill_viridis(option = "turbo") +
     theme_minimal() +
     theme(
-      axis.text.y = element_text(size = 2),
+      axis.text.y = element_text(size = 10),
     )
 
   return(plot)
@@ -627,129 +655,40 @@ calc_mts_segment <- function(data_segment, dpss_tapers, nfft, freq_inds, weighti
   return(mt_spectrum[freq_inds])
 }
 
-# Save to meta folder for 3D brain display
-electrode_powertime <- function(heatmapbetacol, subject_code) {
-  data <- as.data.frame(heatmapbetacol)
-  stimes <- data$stimes
-  data <- data[ ,-1]
-  elecnum <- colnames(data)
+# Save for 3D brain display
+electrode_powertime <- function(heatmapbetacol, subject_code, freq_list) {
 
-  heatmapbetacol <- as.matrix(data)
+  powertime_freq_list <- vector("list", length(freq_list))
 
-  heatmap_data <- expand.grid(Time = stimes, Electrode = elecnum)
-  heatmap_data$Value <- c(heatmapbetacol)
+  for (i in seq_along(freq_list)) {
+    data <- as.data.frame(heatmapbetacol[[i]])
+    stimes <- data$stimes
+    data <- data[ ,-1]
+    elecnum <- colnames(data)
 
-  #Normalize value between -1 and 1
-  heatmap_data$Value <- (heatmap_data$Value - min(heatmap_data$Value)) / (max(heatmap_data$Value) - min(heatmap_data$Value)) * 2 - 1
+    Hmap <- as.matrix(data)
 
+    heatmap_data <- expand.grid(Time = stimes, Electrode = elecnum)
+    heatmap_data$Value <- c(Hmap)
 
-  #Create data sheet for YAEL ----
-  subject_name <- subject_code
-
-  # Create a new data frame with the desired structure
-  YAEL_data <- data.frame(
-    Subject = rep(subject_name, nrow(heatmap_data)),
-    Electrode = heatmap_data$Electrode,
-    Time = heatmap_data$Time,
-    HeatmapValue = heatmap_data$Value
-  )
-
-  # save as .csv file
-  return(YAEL_data)
-}
-
-# Generate quantile data
-generate_quantile_data <- function(SOZ_string, load_electrodes, time_window, num_windows, heatmapbetacol) {
-
-  data <- as.data.frame(heatmapbetacol)
-  stimes <- data$stimes
-  data <- data[ ,-1]
-  elecnum <- colnames(data)
-
-  heatmapbetacol <- as.matrix(data)
+    #Normalize value between -1 and 1
+    heatmap_data$Value <- (heatmap_data$Value - min(heatmap_data$Value)) / (max(heatmap_data$Value) - min(heatmap_data$Value)) * 2 - 1
 
 
-  results <- parse_electrodes(SOZ_string)
-  SOZ <-results$elecn
-  results <- parse_electrodes(load_electrodes)
-  SOZC <-results$elecn
-  SOZC <- SOZC[!SOZC %in% SOZ]
+    #Create data sheet for YAEL ----
+    subject_name <- subject_code
 
-  #generate list of electrodes
-  elecnum <- colnames(data)
-
-  # Calculate the time windows variables for 100 windows
-  startT <- time_window[1]
-  endT <- time_window[2]
-  steps <- round((endT - startT)/num_windows)
-  time_windows <- seq(startT, endT, by = steps)
-
-  # Initialize vectors to store pooled data
-  pooled_SOZ <- vector("list", num_windows)
-  pooled_SOZC <- vector("list", num_windows)
-
-  # Pool data from SOZ electrodes for each time window
-  for (j in 1:num_windows) {
-    pooled_data <- numeric(0)
-    for (el in SOZ) {
-      window_start <- time_windows[j]
-      window_end <- min(window_start + steps, endT)
-      t_electrode_data <- as.vector(heatmapbetacol[window_start:window_end, which(elecnum == el)])
-      pooled_data <- c(pooled_data, t_electrode_data)
-    }
-    pooled_SOZ[[j]] <- pooled_data
-  }
-
-  # Pool data from SOZC electrodes for each time window
-  for (j in 1:num_windows) {
-    pooled_data <- numeric(0)
-    for (el in SOZC) {
-      window_start <- time_windows[j]
-      window_end <- min(window_start + steps, endT)
-      t_electrode_data <- as.vector(heatmapbetacol[window_start:window_end, which(elecnum == el)])
-      pooled_data <- c(pooled_data, t_electrode_data)
-    }
-    pooled_SOZC[[j]] <- pooled_data
-  }
-
-  # Initialize a data frame for plotting SOZ and SOZC
-  plot_data <- matrix(ncol = num_windows, nrow = 20)
-
-  # Calculate and aggregate quantiles for pooled SOZ data
-  for (j in 1:num_windows) {
-    quantile_data <- quantile(pooled_SOZ[[j]], probs = seq(0.1, 1, by = 0.1))
-    plot_data[1:10, j] <- quantile_data
-  }
-
-  # Calculate and aggregate quantiles for pooled SOZC data
-  for (j in 1:num_windows) {
-    quantile_data <- quantile(pooled_SOZC[[j]], probs = seq(0.1, 1, by = 0.1))
-    plot_data[11:20, j] <- quantile_data
-  }
-
-  return(plot_data)
-}
-
-# Plot quantile data
-plot_quantile_data <- function(quantile_data) {
-  # Convert the matrix to a long format data frame
-  plot_df <- melt(quantile_data)
-  names(plot_df) <- c("Quantile", "Time_Window", "Average_Quantile_Value")
-
-  # Adjust factor levels and labels for Quantiles
-  quantile_labels <- c(paste0("SOZ_", seq(1, 10)),
-                       paste0("SOZC_", seq(1, 10)))
-  plot_df$Quantile <- factor(plot_df$Quantile, levels = 1:20, labels = quantile_labels)
-  # Plotting
-  plot <- ggplot(plot_df, aes(x = Time_Window, y = Quantile, fill = Average_Quantile_Value)) +
-    geom_tile() +
-    labs(title = "Mean electrode quantile values for 100 time windows", x = "Time (A.U.)", y = "Quantile of Distribution From SOZ and SOZC") +
-    scale_fill_viridis(option = "turbo") +
-    theme_minimal() +
-    theme(
-      axis.text.y = element_text(size = 10),
-      axis.text.x = element_text(size = 10)
+    # Create a new data frame with the desired structure
+    YAEL_data <- data.frame(
+      Subject = rep(subject_name, nrow(heatmap_data)),
+      Electrode = heatmap_data$Electrode,
+      Time = heatmap_data$Time,
+      HeatmapValue = heatmap_data$Value
     )
-  return(plot)
+
+    # save to list
+    powertime_freq_list[[i]] <- YAEL_data
+  }
+  return(powertime_freq_list)
 }
 

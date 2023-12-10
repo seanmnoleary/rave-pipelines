@@ -1,7 +1,6 @@
 
 module_server <- function(input, output, session, ...){
 
-
   # Local reactive values, used to store reactive event triggers
   local_reactives <- shiny::reactiveValues(
     update_outputs = NULL
@@ -75,13 +74,13 @@ module_server <- function(input, output, session, ...){
       type = "callr",
       callr_function = NULL,
       # shortcut = TRUE,
-      names = c("heatmapbetacol", "YAEL_data")
+      names = c("multitaper_result", "heatmap_result", "YAEL_data")
     )
 
     results$promise$then(
       onFulfilled = function(...){
 
-        local_data$results <- pipeline$read(c("heatmapbetacol", "YAEL_data", "frequency_range"))
+        local_data$results <- pipeline$read(c("multitaper_result", "heatmap_result", "YAEL_data"))
 
         # update inputs depending on multitaper
         frequency_range <- range(unlist(local_data$results$frequency_range))
@@ -130,9 +129,9 @@ module_server <- function(input, output, session, ...){
         return(msg)
       }
     )
-
     return()
   }
+
 
   # Register event: main pipeline need to run
   shiny::bindEvent(
@@ -416,11 +415,9 @@ module_server <- function(input, output, session, ...){
         )
       )
 
-      heatmapbetacol <- local_data$results$heatmapbetacol
-      plot <- plot_heatmap(heatmapbetacol)
-      print(plot)
-
-
+      heatmap_result <- local_data$results$heatmap_result
+      p <- plot_heatmap(heatmap_result[[1]])
+      print(p)
     })
   )
 
@@ -441,7 +438,7 @@ module_server <- function(input, output, session, ...){
       has_plot_data <- FALSE
       plot_data <- NULL
       if(is.list(local_data$results)) {
-        plot_data <- local_data$results$YAEL_data
+        plot_data <- local_data$results$YAEL_data[[1]]
         if(is.data.frame(plot_data)) {
           has_plot_data <- TRUE
         }
