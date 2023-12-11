@@ -36,5 +36,18 @@ reference: default
 save_pipeline: yes
 freq_list:
   f1:
+  - 1
+  - 3
+  f2:
+  - 4
+  - 7
+  f3:
+  - 8
+  - 12
+  f4:
+  - 13
+  - 31
+  f5:
   - 32
   - 150
+condition: sz1

@@ -8,55 +8,69 @@ get_default_cores <- function(round = TRUE) {
   re
 }
 
-# Code for computing beta power matrix
+
+# Generate multitaper for every condition
 generate_multitaper <- function (repository, load_electrodes, frequency_range,
                                  time_bandwidth, num_tapers, window_params, min_nfft,
-                                 weighting, detrend_opt, parallel, epoch) {
+                                 weighting, detrend_opt, parallel) {
   fs <- repository$sample_rate
   results <- parse_electrodes(load_electrodes)
   nel <- results$nel
   elecn <-results$elecn
 
-  #nwt <- length(elect)
   voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
 
-  spectrogram_list <- vector("list", length(elecn))
+  # Generate data format for storing epochs and corresponding voltage data
+  conditions <- repository$epoch_table$Condition
+  df <- data.frame(Conditions = conditions)
 
-  cnt <- 1
+  for(condition in conditions) {
 
-  for(e in elecn) {
-    #Get voltage data
-    voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", e)]]
+    spectrogram_list <- vector("list", length(elecn))
+    cnt <- 1
 
-    #collapse voltage for selected condition
-    selector <- repository$epoch_table$Condition %in% c(epoch)
 
-    if(!any(selector)) {
-      stop("No condition selected.")
+    for(e in elecn) {
+      #Get voltage data
+      voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", e)]]
+
+      #collapse voltage for selected condition
+      selector <- repository$epoch_table$Condition %in% c(condition)
+      if(!any(selector)) {
+        stop("Invalid condition selected.")
+      }
+      trial_list <- repository$epoch_table$Trial[selector]
+      selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
+      collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
+
+      # Compute the multitaper spectrogram
+      results = multitaper_spectrogram_R(collapsed_trial, fs, frequency_range, time_bandwidth, num_tapers, window_params,
+                                         min_nfft, weighting, detrend_opt, parallel, num_workers,
+                                         plot_on, verbose, xyflip)
+
+      spect <- results[[1]]
+      spectrogram_list[[cnt]] <- spect
+      cnt <- cnt + 1
     }
 
-    trial_list <- repository$epoch_table$Trial[selector]
-    selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list, drop = FALSE)
-    collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
-
-    # Compute the multitaper spectrogram
-    results = multitaper_spectrogram_R(collapsed_trial, fs, frequency_range, time_bandwidth, num_tapers, window_params,
-                                       min_nfft, weighting, detrend_opt, parallel, num_workers,
-                                       plot_on=FALSE, verbose=FALSE, xyflip=FALSE)
-
-    spect <- results[[1]]
-    spectrogram_list[[cnt]] <- spect
-    cnt <- cnt + 1
+    #add condition to output
+    row_index <- which(df$Conditions == condition)
+    df$MultitaperData[row_index] <- list(spectrogram_list)
   }
-  return(spectrogram_list)
+  return(df)
 }
 
-## Code for computing beta power matrix
-generate_heatmap <- function(repository, spectrogram_list, time_window,  freq_list, load_electrodes, window_params) {
+## generate all frequency plots for a specific condition
+generate_heatmap <- function(repository, spectrogram_list_all_conditions, time_window,
+                             freq_list, load_electrodes, window_params, condition) {
 
+  fs <- repository$sample_rate
   results <- parse_electrodes(load_electrodes)
   nel <- results$nel
   elecn <-results$elecn
+
+  row_index <- which(spectrogram_list_all_conditions$Conditions == condition)
+  spectrogram_list <- spectrogram_list_all_conditions$MultitaperData[row_index]
 
   voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
   fs <- repository$sample_rate
@@ -81,7 +95,7 @@ generate_heatmap <- function(repository, spectrogram_list, time_window,  freq_li
     cnt <- 1
 
     for(e in elecn) {
-      spec <- spectrogram_list[[cnt]]
+      spec <- spectrogram_list[[1]][[cnt]]
       spectb = spec[freq_start:freq_end,]
       betaie=colMeans(spectb)
       heatmapbeta[cnt,1:nwt]=betaie[1:nwt]
@@ -130,7 +144,7 @@ generate_heatmap <- function(repository, spectrogram_list, time_window,  freq_li
 
 }
 
-# Code for generating heatmap plot
+# Code for generating heatmap plot for a specific freq heatmap
 plot_heatmap <- function(heatmapbetacol) {
   #Plot ----
   data <- as.data.frame(heatmapbetacol)

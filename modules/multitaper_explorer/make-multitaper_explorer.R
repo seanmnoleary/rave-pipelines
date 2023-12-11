@@ -16,9 +16,12 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_freq_list = targets::tar_target_raw("freq_list", quote({
-        settings[["freq_list"]]
-    }), deps = "settings"), input_save_pipeline = targets::tar_target_raw("save_pipeline", 
+    input_condition = targets::tar_target_raw("condition", quote({
+        settings[["condition"]]
+    }), deps = "settings"), input_freq_list = targets::tar_target_raw("freq_list", 
+        quote({
+            settings[["freq_list"]]
+        }), deps = "settings"), input_save_pipeline = targets::tar_target_raw("save_pipeline", 
         quote({
             settings[["save_pipeline"]]
         }), deps = "settings"), input_reference = targets::tar_target_raw("reference", 
@@ -150,7 +153,7 @@ rm(._._env_._.)
                 multitaper_result <- generate_multitaper(repository, 
                   load_electrodes, frequency_range, time_bandwidth, 
                   num_tapers, window_params, min_nfft, weighting, 
-                  detrend_opt, parallel, epoch)
+                  detrend_opt, parallel)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -165,22 +168,22 @@ rm(._._env_._.)
                   multitaper_result <- generate_multitaper(repository, 
                     load_electrodes, frequency_range, time_bandwidth, 
                     num_tapers, window_params, min_nfft, weighting, 
-                    detrend_opt, parallel, epoch)
+                    detrend_opt, parallel)
                 }
                 multitaper_result
             }), target_depends = c("repository", "load_electrodes", 
             "frequency_range", "time_bandwidth", "num_tapers", 
             "window_params", "min_nfft", "weighting", "detrend_opt", 
-            "parallel", "epoch")), deps = c("repository", "load_electrodes", 
+            "parallel")), deps = c("repository", "load_electrodes", 
         "frequency_range", "time_bandwidth", "num_tapers", "window_params", 
-        "min_nfft", "weighting", "detrend_opt", "parallel", "epoch"
-        ), cue = targets::tar_cue("thorough"), pattern = NULL, 
-        iteration = "list"), find_heatmap = targets::tar_target_raw(name = "heatmap_result", 
+        "min_nfft", "weighting", "detrend_opt", "parallel"), 
+        cue = targets::tar_cue("thorough"), pattern = NULL, iteration = "list"), 
+    find_heatmap = targets::tar_target_raw(name = "heatmap_result", 
         command = quote({
             .__target_expr__. <- quote({
                 heatmap_result <- generate_heatmap(repository, 
                   multitaper_result, time_window, freq_list, 
-                  load_electrodes, window_params)
+                  load_electrodes, window_params, condition)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -194,14 +197,15 @@ rm(._._env_._.)
                 {
                   heatmap_result <- generate_heatmap(repository, 
                     multitaper_result, time_window, freq_list, 
-                    load_electrodes, window_params)
+                    load_electrodes, window_params, condition)
                 }
                 heatmap_result
             }), target_depends = c("repository", "multitaper_result", 
-            "time_window", "freq_list", "load_electrodes", "window_params"
-            )), deps = c("repository", "multitaper_result", "time_window", 
-        "freq_list", "load_electrodes", "window_params"), cue = targets::tar_cue("thorough"), 
-        pattern = NULL, iteration = "list"), electrode_powertime = targets::tar_target_raw(name = "YAEL_data", 
+            "time_window", "freq_list", "load_electrodes", "window_params", 
+            "condition")), deps = c("repository", "multitaper_result", 
+        "time_window", "freq_list", "load_electrodes", "window_params", 
+        "condition"), cue = targets::tar_cue("thorough"), pattern = NULL, 
+        iteration = "list"), electrode_powertime = targets::tar_target_raw(name = "YAEL_data", 
         command = quote({
             .__target_expr__. <- quote({
                 YAEL_data <- electrode_powertime(heatmap_result, 
