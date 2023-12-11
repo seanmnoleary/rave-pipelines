@@ -57,14 +57,14 @@ repository <- raveio::prepare_subject_voltage_with_epoch(
 )
 ```
 
-###@ Step 3: Run multitaper and get result for all conditions
+### Step 3: Run multitaper and get result for all conditions
 ```{rave find_multitaper, language = "R", export = "multitaper_result"}
 multitaper_result <- generate_multitaper(repository, load_electrodes, frequency_range, 
                                          time_bandwidth, num_tapers, window_params, min_nfft, 
                                          weighting, detrend_opt, parallel)
 ```
   
-  ###@ Step 4: get heatmap data from multitaper result for each spectral range for a specific condition
+### Step 4: get heatmap data from multitaper result for each spectral range for a specific condition
 ```{rave find_heatmap, language = "R", export = "heatmap_result"}
 heatmap_result <- generate_heatmap(repository, multitaper_result, time_window, freq_list, load_electrodes,
                                    window_params, condition) 

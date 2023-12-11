@@ -2,11 +2,10 @@ subject_code: subHUP064
 project_name: fingerprinting
 epoch_file_name: subHUP064_seizure
 load_electrodes: 3-87
-reference_name: noref
+reference_name: bipolar
 time_window:
 - -20
 - 20
-epoch: sz2
 time_bandwidth: 3
 xyflip: no
 verbose: no
@@ -20,7 +19,6 @@ num_tapers: ~
 frequency_range:
 - 1
 - 200
-sampling_frequency: 1024
 window_params:
 - 2.0
 - 0.5
@@ -37,9 +35,6 @@ save_pipeline: yes
 freq_list:
   f1:
   - 1
-  - 3
-  f2:
-  - 4
   - 7
   f3:
   - 8
@@ -50,4 +45,4 @@ freq_list:
   f5:
   - 32
   - 150
-condition: sz1
+condition: sz2 (6)

@@ -46,7 +46,7 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
       # Compute the multitaper spectrogram
       results = multitaper_spectrogram_R(collapsed_trial, fs, frequency_range, time_bandwidth, num_tapers, window_params,
                                          min_nfft, weighting, detrend_opt, parallel, num_workers,
-                                         plot_on, verbose, xyflip)
+                                         plot_on = FALSE, verbose = FALSE, xyflip = FALSE)
 
       spect <- results[[1]]
       spectrogram_list[[cnt]] <- spect
@@ -57,20 +57,23 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
     row_index <- which(df$Conditions == condition)
     df$MultitaperData[row_index] <- list(spectrogram_list)
   }
+  epoch_table <- repository$epoch_table
+  df$Conditions <- sprintf("%s (%s)", df$Conditions, epoch_table$Trial)
   return(df)
 }
 
 ## generate all frequency plots for a specific condition
-generate_heatmap <- function(repository, spectrogram_list_all_conditions, time_window,
-                             freq_list, load_electrodes, window_params, condition) {
+## Code for computing beta power matrix
+generate_heatmap <- function(repository, multitaper_result, time_window, freq_list, load_electrodes,
+                             window_params, condition) {
 
   fs <- repository$sample_rate
   results <- parse_electrodes(load_electrodes)
   nel <- results$nel
   elecn <-results$elecn
 
-  row_index <- which(spectrogram_list_all_conditions$Conditions == condition)
-  spectrogram_list <- spectrogram_list_all_conditions$MultitaperData[row_index]
+  row_index <- which(multitaper_result$Conditions == condition)
+  spectrogram_list <- multitaper_result$MultitaperData[row_index]
 
   voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
   fs <- repository$sample_rate
