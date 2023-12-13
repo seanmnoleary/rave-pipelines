@@ -16,7 +16,9 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_subject_code = targets::tar_target_raw("subject_code", 
+    input_label = targets::tar_target_raw("label", quote({
+        settings[["label"]]
+    }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
         quote({
             settings[["subject_code"]]
         }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
@@ -178,7 +180,8 @@ rm(._._env_._.)
             .__target_expr__. <- quote({
                 heatmap_result <- generate_heatmap(repository, 
                   multitaper_result, time_window, freq_list, 
-                  load_electrodes, window_params, condition)
+                  load_electrodes, window_params, condition, 
+                  label)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -192,15 +195,16 @@ rm(._._env_._.)
                 {
                   heatmap_result <- generate_heatmap(repository, 
                     multitaper_result, time_window, freq_list, 
-                    load_electrodes, window_params, condition)
+                    load_electrodes, window_params, condition, 
+                    label)
                 }
                 heatmap_result
             }), target_depends = c("repository", "multitaper_result", 
             "time_window", "freq_list", "load_electrodes", "window_params", 
-            "condition")), deps = c("repository", "multitaper_result", 
+            "condition", "label")), deps = c("repository", "multitaper_result", 
         "time_window", "freq_list", "load_electrodes", "window_params", 
-        "condition"), cue = targets::tar_cue("thorough"), pattern = NULL, 
-        iteration = "list"), electrode_powertime = targets::tar_target_raw(name = "YAEL_data", 
+        "condition", "label"), cue = targets::tar_cue("thorough"), 
+        pattern = NULL, iteration = "list"), electrode_powertime = targets::tar_target_raw(name = "YAEL_data", 
         command = quote({
             .__target_expr__. <- quote({
                 YAEL_data <- electrode_powertime(heatmap_result, 

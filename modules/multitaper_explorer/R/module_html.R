@@ -191,6 +191,20 @@ module_html <- function(){
                   )
                 )
               )
+            ),
+
+            ravedash::input_card(
+              title = "Heatmap Options",
+              shiny::fluidRow(
+                shiny::column(
+                  width = 12,
+                  shiny::checkboxInput(
+                    inputId = ns("hm_label"),
+                    label = "Show Electrode Labels",
+                    value = TRUE
+                  )
+                )
+              )
 
             )
 

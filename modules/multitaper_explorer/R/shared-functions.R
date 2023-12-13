@@ -64,8 +64,9 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
 
 ## generate all frequency plots for a specific condition
 ## Code for computing beta power matrix
-generate_heatmap <- function(repository, multitaper_result, time_window, freq_list, load_electrodes,
-                             window_params, condition) {
+generate_heatmap <- function(repository, multitaper_result, time_window,
+                             freq_list, load_electrodes,
+                             window_params, condition, label) {
 
   fs <- repository$sample_rate
   results <- parse_electrodes(load_electrodes)
@@ -133,7 +134,12 @@ generate_heatmap <- function(repository, multitaper_result, time_window, freq_li
     heatmapbetacol <- cbind(elecn, heatmapbetacol)
     heatmapbetacol <- t(heatmapbetacol)
     # Extract the first row as column names
-    colnames(heatmapbetacol) <- heatmapbetacol[1, ]
+    if (label == "numeric") {
+      colnames(heatmapbetacol) <- heatmapbetacol[1, ]
+    } else if (label == "names") {
+      colnames(heatmapbetacol) <- repository$electrode_table$Label[which(heatmapbetacol[1, ]==repository$electrode_table$Electrode)]
+    }
+
     # Remove the first row
     heatmapbetacol <- heatmapbetacol[-1, ]
     # Add the times column
@@ -146,6 +152,7 @@ generate_heatmap <- function(repository, multitaper_result, time_window, freq_li
   return(heatmap_freq_list)
 
 }
+
 
 # Code for generating heatmap plot for a specific freq heatmap
 plot_heatmap <- function(heatmapbetacol) {

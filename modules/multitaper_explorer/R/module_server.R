@@ -340,13 +340,12 @@ module_server <- function(input, output, session, ...){
 
   shiny::bindEvent(
     ravedash::safe_observe({
-
       pipeline$set_settings(
         condition = input$condition
       )
 
       dipsaus::shiny_alert2(
-        title = "Calculating in progress",
+        title = "Updating...",
         text = ravedash::be_patient_text(),
         icon = "info",
         danger_mode = FALSE,
@@ -451,6 +450,80 @@ module_server <- function(input, output, session, ...){
       )
     }),
     input$condition_next,
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE
+  )
+
+  shiny::bindEvent(
+    ravedash::safe_observe({
+
+      label_input = "numeric"
+      if (input$hm_label == TRUE) {
+        label_input = "names"
+      } else {
+        label_input = "numeric"
+      }
+
+      pipeline$set_settings(
+        label = label_input
+      )
+
+      dipsaus::shiny_alert2(
+        title = "Updating...",
+        text = ravedash::be_patient_text(),
+        icon = "info",
+        danger_mode = FALSE,
+        auto_close = FALSE,
+        buttons = FALSE,
+        session = session
+      )
+
+      local_data$results <- NULL
+
+      results <- pipeline$run(
+        as_promise = TRUE,
+        scheduler = "none",
+        type = "callr",
+        callr_function = NULL,
+        # shortcut = TRUE,
+        names = c("heatmap_result", "YAEL_data")
+      )
+
+      results$promise$then(
+        onFulfilled = function(...){
+
+          local_data$results <- pipeline$read(c("heatmap_result", "YAEL_data"))
+
+
+          Sys.sleep(0.5)
+          ravedash::logger("Fulfilled: ", pipeline$pipeline_name,
+                           level = 'debug')
+          shidashi::clear_notifications(class = "pipeline-error")
+          dipsaus::close_alert2()
+
+          local_reactives$update_outputs <- Sys.time()
+          return(TRUE)
+        },
+        onRejected = function(e, ...){
+          msg <- paste(e$message, collapse = "\n")
+          if(inherits(e, "error")){
+            ravedash::logger(msg, level = 'error')
+            ravedash::logger(traceback(e), level = 'error', .sep = "\n")
+            shidashi::show_notification(
+              message = msg,
+              title = "Error while running pipeline", type = "danger",
+              autohide = FALSE, close = TRUE, class = "pipeline-error"
+            )
+          }
+          Sys.sleep(0.5)
+          dipsaus::close_alert2()
+          return(msg)
+        }
+      )
+      return()
+
+    }),
+    input$hm_label,
     ignoreNULL = TRUE,
     ignoreInit = TRUE
   )

@@ -1,3 +1,4 @@
+label: names
 subject_code: subHUP064
 project_name: fingerprinting
 epoch_file_name: subHUP064_seizure
@@ -34,15 +35,6 @@ reference: default
 save_pipeline: yes
 freq_list:
   f1:
-  - 1
-  - 7
-  f3:
-  - 8
-  - 12
-  f4:
   - 13
   - 31
-  f5:
-  - 32
-  - 150
-condition: sz2 (6)
+condition: 80s before sz1 (1)
