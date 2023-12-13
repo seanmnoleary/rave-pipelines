@@ -695,8 +695,9 @@ electrode_powertime <- function(heatmapbetacol, subject_code, freq_list) {
     heatmap_data <- expand.grid(Time = stimes, Electrode = elecnum)
     heatmap_data$Value <- c(Hmap)
 
-    #Normalize value between -1 and 1
-    heatmap_data$Value <- (heatmap_data$Value - min(heatmap_data$Value)) / (max(heatmap_data$Value) - min(heatmap_data$Value)) * 2 - 1
+    #Normalize value between 0 and 1
+    heatmap_data$Value <- (heatmap_data$Value - min(heatmap_data$Value)) / (max(heatmap_data$Value) - min(heatmap_data$Value))
+
 
 
     #Create data sheet for YAEL ----

@@ -602,7 +602,7 @@ module_server <- function(input, output, session, ...){
         brain$plot(
           side_display = FALSE,
           val_ranges = list(
-            "HeatmapValue" = c(-1, 1)
+            "HeatmapValue" = c(0, 1)
           ),
           palettes = list(
             "HeatmapValue" = viridis::turbo(128)
