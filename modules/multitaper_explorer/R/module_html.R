@@ -202,12 +202,20 @@ module_html <- function(){
                     inputId = ns("hm_label"),
                     label = "Show Electrode Labels",
                     value = TRUE
+                  ),
+                  shiny::checkboxInput(
+                    inputId = ns("hm_showSOZ"),
+                    label = "Show SOZ",
+                    value = FALSE
+                  ),
+                  shiny::textInput(
+                    inputId = ns("input_SOZ_electrodes"),
+                    label = "SOZ electrodes (numeric input)",
+                    value = "0"
                   )
                 )
               )
-
             )
-
           )
         )
       ),

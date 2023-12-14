@@ -73,7 +73,8 @@ heatmap_result <- generate_heatmap(repository, multitaper_result, time_window, f
   #### Step 5: Visualize Heatmaps for all the generated spectral ranges for a specific condition
 ```{r}
 for(i in 1:length(heatmap_result)) {
-  p <- plot_heatmap(heatmap_result[[i]])
+  p <- plot_heatmap(heatmap_result[[i]], SOZ_elec = SOZ_elec, plot_SOZ_elec = plot_SOZ_elec,
+                    name_type = label, repository = repository)
   print(p)
 }
 ```

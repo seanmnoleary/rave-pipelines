@@ -37,6 +37,13 @@ module_server <- function(input, output, session, ...){
       num_tapers <- NULL
     }
 
+    label_input <- "numeric"
+    if (input$hm_label == TRUE) {
+      label_input <- "names"
+    } else {
+      label_input <- "numeric"
+    }
+
     pipeline$set_settings(
       window_params = c(input$mt_window_size, input$mt_step_size),
       frequency_range = c(input$mt_frequency_lower_bound, input$mt_frequency_upper_bound),
@@ -47,11 +54,21 @@ module_server <- function(input, output, session, ...){
       time_bandwidth = input$mt_time_bandwidth,
 
       parallel = parallel,
-      num_workers = num_workers
+      num_workers = num_workers,
+
+      plot_SOZ_elec = input$hm_showSOZ,
+      SOZ_elec = input$input_SOZ_electrodes,
+      label = label_input
 
       # freqopt
       # timeopt_range
     )
+
+    local_data$results <- NULL
+
+    local_data$SOZ_elec <- input$input_SOZ_electrodes
+    local_data$plot_SOZ_elec <- input$hm_showSOZ
+    local_data$label_type <- label_input
 
     ravedash::logger("Scheduled: ", pipeline$pipeline_name,
                      level = 'debug', reset_timer = TRUE)
@@ -65,8 +82,6 @@ module_server <- function(input, output, session, ...){
       buttons = FALSE,
       session = session
     )
-
-    local_data$results <- NULL
 
     results <- pipeline$run(
       as_promise = TRUE,
@@ -354,8 +369,6 @@ module_server <- function(input, output, session, ...){
         session = session
       )
 
-      local_data$results <- NULL
-
       results <- pipeline$run(
         as_promise = TRUE,
         scheduler = "none",
@@ -457,15 +470,19 @@ module_server <- function(input, output, session, ...){
   shiny::bindEvent(
     ravedash::safe_observe({
 
-      label_input = "numeric"
+      label_input <- "numeric"
       if (input$hm_label == TRUE) {
-        label_input = "names"
+        label_input <- "names"
       } else {
-        label_input = "numeric"
+        label_input <- "numeric"
       }
 
+      local_data$label <- label_input
+      local_data$SOZ_elec <- input$input_SOZ_electrodes
+
       pipeline$set_settings(
-        label = label_input
+        label = label_input,
+        SOZ_elec = input$input_SOZ_electrodes
       )
 
       dipsaus::shiny_alert2(
@@ -478,7 +495,73 @@ module_server <- function(input, output, session, ...){
         session = session
       )
 
-      local_data$results <- NULL
+      results <- pipeline$run(
+        as_promise = TRUE,
+        scheduler = "none",
+        type = "callr",
+        callr_function = NULL,
+        # shortcut = TRUE,
+        names = c("heatmap_result", "YAEL_data")
+      )
+
+      results$promise$then(
+        onFulfilled = function(...){
+
+          local_data$results <- pipeline$read(c("heatmap_result", "YAEL_data"))
+
+          Sys.sleep(0.5)
+          ravedash::logger("Fulfilled: ", pipeline$pipeline_name,
+                           level = 'debug')
+          shidashi::clear_notifications(class = "pipeline-error")
+          dipsaus::close_alert2()
+
+          local_reactives$update_outputs <- Sys.time()
+          return(TRUE)
+        },
+        onRejected = function(e, ...){
+          msg <- paste(e$message, collapse = "\n")
+          if(inherits(e, "error")){
+            ravedash::logger(msg, level = 'error')
+            ravedash::logger(traceback(e), level = 'error', .sep = "\n")
+            shidashi::show_notification(
+              message = msg,
+              title = "Error while running pipeline", type = "danger",
+              autohide = FALSE, close = TRUE, class = "pipeline-error"
+            )
+          }
+          Sys.sleep(0.5)
+          dipsaus::close_alert2()
+          return(msg)
+        }
+      )
+      return()
+
+    }),
+    input$hm_label,
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE
+  )
+
+  shiny::bindEvent(
+    ravedash::safe_observe({
+
+      local_data$plot_SOZ_elec <- input$hm_showSOZ
+      local_data$SOZ_elec <- input$input_SOZ_electrodes
+
+      pipeline$set_settings(
+        plot_SOZ_elec = input$hm_showSOZ,
+        SOZ_elec = input$input_SOZ_electrodes
+      )
+
+      dipsaus::shiny_alert2(
+        title = "Updating...",
+        text = ravedash::be_patient_text(),
+        icon = "info",
+        danger_mode = FALSE,
+        auto_close = FALSE,
+        buttons = FALSE,
+        session = session
+      )
 
       results <- pipeline$run(
         as_promise = TRUE,
@@ -523,7 +606,7 @@ module_server <- function(input, output, session, ...){
       return()
 
     }),
-    input$hm_label,
+    input$hm_showSOZ,
     ignoreNULL = TRUE,
     ignoreInit = TRUE
   )
@@ -555,7 +638,30 @@ module_server <- function(input, output, session, ...){
       )
 
       heatmap_result <- local_data$results$heatmap_result
-      p <- plot_heatmap(heatmap_result[[1]])
+      SOZ_elec <-  local_data$SOZ_elec
+      plot_SOZ_elec <- local_data$plot_SOZ_elec
+      label_type <- local_data$label
+      if (is.null(label_type)) {
+        label_type <- "names"
+      }
+      if (is.null(SOZ_elec)) {
+        SOZ_elec <- "0"
+      }
+      if (is.null(plot_SOZ_elec)) {
+        plot_SOZ_elec <- FALSE
+
+      }
+      repository_plot <- pipeline$read("repository")
+
+      print("**********************")
+      print(SOZ_elec)
+      print("**********************")
+      print(plot_SOZ_elec)
+      print("**********************")
+      print(label_type)
+      print("**********************")
+
+      p <- plot_heatmap(heatmap_result[[1]], SOZ_elec, plot_SOZ_elec, label_type, repository_plot)
       print(p)
     })
   )

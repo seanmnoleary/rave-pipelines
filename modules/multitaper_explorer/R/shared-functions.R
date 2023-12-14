@@ -155,8 +155,25 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
 
 
 # Code for generating heatmap plot for a specific freq heatmap
-plot_heatmap <- function(heatmapbetacol) {
-  #Plot ----
+# Code for generating heatmap plot
+plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type, repository) {
+
+  # Generate list of SOZ electrodes
+  results_soz <- parse_electrodes(SOZ_elec)
+  soz_elec <- results_soz$elecn
+
+  electrode_table<- repository$electrode_table
+
+  #Validate only correct SOZ_elec were input
+  soz_elec <- soz_elec[soz_elec %in% electrode_table$Electrode]
+
+  if (name_type == "names") {
+    indices <- which(electrode_table$Electrode %in% soz_elec)
+    corresponding_labels <- electrode_table$Label[indices]
+    soz_elec <- corresponding_labels
+  }
+
+  # Plot ----
   data <- as.data.frame(heatmapbetacol)
   stimes <- data$stimes
   data <- data[ ,-1]
@@ -166,6 +183,16 @@ plot_heatmap <- function(heatmapbetacol) {
 
   heatmap_data <- expand.grid(Time = stimes, Electrode = elecnum)
   heatmap_data$Value <- c(heatmapbetacol)
+  print(str(heatmap_data))
+
+  # Define a custom function to change color of SOZ electrodes
+  color_electrodes <- function(electrode) {
+    if ((electrode %in% soz_elec) & plot_SOZ_elec == TRUE) {
+      return("red")
+    } else {
+      return("black")
+    }
+  }
 
   plot <- ggplot(heatmap_data, aes(x = Time, y = Electrode, fill = Value)) +
     geom_tile() +
@@ -173,7 +200,7 @@ plot_heatmap <- function(heatmapbetacol) {
     scale_fill_viridis(option = "turbo") +
     theme_minimal() +
     theme(
-      axis.text.y = element_text(size = 10),
+      axis.text.y = element_text(size = 5, color = sapply(levels(heatmap_data$Electrode), color_electrodes))
     )
 
   return(plot)
