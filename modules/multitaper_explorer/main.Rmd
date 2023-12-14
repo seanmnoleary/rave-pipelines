@@ -74,7 +74,7 @@ heatmap_result <- generate_heatmap(repository, multitaper_result, time_window, f
 ```{r}
 for(i in 1:length(heatmap_result)) {
   p <- plot_heatmap(heatmap_result[[i]], SOZ_elec = SOZ_elec, plot_SOZ_elec = plot_SOZ_elec,
-                    name_type = label, repository = repository)
+                    name_type = label, organize_top = organize_top, repository = repository)
   print(p)
 }
 ```
@@ -84,7 +84,9 @@ for(i in 1:length(heatmap_result)) {
 YAEL_data <- electrode_powertime(
   heatmap_result, 
   subject_code = subject_code ,
-  freq_list
+  freq_list = freq_list,
+  SOZ_elec = SOZ_elec,
+  load_electrodes = load_electrodes
 )
 ```
 

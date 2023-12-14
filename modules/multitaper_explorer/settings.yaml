@@ -1,42 +1,43 @@
-condition: sz1 (4)
+organize_top: yes
+label: names
+subject_code: subHUP064
+project_name: fingerprinting
+epoch_file_name: subHUP064_seizure
+plot_SOZ_elec: yes
+SOZ_elec: 50-70
+load_electrodes: 3-87
+reference_name: bipolar
+time_window:
+- -20
+- 20
+time_bandwidth: 3
+xyflip: no
+verbose: no
+plot_on: no
+num_workers: 31.0
+parallel: yes
+detrend_opt: linear
+weighting: unity
+min_nfft: 0
+num_tapers: ~
+frequency_range:
+- 1
+- 200
+window_params:
+- 2.0
+- 0.5
+baseline_method: decibel
+baseline:
+- - -1
+  - -0.2
+type: power
+intervals:
+- - -1.0
+  - 2.0
+reference: default
+save_pipeline: yes
 freq_list:
   f1:
   - 13
   - 31
-save_pipeline: yes
-reference: default
-intervals:
-- - -1.0
-  - 2.0
-type: power
-baseline:
-- - -1
-  - -0.2
-baseline_method: decibel
-window_params:
-- 2.0
-- 0.5
-frequency_range:
-- 1
-- 200
-num_tapers: ~
-min_nfft: 0
-weighting: unity
-detrend_opt: linear
-parallel: yes
-num_workers: 31.0
-plot_on: no
-verbose: no
-xyflip: no
-time_bandwidth: 3
-time_window:
-- -20
-- 20
-reference_name: bipolar
-load_electrodes: 3-87
-SOZ_elec: 12,13,17-21,25-29,31,42,43,51,52,
-plot_SOZ_elec: yes
-epoch_file_name: subHUP064_seizure
-project_name: fingerprinting
-subject_code: subHUP064
-label: names
+condition: 80s before sz1 (1)

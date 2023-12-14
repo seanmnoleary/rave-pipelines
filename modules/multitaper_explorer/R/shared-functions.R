@@ -156,7 +156,7 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
 
 # Code for generating heatmap plot for a specific freq heatmap
 # Code for generating heatmap plot
-plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type, repository) {
+plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type, organize_top, repository) {
 
   # Generate list of SOZ electrodes
   results_soz <- parse_electrodes(SOZ_elec)
@@ -179,11 +179,21 @@ plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type, rep
   data <- data[ ,-1]
   elecnum <- colnames(data)
 
-  heatmapbetacol <- as.matrix(data)
+  # Reorder electrodes if organize_top is TRUE
+  if (organize_top) {
+    all_electrodes <- setdiff(elecnum, soz_elec)
+    ordered_electrodes <- c(soz_elec, all_electrodes)
 
-  heatmap_data <- expand.grid(Time = stimes, Electrode = elecnum)
+    # Reorder the rows of the data matrix based on the order of electrodes
+    reordered_indices <- match(ordered_electrodes, elecnum)
+    heatmapbetacol <- as.matrix(data[, reordered_indices, drop = FALSE])
+  } else {
+    ordered_electrodes <- elecnum
+    heatmapbetacol <- as.matrix(data)
+  }
+
+  heatmap_data <- expand.grid(Time = stimes, Electrode = factor(ordered_electrodes, levels = ordered_electrodes))
   heatmap_data$Value <- c(heatmapbetacol)
-  print(str(heatmap_data))
 
   # Define a custom function to change color of SOZ electrodes
   color_electrodes <- function(electrode) {
@@ -707,7 +717,14 @@ calc_mts_segment <- function(data_segment, dpss_tapers, nfft, freq_inds, weighti
 }
 
 # Save for 3D brain display
-electrode_powertime <- function(heatmapbetacol, subject_code, freq_list) {
+electrode_powertime <- function(heatmapbetacol, subject_code, freq_list, SOZ_elec, load_electrodes) {
+
+  # Generate list of included SOZ electrodes
+  SOZ_results <- parse_electrodes(SOZ_elec)
+  SOZ_elec <- SOZ_results$elecn
+  # Generate list of included electrodes
+  elec_results <- parse_electrodes(load_electrodes)
+  elecn <- elec_results$elecn
 
   powertime_freq_list <- vector("list", length(freq_list))
 
@@ -719,13 +736,16 @@ electrode_powertime <- function(heatmapbetacol, subject_code, freq_list) {
 
     Hmap <- as.matrix(data)
 
-    heatmap_data <- expand.grid(Time = stimes, Electrode = elecnum)
+    heatmap_data <- expand.grid(Time = stimes, Electrode_label = elecnum)
+    heatmap_data$Electrode_numeric <- rep(elecn, each = length(stimes))
+
+    #Add a column for SOZ electrodes
+    SOZ_vector <- as.numeric(heatmap_data$Electrode_numeric %in% SOZ_elec)
+
     heatmap_data$Value <- c(Hmap)
 
     #Normalize value between 0 and 1
     heatmap_data$Value <- (heatmap_data$Value - min(heatmap_data$Value)) / (max(heatmap_data$Value) - min(heatmap_data$Value))
-
-
 
     #Create data sheet for YAEL ----
     subject_name <- subject_code
@@ -733,14 +753,17 @@ electrode_powertime <- function(heatmapbetacol, subject_code, freq_list) {
     # Create a new data frame with the desired structure
     YAEL_data <- data.frame(
       Subject = rep(subject_name, nrow(heatmap_data)),
-      Electrode = heatmap_data$Electrode,
+      Electrode = heatmap_data$Electrode_label,
       Time = heatmap_data$Time,
-      HeatmapValue = heatmap_data$Value
+      HeatmapValue = heatmap_data$Value,
+      SOZ = SOZ_vector
     )
 
     # save to list
     powertime_freq_list[[i]] <- YAEL_data
   }
+
   return(powertime_freq_list)
 }
+
 

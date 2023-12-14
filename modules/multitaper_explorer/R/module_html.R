@@ -208,10 +208,19 @@ module_html <- function(){
                     label = "Show SOZ",
                     value = FALSE
                   ),
+                  shiny::checkboxInput(
+                    inputId = ns("hm_groupSOZ"),
+                    label = "Group SOZ",
+                    value = FALSE
+                  ),
                   shiny::textInput(
                     inputId = ns("input_SOZ_electrodes"),
                     label = "SOZ electrodes (numeric input)",
                     value = "0"
+                  ),
+                  dipsaus::actionButtonStyled(
+                    inputId = ns("refresh_soz"),
+                    label = "Refresh SOZ", width = "100%"
                   )
                 )
               )
