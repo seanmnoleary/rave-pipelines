@@ -99,6 +99,15 @@ rm(._._env_._.)
         }), deps = "settings"), input_analysis_windows = targets::tar_target_raw("analysis_windows", 
         quote({
             settings[["analysis_windows"]]
+        }), deps = "settings"), input_text_size = targets::tar_target_raw("text_size", 
+        quote({
+            settings[["text_size"]]
+        }), deps = "settings"), input_resect_elec = targets::tar_target_raw("resect_elec", 
+        quote({
+            settings[["resect_elec"]]
+        }), deps = "settings"), input_plot_resect_elec = targets::tar_target_raw("plot_resect_elec", 
+        quote({
+            settings[["plot_resect_elec"]]
         }), deps = "settings"), load_subject = targets::tar_target_raw(name = "subject", 
         command = quote({
             .__target_expr__. <- quote({

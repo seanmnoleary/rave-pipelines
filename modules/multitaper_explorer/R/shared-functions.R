@@ -46,9 +46,9 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
       # Compute the multitaper spectrogram
       results = multitaper_spectrogram_R(collapsed_trial, fs, frequency_range, time_bandwidth, num_tapers, window_params,
                                          min_nfft, weighting, detrend_opt, parallel, num_workers,
-                                         plot_on = FALSE, verbose = FALSE, xyflip = FALSE)
+                                         plot_on=FALSE, verbose=FALSE, xyflip=FALSE)
 
-      spect <- results[[1]]
+      spect <- results
       spectrogram_list[[cnt]] <- spect
       cnt <- cnt + 1
     }
@@ -68,7 +68,7 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
                              analysis_windows, load_electrodes,
                              window_params, condition, label) {
 
-  # extract frequency list
+  # create frequency and time list
   freq_list <- list()
   for (i in seq_along(analysis_windows)) {
     freq_list_name <- paste0("f", i)
@@ -99,8 +99,8 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
 
     # extract frequency values
     freq_temp <- freq_list[[i]]
-    freq_start <- round(as.numeric(freq_temp[1]))
-    freq_end <- round(as.numeric(freq_temp[2]))
+    freq_start <- as.numeric(freq_temp[1])
+    freq_end <- as.numeric(freq_temp[2])
 
     heatmapbeta=zeros(nel,nwt)
 
@@ -108,7 +108,11 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
 
     for(e in elecn) {
       spec <- spectrogram_list[[1]][[cnt]]
-      spectb = spec[freq_start:freq_end,]
+      specR <- spec[[1]]
+      specF <- spec[[3]]
+      freq_start_index. <- which.min(abs(specF - freq_start))
+      freq_end_index <- freq_end_index <- which.min(abs(specF - freq_end))
+      spectb = specR[freq_start_index.:freq_end_index,]
       betaie=colMeans(spectb)
       heatmapbeta[cnt,1:nwt]=betaie[1:nwt]
       cnt <- cnt + 1
@@ -161,10 +165,9 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
 
 }
 
-
 # Code for generating heatmap plot for a specific freq heatmap
-plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type,
-                         organize_top, repository, subject_code, analysis_windows, index) {
+plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, resect_elec, plot_resect_elec, name_type,
+                         organize_top, repository, subject_code, analysis_windows, index, text_size) {
 
   time_list <- list()
   for (i in seq_along(analysis_windows)) {
@@ -174,8 +177,8 @@ plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type,
 
   # extract time values
   time_temp <- time_list[[index]]
-  time_start <-round(as.numeric(time_temp[[1]]))
-  time_end <- round(as.numeric(time_temp[[2]]))
+  time_start <-time_temp[[1]]
+  time_end <- time_temp[[2]]
 
   #remove rows in stimes with values less than time_start and greater than time_end
   heatmapbetacol <- heatmapbetacol[heatmapbetacol[, "stimes"] >= time_start & heatmapbetacol[, "stimes"] <= time_end, ]
@@ -184,15 +187,25 @@ plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type,
   results_soz <- parse_electrodes(SOZ_elec)
   soz_elec <- results_soz$elecn
 
+  # Generate list of Resect electrodes
+  results_resect <- parse_electrodes(resect_elec)
+  resect_elec <- results_resect$elecn
+
   electrode_table<- repository$electrode_table
 
-  #Validate only correct SOZ_elec were input
-  soz_elec <- soz_elec[soz_elec %in% repository$electrode_list]
+  #Validate only correct SOZ_elec and resect_elec were input
+  soz_elec <- soz_elec[soz_elec %in% electrode_table$Electrode]
+  resect_elec <- resect_elec[resect_elec %in% electrode_table$Electrode]
 
   if (name_type == "names") {
+    #change soz_elec
     indices <- which(electrode_table$Electrode %in% soz_elec)
     corresponding_labels <- electrode_table$Label[indices]
     soz_elec <- corresponding_labels
+    #change resect_elec
+    indices <- which(electrode_table$Electrode %in% resect_elec)
+    corresponding_labels <- electrode_table$Label[indices]
+    resect_elec <- corresponding_labels
   }
 
   # Plot ----
@@ -203,8 +216,21 @@ plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type,
 
   # Reorder electrodes if organize_top is TRUE
   if (organize_top) {
-    all_electrodes <- setdiff(elecnum, soz_elec)
-    ordered_electrodes <- c(soz_elec, all_electrodes)
+    # Intersecting electrodes between soz_elec and resect_elec
+    intersect_electrodes <- intersect(soz_elec, resect_elec)
+
+    # Electrodes in soz_elec not in resect_elec
+    unique_soz_elec <- setdiff(soz_elec, resect_elec)
+
+    # Electrodes in resect_elec not in soz_elec
+    unique_resect_elec <- setdiff(resect_elec, soz_elec)
+
+    # Combine the lists while ensuring no duplicates
+    ordered_electrodes <- unique(c(unique_resect_elec, intersect_electrodes, unique_soz_elec))
+
+    # Add remaining electrodes that are not in soz_elec or resect_elec
+    all_electrodes <- setdiff(elecnum, ordered_electrodes)
+    ordered_electrodes <- unique(c(ordered_electrodes, all_electrodes))
 
     # Reorder the rows of the data matrix based on the order of electrodes
     reordered_indices <- match(ordered_electrodes, elecnum)
@@ -214,12 +240,17 @@ plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type,
     heatmapbetacol <- as.matrix(data)
   }
 
+
   heatmap_data <- expand.grid(Time = stimes, Electrode = factor(ordered_electrodes, levels = ordered_electrodes))
   heatmap_data$Value <- c(heatmapbetacol)
 
   # Define a custom function to change color of SOZ electrodes
   color_electrodes <- function(electrode) {
-    if ((electrode %in% soz_elec) & plot_SOZ_elec == TRUE) {
+    if ((electrode %in% resect_elec) & (electrode %in% soz_elec) & plot_SOZ_elec == TRUE & plot_resect_elec == TRUE) {
+      return("purple")
+    } else if ((electrode %in% resect_elec) & plot_resect_elec == TRUE) {
+      return("blue")
+    } else if ((electrode %in% soz_elec) & plot_SOZ_elec == TRUE) {
       return("red")
     } else {
       return("black")
@@ -232,8 +263,9 @@ plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type,
     scale_fill_viridis(option = "turbo") +
     theme_minimal() +
     theme(
-      axis.text.y = element_text(size = 5, color = sapply(levels(heatmap_data$Electrode), color_electrodes)),
-      plot.title = element_text(hjust = 0.5)  # Center the title
+      axis.text.x = element_text(size = text_size),
+      axis.text.y = element_text(size = text_size, color = sapply(levels(heatmap_data$Electrode), color_electrodes)),
+      plot.title = element_text(hjust = 0.5)
     )
 
 
@@ -243,7 +275,7 @@ plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type,
 # Multitaper Spectrogram #
 multitaper_spectrogram_R <- function(data, fs, frequency_range=NULL, time_bandwidth=5, num_tapers=NULL, window_params=c(5,1),
                                      min_nfft=0, weighting='unity', detrend_opt='linear', parallel=FALSE, num_workers=FALSE,
-                                     plot_on=TRUE, verbose=TRUE, xyflip=FALSE){
+                                     plot_on=FALSE, verbose=FALSE, xyflip=FALSE){
   # Compute multitaper spectrogram of timeseries data
   #
   # Results tend to agree with Prerau Lab python implementation of multitaper spectrogram with precision on the order of at most

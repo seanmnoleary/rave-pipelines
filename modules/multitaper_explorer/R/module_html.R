@@ -203,20 +203,36 @@ module_html <- function(){
                     label = "Show Electrode Labels",
                     value = TRUE
                   ),
+                  shiny::numericInput(
+                    inputId = ns("electrode_text_size"),
+                    label = "Electrode Text Size",
+                    value = 5,
+                    min = 1, step = 1, width = "100%"
+                  ),
                   shiny::checkboxInput(
                     inputId = ns("hm_showSOZ"),
                     label = "Show SOZ",
-                    value = FALSE
-                  ),
-                  shiny::checkboxInput(
-                    inputId = ns("hm_groupSOZ"),
-                    label = "Group SOZ",
                     value = FALSE
                   ),
                   shiny::textInput(
                     inputId = ns("input_SOZ_electrodes"),
                     label = "SOZ electrodes (numeric input)",
                     value = "0"
+                  ),
+                  shiny::checkboxInput(
+                    inputId = ns("hm_showResection"),
+                    label = "Show Resection",
+                    value = FALSE
+                  ),
+                  shiny::textInput(
+                    inputId = ns("input_Resection_electrodes"),
+                    label = "Resection electrodes (numeric input)",
+                    value = "0"
+                  ),
+                  shiny::checkboxInput(
+                    inputId = ns("hm_group"),
+                    label = "Group SOZ/Resected",
+                    value = FALSE
                   )
                 )
               )

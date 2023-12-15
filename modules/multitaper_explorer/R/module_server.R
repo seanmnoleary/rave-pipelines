@@ -49,22 +49,9 @@ module_server <- function(input, output, session, ...){
 
       parallel = parallel,
       num_workers = num_workers
-
-      # plot_SOZ_elec = input$hm_showSOZ,
-      # SOZ_elec = input$input_SOZ_electrodes,
-      # label = label_input,
-      # organize_top = input$hm_groupSOZ
-
-      # freqopt
-      # timeopt_range
     )
 
     local_data$results <- NULL
-
-    # local_data$SOZ_elec <- input$input_SOZ_electrodes
-    # local_data$plot_SOZ_elec <- input$hm_showSOZ
-    # local_data$label_type <- label_input
-    # local_data$group_SOZ <- input$hm_groupSOZ
 
     ravedash::logger("Scheduled: ", pipeline$pipeline_name,
                      level = 'debug', reset_timer = TRUE)
@@ -140,15 +127,20 @@ module_server <- function(input, output, session, ...){
         plot_SOZ_elec = input$hm_showSOZ,
         SOZ_elec = input$input_SOZ_electrodes,
         label = label_input,
-        organize_top = input$hm_groupSOZ
+        organize_top = input$hm_group,
+        text_size = input$electrode_text_size,
+        plot_resect_elec = input$hm_showResection,
+        resect_elec = input$input_Resection_electrodes
       )
 
       local_data$analysis_settings <- input$analysis_settings
       local_data$SOZ_elec <- input$input_SOZ_electrodes
       local_data$plot_SOZ_elec <- input$hm_showSOZ
-      local_data$label_type <- label_input
-      local_data$group_SOZ <- input$hm_groupSOZ
+      local_data$group_SOZResect <- input$hm_group
       local_data$label <- label_input
+      local_data$text_size <- input$electrode_text_size
+      local_data$plot_resect_elec <- input$hm_showResection
+      local_data$resect_elec <- input$input_Resection_electrodes
 
       output_flags <- local_reactives$update_outputs
       if(!length(output_flags) || isFALSE(output_flags) || !is.list(local_data$results)) {
@@ -440,30 +432,19 @@ module_server <- function(input, output, session, ...){
       SOZ_elec <-  local_data$SOZ_elec
       plot_SOZ_elec <- local_data$plot_SOZ_elec
       label_type <- local_data$label
-      group_soz <- local_data$group_SOZ
+      group_SOZResect <- local_data$group_SOZResect
       analysis_settings <- local_data$analysis_settings
-
-      if (is.null(label_type)) {
-        label_type <- "names"
-      }
-      if (is.null(SOZ_elec)) {
-        SOZ_elec <- "0"
-      }
-      if (is.null(plot_SOZ_elec)) {
-        plot_SOZ_elec <- FALSE
-
-      }
-      if (is.null(group_soz)) {
-        group_soz <- FALSE
-
-      }
+      text_size <- local_data$text_size
+      resect_elec <- local_data$resect_elec
+      plot_resect_elec <- local_data$plot_resect_elec
 
       repository_plot <- pipeline$read("repository")
       subject_code <- pipeline$read("subject_code")
       analysis_windows <- pipeline$read("subject_code")
 
-      p <- plot_heatmap(heatmap_result[[1]], SOZ_elec, plot_SOZ_elec, label_type,
-                        group_soz, repository_plot, subject_code, analysis_settings, index = 1)
+      p <- plot_heatmap(heatmap_result[[1]], SOZ_elec, plot_SOZ_elec, resect_elec, plot_resect_elec,  label_type,
+                        group_SOZResect, repository_plot, subject_code, analysis_settings, index = 1, text_size)
+
       print(p)
     })
   )

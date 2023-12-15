@@ -66,13 +66,15 @@ multitaper_result <- generate_multitaper(repository, load_electrodes, frequency_
   
 ### Step 4: get heatmap data from multitaper result for each spectral range for a specific condition
 ```{rave find_heatmap, language = "R", export = "heatmap_result"}
-heatmap_result <- generate_heatmap(repository, multitaper_result, time_window, analysis_windows, load_electrodes, window_params, condition, label) 
+heatmap_result <- generate_heatmap(repository, multitaper_result, time_window,
+                             analysis_windows, load_electrodes,
+                             window_params, condition, label) 
 ```
   
   #### Step 5: Visualize Heatmaps for all the generated spectral ranges for a specific condition
 ```{r}
 for(i in 1:length(heatmap_result)) {
-  p <- plot_heatmap(heatmap_result[[i]], SOZ_elec = SOZ_elec, plot_SOZ_elec = plot_SOZ_elec, name_type = label, organize_top = organize_top, repository = repository, subject_code = subject_code, analysis_windows, index = i)
+  p <- plot_heatmap(heatmap_result[[i]], SOZ_elec = SOZ_elec, plot_SOZ_elec = plot_SOZ_elec, resect_elec, plot_resect_elec, name_type = label, organize_top = organize_top, repository = repository, subject_code = subject_code, analysis_windows, index = i, text_size)
   print(p)
 }
 ```
