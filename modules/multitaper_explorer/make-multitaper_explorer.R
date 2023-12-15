@@ -16,96 +16,89 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_organize_top = targets::tar_target_raw("organize_top", 
+    input_condition = targets::tar_target_raw("condition", quote({
+        settings[["condition"]]
+    }), deps = "settings"), input_save_pipeline = targets::tar_target_raw("save_pipeline", 
         quote({
-            settings[["organize_top"]]
-        }), deps = "settings"), input_label = targets::tar_target_raw("label", 
-        quote({
-            settings[["label"]]
-        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
-        quote({
-            settings[["subject_code"]]
-        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
-        quote({
-            settings[["project_name"]]
-        }), deps = "settings"), input_epoch_file_name = targets::tar_target_raw("epoch_file_name", 
-        quote({
-            settings[["epoch_file_name"]]
-        }), deps = "settings"), input_plot_SOZ_elec = targets::tar_target_raw("plot_SOZ_elec", 
-        quote({
-            settings[["plot_SOZ_elec"]]
-        }), deps = "settings"), input_SOZ_elec = targets::tar_target_raw("SOZ_elec", 
-        quote({
-            settings[["SOZ_elec"]]
-        }), deps = "settings"), input_load_electrodes = targets::tar_target_raw("load_electrodes", 
-        quote({
-            settings[["load_electrodes"]]
-        }), deps = "settings"), input_reference_name = targets::tar_target_raw("reference_name", 
-        quote({
-            settings[["reference_name"]]
-        }), deps = "settings"), input_time_window = targets::tar_target_raw("time_window", 
-        quote({
-            settings[["time_window"]]
-        }), deps = "settings"), input_time_bandwidth = targets::tar_target_raw("time_bandwidth", 
-        quote({
-            settings[["time_bandwidth"]]
-        }), deps = "settings"), input_xyflip = targets::tar_target_raw("xyflip", 
-        quote({
-            settings[["xyflip"]]
-        }), deps = "settings"), input_verbose = targets::tar_target_raw("verbose", 
-        quote({
-            settings[["verbose"]]
-        }), deps = "settings"), input_plot_on = targets::tar_target_raw("plot_on", 
-        quote({
-            settings[["plot_on"]]
-        }), deps = "settings"), input_num_workers = targets::tar_target_raw("num_workers", 
-        quote({
-            settings[["num_workers"]]
-        }), deps = "settings"), input_parallel = targets::tar_target_raw("parallel", 
-        quote({
-            settings[["parallel"]]
-        }), deps = "settings"), input_detrend_opt = targets::tar_target_raw("detrend_opt", 
-        quote({
-            settings[["detrend_opt"]]
-        }), deps = "settings"), input_weighting = targets::tar_target_raw("weighting", 
-        quote({
-            settings[["weighting"]]
-        }), deps = "settings"), input_min_nfft = targets::tar_target_raw("min_nfft", 
-        quote({
-            settings[["min_nfft"]]
-        }), deps = "settings"), input_num_tapers = targets::tar_target_raw("num_tapers", 
-        quote({
-            settings[["num_tapers"]]
-        }), deps = "settings"), input_frequency_range = targets::tar_target_raw("frequency_range", 
-        quote({
-            settings[["frequency_range"]]
-        }), deps = "settings"), input_window_params = targets::tar_target_raw("window_params", 
-        quote({
-            settings[["window_params"]]
-        }), deps = "settings"), input_baseline_method = targets::tar_target_raw("baseline_method", 
-        quote({
-            settings[["baseline_method"]]
-        }), deps = "settings"), input_baseline = targets::tar_target_raw("baseline", 
-        quote({
-            settings[["baseline"]]
-        }), deps = "settings"), input_type = targets::tar_target_raw("type", 
-        quote({
-            settings[["type"]]
-        }), deps = "settings"), input_intervals = targets::tar_target_raw("intervals", 
-        quote({
-            settings[["intervals"]]
+            settings[["save_pipeline"]]
         }), deps = "settings"), input_reference = targets::tar_target_raw("reference", 
         quote({
             settings[["reference"]]
-        }), deps = "settings"), input_save_pipeline = targets::tar_target_raw("save_pipeline", 
+        }), deps = "settings"), input_intervals = targets::tar_target_raw("intervals", 
         quote({
-            settings[["save_pipeline"]]
-        }), deps = "settings"), input_freq_list = targets::tar_target_raw("freq_list", 
+            settings[["intervals"]]
+        }), deps = "settings"), input_type = targets::tar_target_raw("type", 
         quote({
-            settings[["freq_list"]]
-        }), deps = "settings"), input_condition = targets::tar_target_raw("condition", 
+            settings[["type"]]
+        }), deps = "settings"), input_window_params = targets::tar_target_raw("window_params", 
         quote({
-            settings[["condition"]]
+            settings[["window_params"]]
+        }), deps = "settings"), input_frequency_range = targets::tar_target_raw("frequency_range", 
+        quote({
+            settings[["frequency_range"]]
+        }), deps = "settings"), input_num_tapers = targets::tar_target_raw("num_tapers", 
+        quote({
+            settings[["num_tapers"]]
+        }), deps = "settings"), input_min_nfft = targets::tar_target_raw("min_nfft", 
+        quote({
+            settings[["min_nfft"]]
+        }), deps = "settings"), input_weighting = targets::tar_target_raw("weighting", 
+        quote({
+            settings[["weighting"]]
+        }), deps = "settings"), input_detrend_opt = targets::tar_target_raw("detrend_opt", 
+        quote({
+            settings[["detrend_opt"]]
+        }), deps = "settings"), input_parallel = targets::tar_target_raw("parallel", 
+        quote({
+            settings[["parallel"]]
+        }), deps = "settings"), input_num_workers = targets::tar_target_raw("num_workers", 
+        quote({
+            settings[["num_workers"]]
+        }), deps = "settings"), input_plot_on = targets::tar_target_raw("plot_on", 
+        quote({
+            settings[["plot_on"]]
+        }), deps = "settings"), input_verbose = targets::tar_target_raw("verbose", 
+        quote({
+            settings[["verbose"]]
+        }), deps = "settings"), input_xyflip = targets::tar_target_raw("xyflip", 
+        quote({
+            settings[["xyflip"]]
+        }), deps = "settings"), input_time_bandwidth = targets::tar_target_raw("time_bandwidth", 
+        quote({
+            settings[["time_bandwidth"]]
+        }), deps = "settings"), input_time_window = targets::tar_target_raw("time_window", 
+        quote({
+            settings[["time_window"]]
+        }), deps = "settings"), input_reference_name = targets::tar_target_raw("reference_name", 
+        quote({
+            settings[["reference_name"]]
+        }), deps = "settings"), input_load_electrodes = targets::tar_target_raw("load_electrodes", 
+        quote({
+            settings[["load_electrodes"]]
+        }), deps = "settings"), input_SOZ_elec = targets::tar_target_raw("SOZ_elec", 
+        quote({
+            settings[["SOZ_elec"]]
+        }), deps = "settings"), input_plot_SOZ_elec = targets::tar_target_raw("plot_SOZ_elec", 
+        quote({
+            settings[["plot_SOZ_elec"]]
+        }), deps = "settings"), input_epoch_file_name = targets::tar_target_raw("epoch_file_name", 
+        quote({
+            settings[["epoch_file_name"]]
+        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
+        quote({
+            settings[["project_name"]]
+        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
+        quote({
+            settings[["subject_code"]]
+        }), deps = "settings"), input_label = targets::tar_target_raw("label", 
+        quote({
+            settings[["label"]]
+        }), deps = "settings"), input_organize_top = targets::tar_target_raw("organize_top", 
+        quote({
+            settings[["organize_top"]]
+        }), deps = "settings"), input_analysis_windows = targets::tar_target_raw("analysis_windows", 
+        quote({
+            settings[["analysis_windows"]]
         }), deps = "settings"), load_subject = targets::tar_target_raw(name = "subject", 
         command = quote({
             .__target_expr__. <- quote({
@@ -189,7 +182,7 @@ rm(._._env_._.)
         command = quote({
             .__target_expr__. <- quote({
                 heatmap_result <- generate_heatmap(repository, 
-                  multitaper_result, time_window, freq_list, 
+                  multitaper_result, time_window, analysis_windows, 
                   load_electrodes, window_params, condition, 
                   label)
             })
@@ -204,21 +197,22 @@ rm(._._env_._.)
             target_export = "heatmap_result", target_expr = quote({
                 {
                   heatmap_result <- generate_heatmap(repository, 
-                    multitaper_result, time_window, freq_list, 
+                    multitaper_result, time_window, analysis_windows, 
                     load_electrodes, window_params, condition, 
                     label)
                 }
                 heatmap_result
             }), target_depends = c("repository", "multitaper_result", 
-            "time_window", "freq_list", "load_electrodes", "window_params", 
-            "condition", "label")), deps = c("repository", "multitaper_result", 
-        "time_window", "freq_list", "load_electrodes", "window_params", 
-        "condition", "label"), cue = targets::tar_cue("thorough"), 
-        pattern = NULL, iteration = "list"), electrode_powertime = targets::tar_target_raw(name = "YAEL_data", 
+            "time_window", "analysis_windows", "load_electrodes", 
+            "window_params", "condition", "label")), deps = c("repository", 
+        "multitaper_result", "time_window", "analysis_windows", 
+        "load_electrodes", "window_params", "condition", "label"
+        ), cue = targets::tar_cue("thorough"), pattern = NULL, 
+        iteration = "list"), electrode_powertime = targets::tar_target_raw(name = "YAEL_data", 
         command = quote({
             .__target_expr__. <- quote({
                 YAEL_data <- electrode_powertime(heatmap_result, 
-                  subject_code = subject_code, freq_list = freq_list, 
+                  subject_code = subject_code, analysis_windows = analysis_windows, 
                   SOZ_elec = SOZ_elec, load_electrodes = load_electrodes)
             })
             tryCatch({
@@ -232,12 +226,12 @@ rm(._._env_._.)
             target_export = "YAEL_data", target_expr = quote({
                 {
                   YAEL_data <- electrode_powertime(heatmap_result, 
-                    subject_code = subject_code, freq_list = freq_list, 
+                    subject_code = subject_code, analysis_windows = analysis_windows, 
                     SOZ_elec = SOZ_elec, load_electrodes = load_electrodes)
                 }
                 YAEL_data
             }), target_depends = c("heatmap_result", "subject_code", 
-            "freq_list", "SOZ_elec", "load_electrodes")), deps = c("heatmap_result", 
-        "subject_code", "freq_list", "SOZ_elec", "load_electrodes"
-        ), cue = targets::tar_cue("thorough"), pattern = NULL, 
-        iteration = "list"))
+            "analysis_windows", "SOZ_elec", "load_electrodes"
+            )), deps = c("heatmap_result", "subject_code", "analysis_windows", 
+        "SOZ_elec", "load_electrodes"), cue = targets::tar_cue("thorough"), 
+        pattern = NULL, iteration = "list"))

@@ -65,8 +65,15 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
 ## generate all frequency plots for a specific condition
 ## Code for computing beta power matrix
 generate_heatmap <- function(repository, multitaper_result, time_window,
-                             freq_list, load_electrodes,
+                             analysis_windows, load_electrodes,
                              window_params, condition, label) {
+
+  # extract frequency list
+  freq_list <- list()
+  for (i in seq_along(analysis_windows)) {
+    freq_list_name <- paste0("f", i)
+    freq_list[[freq_list_name]] <- analysis_windows[[i]]$frequency_range
+  }
 
   fs <- repository$sample_rate
   results <- parse_electrodes(load_electrodes)
@@ -90,9 +97,10 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
 
   for (i in seq_along(freq_list)) {
 
+    # extract frequency values
     freq_temp <- freq_list[[i]]
-    freq_start <- freq_temp[1]
-    freq_end <- freq_temp[2]
+    freq_start <- round(as.numeric(freq_temp[1]))
+    freq_end <- round(as.numeric(freq_temp[2]))
 
     heatmapbeta=zeros(nel,nwt)
 
@@ -108,7 +116,7 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
 
     # normalize by max for the whole heatmap
     maxheatBeta=max(heatmapbeta)
-    heatmapbetan=heatmapbeta/maxheatBeta
+    heatmapbetcorresponding_labelsan=heatmapbeta/maxheatBeta
 
     maxcolbetap=apply(heatmapbeta,2,max)
 
@@ -155,8 +163,22 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
 
 
 # Code for generating heatmap plot for a specific freq heatmap
-# Code for generating heatmap plot
-plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type, organize_top, repository) {
+plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type,
+                         organize_top, repository, subject_code, analysis_windows, index) {
+
+  time_list <- list()
+  for (i in seq_along(analysis_windows)) {
+    time_list_name <- paste0("t", i)
+    time_list[[time_list_name]] <- analysis_windows[[i]]$time_range
+  }
+
+  # extract time values
+  time_temp <- time_list[[index]]
+  time_start <-round(as.numeric(time_temp[[1]]))
+  time_end <- round(as.numeric(time_temp[[2]]))
+
+  #remove rows in stimes with values less than time_start and greater than time_end
+  heatmapbetacol <- heatmapbetacol[heatmapbetacol[, "stimes"] >= time_start & heatmapbetacol[, "stimes"] <= time_end, ]
 
   # Generate list of SOZ electrodes
   results_soz <- parse_electrodes(SOZ_elec)
@@ -165,7 +187,7 @@ plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type, org
   electrode_table<- repository$electrode_table
 
   #Validate only correct SOZ_elec were input
-  soz_elec <- soz_elec[soz_elec %in% electrode_table$Electrode]
+  soz_elec <- soz_elec[soz_elec %in% repository$electrode_list]
 
   if (name_type == "names") {
     indices <- which(electrode_table$Electrode %in% soz_elec)
@@ -206,12 +228,14 @@ plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type, org
 
   plot <- ggplot(heatmap_data, aes(x = Time, y = Electrode, fill = Value)) +
     geom_tile() +
-    labs(x = "Time (s)", y = "Electrode") +
+    labs(x = "Time (s)", y = "Electrode", title = subject_code) +
     scale_fill_viridis(option = "turbo") +
     theme_minimal() +
     theme(
-      axis.text.y = element_text(size = 5, color = sapply(levels(heatmap_data$Electrode), color_electrodes))
+      axis.text.y = element_text(size = 5, color = sapply(levels(heatmap_data$Electrode), color_electrodes)),
+      plot.title = element_text(hjust = 0.5)  # Center the title
     )
+
 
   return(plot)
 }
@@ -717,7 +741,14 @@ calc_mts_segment <- function(data_segment, dpss_tapers, nfft, freq_inds, weighti
 }
 
 # Save for 3D brain display
-electrode_powertime <- function(heatmapbetacol, subject_code, freq_list, SOZ_elec, load_electrodes) {
+electrode_powertime <- function(heatmapbetacol, subject_code, analysis_windows, SOZ_elec, load_electrodes) {
+
+  # extract frequency list
+  freq_list <- list()
+  for (i in seq_along(analysis_windows)) {
+    freq_list_name <- paste0("f", i)
+    freq_list[[freq_list_name]] <- analysis_windows[[i]]$frequency_range
+  }
 
   # Generate list of included SOZ electrodes
   SOZ_results <- parse_electrodes(SOZ_elec)

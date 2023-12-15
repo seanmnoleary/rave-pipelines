@@ -14,7 +14,7 @@ module_server <- function(input, output, session, ...){
 
   # Run analysis once the following input IDs are changed
   # This is used by auto-recalculation feature
-  # server_tools$run_analysis_onchange()
+  server_tools$run_analysis_onchange("condition")
 
   run_multitaper <- function() {
     # SOZ_string: 12-13,17-21,25-29,31,33-37,39,42-43,51-52
@@ -37,12 +37,6 @@ module_server <- function(input, output, session, ...){
       num_tapers <- NULL
     }
 
-    label_input <- "numeric"
-    if (input$hm_label == TRUE) {
-      label_input <- "names"
-    } else {
-      label_input <- "numeric"
-    }
 
     pipeline$set_settings(
       window_params = c(input$mt_window_size, input$mt_step_size),
@@ -54,12 +48,12 @@ module_server <- function(input, output, session, ...){
       time_bandwidth = input$mt_time_bandwidth,
 
       parallel = parallel,
-      num_workers = num_workers,
+      num_workers = num_workers
 
-      plot_SOZ_elec = input$hm_showSOZ,
-      SOZ_elec = input$input_SOZ_electrodes,
-      label = label_input,
-      organize_top = input$hm_groupSOZ
+      # plot_SOZ_elec = input$hm_showSOZ,
+      # SOZ_elec = input$input_SOZ_electrodes,
+      # label = label_input,
+      # organize_top = input$hm_groupSOZ
 
       # freqopt
       # timeopt_range
@@ -67,10 +61,10 @@ module_server <- function(input, output, session, ...){
 
     local_data$results <- NULL
 
-    local_data$SOZ_elec <- input$input_SOZ_electrodes
-    local_data$plot_SOZ_elec <- input$hm_showSOZ
-    local_data$label_type <- label_input
-    local_data$group_SOZ <- input$hm_groupSOZ
+    # local_data$SOZ_elec <- input$input_SOZ_electrodes
+    # local_data$plot_SOZ_elec <- input$hm_showSOZ
+    # local_data$label_type <- label_input
+    # local_data$group_SOZ <- input$hm_groupSOZ
 
     ravedash::logger("Scheduled: ", pipeline$pipeline_name,
                      level = 'debug', reset_timer = TRUE)
@@ -85,66 +79,42 @@ module_server <- function(input, output, session, ...){
       session = session
     )
 
-    results <- pipeline$run(
-      as_promise = TRUE,
+    pipeline$run(
+      as_promise = FALSE,
       scheduler = "none",
       type = "callr",
       callr_function = NULL,
       # shortcut = TRUE,
-      names = c("multitaper_result", "heatmap_result", "YAEL_data")
+      names = c("multitaper_result")
     )
 
-    results$promise$then(
-      onFulfilled = function(...){
+    # local_data$results <- pipeline$read(c("multitaper_result", "frequency_range"))
+    frequency_range <- range(unlist(pipeline$get_settings('frequency_range')))
+    analysis_windows <- pipeline$get_settings('analysis_windows')
 
-        local_data$results <- pipeline$read(c("multitaper_result", "heatmap_result", "YAEL_data"))
-
-        # update inputs depending on multitaper
-        frequency_range <- range(unlist(local_data$results$frequency_range))
-        dipsaus::updateCompoundInput2(
-          session = session,
-          inputId = "analysis_settings",
-          initialization = list(
-            "frequency_range" = list(
-              min = frequency_range[[1]],
-              max = frequency_range[[2]]
-            )
-          )
+    # update inputs depending on multitaper
+    dipsaus::updateCompoundInput2(
+      session = session,
+      inputId = "analysis_settings",
+      initialization = list(
+        "frequency_range" = list(
+          min = frequency_range[[1]],
+          max = frequency_range[[2]]
         )
+      ),
+      value = analysis_windows,
+      ncomp = length(analysis_windows)
+    )
 
-        Sys.sleep(0.5)
-        ravedash::logger("Fulfilled: ", pipeline$pipeline_name,
-                         level = 'debug')
-        shidashi::clear_notifications(class = "pipeline-error")
-        dipsaus::close_alert2()
+    Sys.sleep(0.5)
+    ravedash::logger("Fulfilled: ", pipeline$pipeline_name,
+                     level = 'debug')
+    shidashi::clear_notifications(class = "pipeline-error")
+    dipsaus::close_alert2()
 
-        shidashi::card_operate(
-          title = "Multitaper Parameters",
-          method = "collapse"
-        )
-
-        local_reactives$update_outputs <- Sys.time()
-        return(TRUE)
-      },
-      onRejected = function(e, ...){
-        msg <- paste(e$message, collapse = "\n")
-        if(inherits(e, "error")){
-          ravedash::logger(msg, level = 'error')
-          ravedash::logger(traceback(e), level = 'error', .sep = "\n")
-          shidashi::show_notification(
-            message = msg,
-            title = "Error while running pipeline", type = "danger",
-            autohide = FALSE, close = TRUE, class = "pipeline-error"
-          )
-          shidashi::card_operate(
-            title = "Multitaper Parameters",
-            method = "expand"
-          )
-        }
-        Sys.sleep(0.5)
-        dipsaus::close_alert2()
-        return(msg)
-      }
+    shidashi::card_operate(
+      title = "Multitaper Parameters",
+      method = "collapse"
     )
     return()
   }
@@ -157,12 +127,38 @@ module_server <- function(input, output, session, ...){
       loaded_flag <- ravedash::watch_data_loaded()
       if(!loaded_flag){ return() }
 
+      # set inputs first, and then decide whether to run multitaper
+      label_input <- "numeric"
+      if (input$hm_label == TRUE) {
+        label_input <- "names"
+      } else {
+        label_input <- "numeric"
+      }
+      pipeline$set_settings(
+        condition = input$condition,
+        analysis_windows = input$analysis_settings,
+        plot_SOZ_elec = input$hm_showSOZ,
+        SOZ_elec = input$input_SOZ_electrodes,
+        label = label_input,
+        organize_top = input$hm_groupSOZ
+      )
+
+      local_data$analysis_settings <- input$analysis_settings
+      local_data$SOZ_elec <- input$input_SOZ_electrodes
+      local_data$plot_SOZ_elec <- input$hm_showSOZ
+      local_data$label_type <- label_input
+      local_data$group_SOZ <- input$hm_groupSOZ
+      local_data$label <- label_input
+
       output_flags <- local_reactives$update_outputs
       if(!length(output_flags) || isFALSE(output_flags) || !is.list(local_data$results)) {
         run_multitaper()
       }
 
       # run the rest
+
+      local_data$results <- pipeline$run(c("YAEL_data", "heatmap_result"))
+      local_reactives$update_outputs <- Sys.time()
 
     }, error_wrapper = "alert"),
     server_tools$run_analysis_flag(),
@@ -217,6 +213,8 @@ module_server <- function(input, output, session, ...){
       # Initialize inputs
       time_window_range <- range(unlist(new_repository$time_windows))
       nyquist_floor <- floor(new_repository$sample_rate / 2)
+      frequency_range <- pipeline$get_settings('frequency_range')
+      analysis_windows <- pipeline$get_settings('analysis_windows')
 
       shiny::updateNumericInput(
         session = session,
@@ -246,8 +244,14 @@ module_server <- function(input, output, session, ...){
           "time_range" = list(
             min = time_window_range[[1]],
             max = time_window_range[[2]]
+          ),
+          "frequency_range" = list(
+            min = frequency_range[[1]],
+            max = frequency_range[[2]]
           )
-        )
+        ),
+        value = analysis_windows,
+        ncomp = length(analysis_windows)
       )
       shidashi::card_operate(
         title = "Multitaper Parameters",
@@ -357,70 +361,6 @@ module_server <- function(input, output, session, ...){
 
   shiny::bindEvent(
     ravedash::safe_observe({
-      pipeline$set_settings(
-        condition = input$condition
-      )
-
-      dipsaus::shiny_alert2(
-        title = "Updating...",
-        text = ravedash::be_patient_text(),
-        icon = "info",
-        danger_mode = FALSE,
-        auto_close = FALSE,
-        buttons = FALSE,
-        session = session
-      )
-
-      results <- pipeline$run(
-        as_promise = TRUE,
-        scheduler = "none",
-        type = "callr",
-        callr_function = NULL,
-        # shortcut = TRUE,
-        names = c("heatmap_result", "YAEL_data")
-      )
-
-      results$promise$then(
-        onFulfilled = function(...){
-
-          local_data$results <- pipeline$read(c("heatmap_result", "YAEL_data"))
-
-
-          Sys.sleep(0.5)
-          ravedash::logger("Fulfilled: ", pipeline$pipeline_name,
-                           level = 'debug')
-          shidashi::clear_notifications(class = "pipeline-error")
-          dipsaus::close_alert2()
-
-          local_reactives$update_outputs <- Sys.time()
-          return(TRUE)
-        },
-        onRejected = function(e, ...){
-          msg <- paste(e$message, collapse = "\n")
-          if(inherits(e, "error")){
-            ravedash::logger(msg, level = 'error')
-            ravedash::logger(traceback(e), level = 'error', .sep = "\n")
-            shidashi::show_notification(
-              message = msg,
-              title = "Error while running pipeline", type = "danger",
-              autohide = FALSE, close = TRUE, class = "pipeline-error"
-            )
-          }
-          Sys.sleep(0.5)
-          dipsaus::close_alert2()
-          return(msg)
-        }
-      )
-      return()
-
-    }),
-    input$condition,
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  shiny::bindEvent(
-    ravedash::safe_observe({
       epoch_table <- component_container$data$epoch_table
       current_condition <- input$condition
       current_idx <- which(epoch_table$Condition2 == current_condition)
@@ -438,6 +378,7 @@ module_server <- function(input, output, session, ...){
         inputId = "condition",
         selected = new_condition
       )
+      ravedash::fire_rave_event()
     }),
     input$condition_prev,
     ignoreNULL = TRUE,
@@ -468,286 +409,6 @@ module_server <- function(input, output, session, ...){
     ignoreNULL = TRUE,
     ignoreInit = TRUE
   )
-
-  shiny::bindEvent(
-    ravedash::safe_observe({
-
-      label_input <- "numeric"
-      if (input$hm_label == TRUE) {
-        label_input <- "names"
-      } else {
-        label_input <- "numeric"
-      }
-
-      local_data$label <- label_input
-      local_data$SOZ_elec <- input$input_SOZ_electrodes
-
-      pipeline$set_settings(
-        label = label_input,
-        SOZ_elec = input$input_SOZ_electrodes
-      )
-
-      dipsaus::shiny_alert2(
-        title = "Updating...",
-        text = ravedash::be_patient_text(),
-        icon = "info",
-        danger_mode = FALSE,
-        auto_close = FALSE,
-        buttons = FALSE,
-        session = session
-      )
-
-      results <- pipeline$run(
-        as_promise = TRUE,
-        scheduler = "none",
-        type = "callr",
-        callr_function = NULL,
-        # shortcut = TRUE,
-        names = c("heatmap_result", "YAEL_data")
-      )
-
-      results$promise$then(
-        onFulfilled = function(...){
-
-          local_data$results <- pipeline$read(c("heatmap_result", "YAEL_data"))
-
-          Sys.sleep(0.5)
-          ravedash::logger("Fulfilled: ", pipeline$pipeline_name,
-                           level = 'debug')
-          shidashi::clear_notifications(class = "pipeline-error")
-          dipsaus::close_alert2()
-
-          local_reactives$update_outputs <- Sys.time()
-          return(TRUE)
-        },
-        onRejected = function(e, ...){
-          msg <- paste(e$message, collapse = "\n")
-          if(inherits(e, "error")){
-            ravedash::logger(msg, level = 'error')
-            ravedash::logger(traceback(e), level = 'error', .sep = "\n")
-            shidashi::show_notification(
-              message = msg,
-              title = "Error while running pipeline", type = "danger",
-              autohide = FALSE, close = TRUE, class = "pipeline-error"
-            )
-          }
-          Sys.sleep(0.5)
-          dipsaus::close_alert2()
-          return(msg)
-        }
-      )
-      return()
-
-    }),
-    input$hm_label,
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  shiny::bindEvent(
-    ravedash::safe_observe({
-
-      local_data$plot_SOZ_elec <- input$hm_showSOZ
-      local_data$SOZ_elec <- input$input_SOZ_electrodes
-
-      pipeline$set_settings(
-        plot_SOZ_elec = input$hm_showSOZ,
-        SOZ_elec = input$input_SOZ_electrodes
-      )
-
-      dipsaus::shiny_alert2(
-        title = "Updating...",
-        text = ravedash::be_patient_text(),
-        icon = "info",
-        danger_mode = FALSE,
-        auto_close = FALSE,
-        buttons = FALSE,
-        session = session
-      )
-
-      results <- pipeline$run(
-        as_promise = TRUE,
-        scheduler = "none",
-        type = "callr",
-        callr_function = NULL,
-        # shortcut = TRUE,
-        names = c("heatmap_result", "YAEL_data")
-      )
-
-      results$promise$then(
-        onFulfilled = function(...){
-
-          local_data$results <- pipeline$read(c("heatmap_result", "YAEL_data"))
-
-
-          Sys.sleep(0.5)
-          ravedash::logger("Fulfilled: ", pipeline$pipeline_name,
-                           level = 'debug')
-          shidashi::clear_notifications(class = "pipeline-error")
-          dipsaus::close_alert2()
-
-          local_reactives$update_outputs <- Sys.time()
-          return(TRUE)
-        },
-        onRejected = function(e, ...){
-          msg <- paste(e$message, collapse = "\n")
-          if(inherits(e, "error")){
-            ravedash::logger(msg, level = 'error')
-            ravedash::logger(traceback(e), level = 'error', .sep = "\n")
-            shidashi::show_notification(
-              message = msg,
-              title = "Error while running pipeline", type = "danger",
-              autohide = FALSE, close = TRUE, class = "pipeline-error"
-            )
-          }
-          Sys.sleep(0.5)
-          dipsaus::close_alert2()
-          return(msg)
-        }
-      )
-      return()
-
-    }),
-    input$hm_showSOZ,
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-  shiny::bindEvent(
-    ravedash::safe_observe({
-
-      local_data$group_SOZ <- input$hm_groupSOZ
-
-      pipeline$set_settings(
-        organize_top = input$hm_groupSOZ
-      )
-
-      dipsaus::shiny_alert2(
-        title = "Updating...",
-        text = ravedash::be_patient_text(),
-        icon = "info",
-        danger_mode = FALSE,
-        auto_close = FALSE,
-        buttons = FALSE,
-        session = session
-      )
-
-      results <- pipeline$run(
-        as_promise = TRUE,
-        scheduler = "none",
-        type = "callr",
-        callr_function = NULL,
-        # shortcut = TRUE,
-        names = c("heatmap_result", "YAEL_data")
-      )
-
-      results$promise$then(
-        onFulfilled = function(...){
-
-          local_data$results <- pipeline$read(c("heatmap_result", "YAEL_data"))
-
-
-          Sys.sleep(0.5)
-          ravedash::logger("Fulfilled: ", pipeline$pipeline_name,
-                           level = 'debug')
-          shidashi::clear_notifications(class = "pipeline-error")
-          dipsaus::close_alert2()
-
-          local_reactives$update_outputs <- Sys.time()
-          return(TRUE)
-        },
-        onRejected = function(e, ...){
-          msg <- paste(e$message, collapse = "\n")
-          if(inherits(e, "error")){
-            ravedash::logger(msg, level = 'error')
-            ravedash::logger(traceback(e), level = 'error', .sep = "\n")
-            shidashi::show_notification(
-              message = msg,
-              title = "Error while running pipeline", type = "danger",
-              autohide = FALSE, close = TRUE, class = "pipeline-error"
-            )
-          }
-          Sys.sleep(0.5)
-          dipsaus::close_alert2()
-          return(msg)
-        }
-      )
-      return()
-
-    }),
-    input$hm_groupSOZ,
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
-
-  shiny::bindEvent(
-    ravedash::safe_observe({
-
-      local_data$SOZ_elec <- input$input_SOZ_electrodes
-
-      pipeline$set_settings(
-        SOZ_elec = input$input_SOZ_electrodes
-      )
-
-      dipsaus::shiny_alert2(
-        title = "Updating...",
-        text = ravedash::be_patient_text(),
-        icon = "info",
-        danger_mode = FALSE,
-        auto_close = FALSE,
-        buttons = FALSE,
-        session = session
-      )
-
-      results <- pipeline$run(
-        as_promise = TRUE,
-        scheduler = "none",
-        type = "callr",
-        callr_function = NULL,
-        # shortcut = TRUE,
-        names = c("heatmap_result", "YAEL_data")
-      )
-
-      results$promise$then(
-        onFulfilled = function(...){
-
-          local_data$results <- pipeline$read(c("heatmap_result", "YAEL_data"))
-
-
-          Sys.sleep(0.5)
-          ravedash::logger("Fulfilled: ", pipeline$pipeline_name,
-                           level = 'debug')
-          shidashi::clear_notifications(class = "pipeline-error")
-          dipsaus::close_alert2()
-
-          local_reactives$update_outputs <- Sys.time()
-          return(TRUE)
-        },
-        onRejected = function(e, ...){
-          msg <- paste(e$message, collapse = "\n")
-          if(inherits(e, "error")){
-            ravedash::logger(msg, level = 'error')
-            ravedash::logger(traceback(e), level = 'error', .sep = "\n")
-            shidashi::show_notification(
-              message = msg,
-              title = "Error while running pipeline", type = "danger",
-              autohide = FALSE, close = TRUE, class = "pipeline-error"
-            )
-          }
-          Sys.sleep(0.5)
-          dipsaus::close_alert2()
-          return(msg)
-        }
-      )
-      return()
-
-    }),
-    input$refresh_soz,
-    ignoreNULL = TRUE,
-    ignoreInit = TRUE
-  )
-
 
   # ---- Events : END ------------------------------------------
 
@@ -780,6 +441,7 @@ module_server <- function(input, output, session, ...){
       plot_SOZ_elec <- local_data$plot_SOZ_elec
       label_type <- local_data$label
       group_soz <- local_data$group_SOZ
+      analysis_settings <- local_data$analysis_settings
 
       if (is.null(label_type)) {
         label_type <- "names"
@@ -797,8 +459,11 @@ module_server <- function(input, output, session, ...){
       }
 
       repository_plot <- pipeline$read("repository")
+      subject_code <- pipeline$read("subject_code")
+      analysis_windows <- pipeline$read("subject_code")
 
-      p <- plot_heatmap(heatmap_result[[1]], SOZ_elec, plot_SOZ_elec, label_type, group_soz, repository_plot)
+      p <- plot_heatmap(heatmap_result[[1]], SOZ_elec, plot_SOZ_elec, label_type,
+                        group_soz, repository_plot, subject_code, analysis_settings, index = 1)
       print(p)
     })
   )

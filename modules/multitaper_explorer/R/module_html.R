@@ -217,10 +217,6 @@ module_html <- function(){
                     inputId = ns("input_SOZ_electrodes"),
                     label = "SOZ electrodes (numeric input)",
                     value = "0"
-                  ),
-                  dipsaus::actionButtonStyled(
-                    inputId = ns("refresh_soz"),
-                    label = "Refresh SOZ", width = "100%"
                   )
                 )
               )
