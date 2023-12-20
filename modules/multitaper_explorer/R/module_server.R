@@ -445,6 +445,7 @@ module_server <- function(input, output, session, ...){
       p <- plot_heatmap(heatmap_result[[1]], SOZ_elec, plot_SOZ_elec, resect_elec, plot_resect_elec,  label_type,
                         group_SOZResect, repository_plot, subject_code, analysis_settings, index = 1, text_size)
 
+
       print(p)
     })
   )
@@ -485,6 +486,9 @@ module_server <- function(input, output, session, ...){
         }
       }
 
+      #Define a color palette to use for blue to purple to red
+      BPR_palette <- colorRampPalette(c("blue", "purple", "red"))(10)
+
       if( has_plot_data ) {
         brain$set_electrode_values(plot_data)
 
@@ -492,10 +496,13 @@ module_server <- function(input, output, session, ...){
           side_display = FALSE,
           val_ranges = list(
             "HeatmapValue" = c(0, 1),
-            "SOZ" = c(0, 1)
+            "SOZ" = c(0, 1),
+            "Resect" = c(0, 1),
+            "SOZ_Resect" = c(0, 1)
           ),
           palettes = list(
-            "HeatmapValue" = viridis::turbo(128)
+            "HeatmapValue" = viridis::turbo(128),
+            "SOZ_Resect" = BPR_palette
           )
         )
 

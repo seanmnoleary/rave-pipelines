@@ -16,9 +16,13 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_condition = targets::tar_target_raw("condition", quote({
-        settings[["condition"]]
-    }), deps = "settings"), input_save_pipeline = targets::tar_target_raw("save_pipeline", 
+    input_time_stat_start = targets::tar_target_raw("time_stat_start", 
+        quote({
+            settings[["time_stat_start"]]
+        }), deps = "settings"), input_condition = targets::tar_target_raw("condition", 
+        quote({
+            settings[["condition"]]
+        }), deps = "settings"), input_save_pipeline = targets::tar_target_raw("save_pipeline", 
         quote({
             settings[["save_pipeline"]]
         }), deps = "settings"), input_reference = targets::tar_target_raw("reference", 
@@ -108,6 +112,9 @@ rm(._._env_._.)
         }), deps = "settings"), input_plot_resect_elec = targets::tar_target_raw("plot_resect_elec", 
         quote({
             settings[["plot_resect_elec"]]
+        }), deps = "settings"), input_time_stat_end = targets::tar_target_raw("time_stat_end", 
+        quote({
+            settings[["time_stat_end"]]
         }), deps = "settings"), load_subject = targets::tar_target_raw(name = "subject", 
         command = quote({
             .__target_expr__. <- quote({
@@ -222,7 +229,8 @@ rm(._._env_._.)
             .__target_expr__. <- quote({
                 YAEL_data <- electrode_powertime(heatmap_result, 
                   subject_code = subject_code, analysis_windows = analysis_windows, 
-                  SOZ_elec = SOZ_elec, load_electrodes = load_electrodes)
+                  SOZ_elec = SOZ_elec, resect_elec = resect_elec, 
+                  load_electrodes = load_electrodes)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -236,11 +244,58 @@ rm(._._env_._.)
                 {
                   YAEL_data <- electrode_powertime(heatmap_result, 
                     subject_code = subject_code, analysis_windows = analysis_windows, 
-                    SOZ_elec = SOZ_elec, load_electrodes = load_electrodes)
+                    SOZ_elec = SOZ_elec, resect_elec = resect_elec, 
+                    load_electrodes = load_electrodes)
                 }
                 YAEL_data
             }), target_depends = c("heatmap_result", "subject_code", 
-            "analysis_windows", "SOZ_elec", "load_electrodes"
+            "analysis_windows", "SOZ_elec", "resect_elec", "load_electrodes"
             )), deps = c("heatmap_result", "subject_code", "analysis_windows", 
-        "SOZ_elec", "load_electrodes"), cue = targets::tar_cue("thorough"), 
+        "SOZ_elec", "resect_elec", "load_electrodes"), cue = targets::tar_cue("thorough"), 
+        pattern = NULL, iteration = "list"), analyze_zscore = targets::tar_target_raw(name = "analysis_data", 
+        command = quote({
+            .__target_expr__. <- quote({
+                for (i in 1:length(heatmap_result)) {
+                  analysis_data <- analyze_zscore(heatmap_result[[i]], 
+                    repository, window_params, time_stat_start, 
+                    time_stat_end)
+                  cat("Frequency: ", i)
+                  for (j in 1:length(analysis_data$Start)) {
+                    if (!is.na(analysis_data$Start[j])) {
+                      cat("Electrode:", analysis_data$Electrodes[j], 
+                        "Start:", analysis_data$Start[j], "Length:", 
+                        analysis_data$Length[j], "\n")
+                    }
+                  }
+                }
+            })
+            tryCatch({
+                eval(.__target_expr__.)
+                return(analysis_data)
+            }, error = function(e) {
+                asNamespace("raveio")$resolve_pipeline_error(name = "analysis_data", 
+                  condition = e, expr = .__target_expr__.)
+            })
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+            target_export = "analysis_data", target_expr = quote({
+                {
+                  for (i in 1:length(heatmap_result)) {
+                    analysis_data <- analyze_zscore(heatmap_result[[i]], 
+                      repository, window_params, time_stat_start, 
+                      time_stat_end)
+                    cat("Frequency: ", i)
+                    for (j in 1:length(analysis_data$Start)) {
+                      if (!is.na(analysis_data$Start[j])) {
+                        cat("Electrode:", analysis_data$Electrodes[j], 
+                          "Start:", analysis_data$Start[j], "Length:", 
+                          analysis_data$Length[j], "\n")
+                      }
+                    }
+                  }
+                }
+                analysis_data
+            }), target_depends = c("heatmap_result", "repository", 
+            "window_params", "time_stat_start", "time_stat_end"
+            )), deps = c("heatmap_result", "repository", "window_params", 
+        "time_stat_start", "time_stat_end"), cue = targets::tar_cue("thorough"), 
         pattern = NULL, iteration = "list"))

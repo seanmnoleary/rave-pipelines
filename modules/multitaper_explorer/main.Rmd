@@ -13,30 +13,6 @@ editor_options:
 raveio::pipeline_setup_rmd("multitaper_explorer")
 ```
 
-## Introduction
-
-A RAVE pipeline markdown is an interactive notebook that can keep your notes, code blocks, and corresponding results together, generating reports in various formats such as `PDF`, `html`, `Word`, `PowerPoint`. 
-
-The note parts are simply `markdown`s - the same as `jupyter notebook`, or github documentations. The code blocks support `R`, `python`, `c++`. When you hit the `Knit` button in this code editor panel, the r-markdown file will be compiled, generating reproducible documentation.
-
-With carefully designed structures, this r-markdown file will automatically generate `RAVE` pipeline scripts during the compilation. The pipeline script can be used by `RAVE` to convert your pipeline into interactive dashboard application. (This feature is currently under development)
-
-## "RAVE" Pipeline Code Block
-
-A `RAVE` pipeline markdown code block starts with ` ```{rave ... `. The block label following `rave` informative description of the target. After the target, the following RAVE-specific parameters configures how the block should be treated:
-
-* `language`: specifies the programming language used; choices are: `R`, `python`
-* `export`: variable name to be exported that will be available to the rest chunks
-* `depends`: indicates current block depends on variables generated from other blocks; this helps `RAVE` to build non-interactive pipeline scripts internally. For blocks written in `R`, the dependence can be automatically determined.
-
-Other parameters are available at [this `rmarkdown` book](https://bookdown.org/yihui/rmarkdown/)
-
-## Beta power Heatmaps
-
-#### Step 1: Create `RAVE` subject's instances
-
-Noting that all the items in the `settings.yaml` are available as variables.
-
 ```{rave load_subject, language = "R", export = "subject", cue = "always", format = "rave-subject"}
 # Load subject instance
 subject <- raveio::RAVESubject$new(project_name = project_name, subject_code = subject_code)
@@ -86,8 +62,32 @@ YAEL_data <- electrode_powertime(
   subject_code = subject_code ,
   analysis_windows = analysis_windows,
   SOZ_elec = SOZ_elec,
+  resect_elec = resect_elec,
   load_electrodes = load_electrodes
-)
+) 
+```
+
+  #### Step 6: Analyze data and find start and duration for bands greater than 2 z-scores
+```{rave analyze_zscore, language = "R", export = "analysis_data"}
+for(i in 1:length(heatmap_result)) {
+  analysis_data <- analyze_zscore(
+    heatmap_result[[i]], 
+    repository,
+    window_params,
+    time_stat_start,
+    time_stat_end
+  ) 
+  # Print results
+  cat("Frequency: ", analysis_windows[[i]]$frequency_range[1], " - ", analysis_windows[[i]]$frequency_range[2], "\n")
+  for (j in 1:length(analysis_data$Start)) {
+    if (!is.na(analysis_data$Start[j])) {
+      cat("Electrode:", analysis_data$Electrodes[j], 
+          "Start:", analysis_data$Start[j], 
+          "Length:", analysis_data$Length[j], "\n")
+    }
+  }
+}
+
 ```
 
 ## Build, Visualize, & Run

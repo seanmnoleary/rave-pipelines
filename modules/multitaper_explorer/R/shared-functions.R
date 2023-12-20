@@ -1,5 +1,4 @@
 # Put shared functions in `shared-*.R` so the pipeline is clean
-
 get_default_cores <- function(round = TRUE) {
   re <- (raveio::raveio_getopt("max_worker") + 1) / 2
   if( round ) {
@@ -7,7 +6,6 @@ get_default_cores <- function(round = TRUE) {
   }
   re
 }
-
 
 # Generate multitaper for every condition
 generate_multitaper <- function (repository, load_electrodes, frequency_range,
@@ -673,7 +671,7 @@ nanpow2db <- function(y){
   return(ydB)
 }
 
-parse_electrodes <- function(load_electrodes) {
+parse_electrodes <- function(load_electrodes){
   # Split the input by comma to handle multiple ranges
   ranges <- strsplit(load_electrodes, ",")[[1]]
 
@@ -773,7 +771,7 @@ calc_mts_segment <- function(data_segment, dpss_tapers, nfft, freq_inds, weighti
 }
 
 # Save for 3D brain display
-electrode_powertime <- function(heatmapbetacol, subject_code, analysis_windows, SOZ_elec, load_electrodes) {
+electrode_powertime <- function(heatmapbetacol, subject_code, analysis_windows, SOZ_elec, resect_elec, load_electrodes) {
 
   # extract frequency list
   freq_list <- list()
@@ -785,6 +783,9 @@ electrode_powertime <- function(heatmapbetacol, subject_code, analysis_windows, 
   # Generate list of included SOZ electrodes
   SOZ_results <- parse_electrodes(SOZ_elec)
   SOZ_elec <- SOZ_results$elecn
+  # Generate list of Resect electrodes
+  results_resect <- parse_electrodes(resect_elec)
+  resect_elec <- results_resect$elecn
   # Generate list of included electrodes
   elec_results <- parse_electrodes(load_electrodes)
   elecn <- elec_results$elecn
@@ -804,6 +805,13 @@ electrode_powertime <- function(heatmapbetacol, subject_code, analysis_windows, 
 
     #Add a column for SOZ electrodes
     SOZ_vector <- as.numeric(heatmap_data$Electrode_numeric %in% SOZ_elec)
+    #Add a column for Resect electrodes
+    Resect_vector <- as.numeric(heatmap_data$Electrode_numeric %in% resect_elec)
+    #Add a column for Resect and SOZ electrodes
+    SOZResect_vector <- ifelse(heatmap_data$Electrode_numeric %in% SOZ_elec & heatmap_data$Electrode_numeric %in% resect_elec, 0.5,
+                                     ifelse(heatmap_data$Electrode_numeric %in% SOZ_elec, 1,
+                                     ifelse(heatmap_data$Electrode_numeric %in% resect_elec, 0, NA)))
+
 
     heatmap_data$Value <- c(Hmap)
 
@@ -819,7 +827,9 @@ electrode_powertime <- function(heatmapbetacol, subject_code, analysis_windows, 
       Electrode = heatmap_data$Electrode_label,
       Time = heatmap_data$Time,
       HeatmapValue = heatmap_data$Value,
-      SOZ = SOZ_vector
+      SOZ = SOZ_vector,
+      Resect = Resect_vector,
+      SOZ_Resect = SOZResect_vector
     )
 
     # save to list
@@ -829,4 +839,56 @@ electrode_powertime <- function(heatmapbetacol, subject_code, analysis_windows, 
   return(powertime_freq_list)
 }
 
+# Analyze Data
+analyze_zscore <- function (heatmap, repository, window_params, time_stat_start, time_stat_end) {
 
+  # Cut heatmap based on start and end time
+  heatmap <- heatmap[heatmap[, "stimes"] >= time_stat_start & heatmap[, "stimes"] <= time_stat_end, ]
+
+  # Prepare data
+  data <- as.data.frame(heatmap)
+  stimes <- data$stimes
+  data <- data[ ,-1]
+  elecnum <- as.character(repository$electrode_list)
+  data <- as.matrix(data)
+
+  # Computer Z-Score
+  heatzscore <-(data-mean(data))/sd(data)
+
+  # Calculate start of period above 2nd zscore (start zl),
+  # and length of that band startzl
+  lengthzl<-vector(mode="numeric", length=length(elecnum))
+  startzl<-vector(mode="numeric", length=length(elecnum))
+  for(ie in 1:length(elecnum)){
+    zl = heatzscore[, ie]
+    seqzl = which(zl > 2.0)
+
+    if(length(seqzl) > 0){
+      # Compute differences of the positions
+      resultzl = rle(diff(seqzl))
+
+      # Find the start of the first sequence
+      first_sequence_start = seqzl[1]
+      startzl[ie] = first_sequence_start
+
+      # Identify the lengths of continuous sequences
+      continuous_sequences = resultzl$lengths[resultzl$values == 1] + 1
+
+      # Store the length of the first sequence
+      lengthzl[ie] = if(length(continuous_sequences) > 0) continuous_sequences[1] else 0
+
+      #correct for step size
+      startzl[ie] <- (startzl[ie] * window_params[2])
+      lengthzl[ie] <- (lengthzl[ie] * window_params[2])
+    } else {
+      startzl[ie] = NA  # No sequence found
+      lengthzl[ie] = 0
+    }
+  }
+
+  results <- list(
+    Length = c(lengthzl),
+    Start = c(startzl),
+    Electrodes = c(elecnum)
+  )
+}
