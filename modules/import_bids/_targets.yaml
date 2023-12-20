@@ -1,3 +1,0 @@
-import_bids:
-  script: make-main.R
-  store: shared

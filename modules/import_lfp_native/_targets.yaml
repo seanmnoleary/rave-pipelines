@@ -1,3 +1,0 @@
-import_lfp_native:
-  script: make-main.R
-  store: shared
