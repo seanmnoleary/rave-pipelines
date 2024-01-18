@@ -1,3 +1,6 @@
+# DIPSAUS DEBUG START
+# raveio::pipeline_setup_rmd("multitaper_explorer")
+
 # UI components for loader
 loader_html <- function(session = shiny::getDefaultReactiveDomain()){
 

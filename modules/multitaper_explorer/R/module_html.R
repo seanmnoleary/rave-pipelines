@@ -207,7 +207,7 @@ module_html <- function(){
 
                 shiny::column(
                   width = 12,
-                  ravedash::run_analysis_button("Update analysis", class = "fill-width")
+                  ravedash::run_analysis_button("Update analysis", width = "100%", class = "margin-top-5")
                 )
               )
             ),

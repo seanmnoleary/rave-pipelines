@@ -76,33 +76,36 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
       # Generate data format for storing epochs and corresponding voltage data
       conditions <- epoch_table$Condition
 
-      multitaper_config <- ravetools::multitaper_config(
-        data_length = data_length,
-        fs = fs,
-        frequency_range = frequency_range,
-        time_bandwidth = time_bandwidth,
-        num_tapers = num_tapers,
-        window_params = window_params,
-        nfft = nfft,
-        detrend_opt = detrend_opt
-      )
-      res <- ravetools:::multitaper_process_input(
-        data_length,
-        fs,
-        frequency_range,
-        time_bandwidth,
-        num_tapers,
-        window_params,
-        nfft,
-        detrend_opt
-      )
-
-      time <- (res$window_start - 1 + res$winsize_samples / 2) / res$fs
+      # multitaper_config <- ravetools::multitaper_config(
+      #   data_length = data_length,
+      #   fs = fs,
+      #   frequency_range = frequency_range,
+      #   time_bandwidth = time_bandwidth,
+      #   num_tapers = num_tapers,
+      #   window_params = window_params,
+      #   nfft = nfft,
+      #   detrend_opt = detrend_opt
+      # )
+      # res <- ravetools:::multitaper_process_input(
+      #   data_length,
+      #   fs,
+      #   frequency_range,
+      #   time_bandwidth,
+      #   num_tapers,
+      #   window_params,
+      #   nfft,
+      #   detrend_opt
+      # )
+      #
+      # time <- (res$window_start - 1 + res$winsize_samples / 2) / res$fs
 
       # We want to run multitaper on all of the trials (sz case)
       if(parallel && num_workers > 1) {
         lapply2 <- function(X, FUN) {
-          raveio::lapply_async(X, FUN, ncores = num_workers)
+          raveio::lapply_async(X, FUN, ncores = num_workers, callback = function(el) {
+            sprintf("Applying multitaper|Channel %s",
+                    paste(el$dimnames()$Electrode, collapse = ""))
+          })
         }
       } else {
         lapply2 <- lapply
@@ -182,6 +185,8 @@ generate_power_over_time_data <- function(
     # ii <- 1
     # analysis_item <- list(frequency_range = c(1L, 200L), time_range = c(-1L, 2L))
     analysis_item <- analysis_time_frequencies[[ ii ]]
+    analysis_item$frequency_range <- range(unlist(analysis_item$frequency_range))
+    analysis_item$time_range <- range(unlist(analysis_item$time_range))
 
     frequency_selection <- dnames$Frequency %within% analysis_item$frequency_range
 
@@ -249,10 +254,11 @@ generate_power_over_time_data <- function(
 }
 
 
-plot_power_over_time_data <- function(power_over_time_data, trial = NULL, soz_electrodes = NULL,
-                                      name_type = c("name", "number"),
-                                      value_range = NULL, scale = c("normal", "decibel"),
-                                      palette = plot_preferences$get('heatmap_palette')[6:11]) {
+plot_power_over_time_data <- function(
+    power_over_time_data, trial = NULL, soz_electrodes = NULL,
+    name_type = c("name", "number"), value_range = NULL,
+    scale = c("normal", "0-1"),
+    palette = plot_preferences$get('heatmap_palette')[6:11]) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
   scale <- match.arg(scale)
@@ -263,7 +269,7 @@ plot_power_over_time_data <- function(power_over_time_data, trial = NULL, soz_el
   # soz_electrodes <- 3:4
   # trial <- 2
   # palette = plot_preferences$get('heatmap_palette')
-  # scale <- "decibel"
+  # scale <- "0-1"
   # palette = plot_preferences$get('heatmap_palette')[6:11]
   # value_range=NULL
   # name_type = "number"
@@ -279,17 +285,22 @@ plot_power_over_time_data <- function(power_over_time_data, trial = NULL, soz_el
   actual_range <- power_over_time_data$value_range
   project_name <- power_over_time_data$project_name
   subject_code <- power_over_time_data$subject_code
+
   if(length(value_range) > 0 && !anyNA(value_range)) {
     value_range <- range(value_range, na.rm = TRUE)
     if( value_range[[2]] == value_range[[1]] ) {
-      value_range <- actual_range
+      if( scale == "0-1" ) {
+        value_range <- c(0,1)
+      } else {
+        value_range <- actual_range
+      }
     }
   } else {
-    value_range <- actual_range
-  }
-  if(scale == "decibel") {
-    value_range[[1]] <- min(0, 10 * log10(value_range[[2]]))
-    value_range[[2]] <- 10 * log10(value_range[[2]])
+    if( scale == "0-1" ) {
+      value_range <- c(0,1)
+    } else {
+      value_range <- actual_range
+    }
   }
 
   # determine the y-axis labels
@@ -324,7 +335,7 @@ plot_power_over_time_data <- function(power_over_time_data, trial = NULL, soz_el
 
   group_data_is_valid <- !sapply(power_over_time_data$group_data, is.null)
 
-  if(!group_data_is_valid) { stop("No valid data; please check analysis frequency and time range.") }
+  if(!any(group_data_is_valid)) { stop("No valid data; please check analysis frequency and time range.") }
 
   layout_heat_maps(sum(group_data_is_valid), max_col = 2, layout_color_bar = TRUE)
   par("mar" = c(3.1, 4.3, 3, 0.1))
@@ -339,13 +350,18 @@ plot_power_over_time_data <- function(power_over_time_data, trial = NULL, soz_el
     }
     ntrials <- dim(data)[[2]]
     nchanns <- dim(data)[[3]]
-    if(scale == "decibel") {
-      # use abs just in case
-      data[data <= 0] <- min(data[data > 0])
-      data <- 10 * log10(abs(data))
-    }
+
     # Time x Trial (collapse) x Electrode
     data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
+
+    if( scale == "0-1" ) {
+      qval <- value_range[[2]]
+      if( qval <= 0 || qval > 1) {
+        qval <- 1
+      }
+      data_over_time_per_elec <- data_over_time_per_elec / quantile(data_over_time_per_elec, qval, na.rm = TRUE) * qval
+      value_range <- c(0, qval)
+    }
 
     data_over_time_per_elec[data_over_time_per_elec < value_range[[1]]] <- value_range[[1]]
     data_over_time_per_elec[data_over_time_per_elec > value_range[[2]]] <- value_range[[2]]
@@ -378,15 +394,12 @@ plot_power_over_time_data <- function(power_over_time_data, trial = NULL, soz_el
   graphics::axis(side = 4, at = c(value_range[[2]], 0), labels = c(sprintf("%.1f", value_range[[2]]), "0"), las = 1)
 
 
-  if(scale == "decibel") {
-    actual_range <- 10 * log10(actual_range)
-    actual_range_text <- paste(sprintf("%.1f dB", actual_range), collapse = " ~ ")
+  if(scale == "0-1") {
+    graphics::title("Quantile", line = 0.6, adj = 0, cex.main = 0.8)
   } else {
     actual_range_text <- paste(sprintf("%.1f", actual_range), collapse = " ~ ")
+    graphics::title(sprintf("[%s]", actual_range_text), line = 0.6, adj = 0, cex.main = 0.8)
   }
-
-  graphics::title(sprintf("[%s]", actual_range_text), line = 0.6, adj = 0, cex.main = 0.8)
-
 
 }
 

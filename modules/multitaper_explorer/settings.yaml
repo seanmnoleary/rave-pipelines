@@ -6,6 +6,13 @@ analysis_time_frequencies:
     time_range:
     - -1
     - 2
+  '2':
+    frequency_range:
+    - 55.8
+    - 200
+    time_range:
+    - -0.4
+    - 1.4
 condition: sz (1)
 reference: default
 window_params:

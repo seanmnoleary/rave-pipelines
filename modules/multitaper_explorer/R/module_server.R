@@ -18,7 +18,8 @@ module_server <- function(input, output, session, ...){
 
   # This function only cares about running multitaper
   # Do not put plotting or analysis configurations here
-  run_multitaper <- function(target_names = c("multitaper_result", "heatmap_result", "YAEL_data"), with_notification = TRUE, ...) {
+  run_multitaper <- function(target_names = c("multitaper_result"),
+                             with_notification = TRUE, ...) {
     # SOZ_string: 12-13,17-21,25-29,31,33-37,39,42-43,51-52
     # num_windows: 100
     # epoch: sz2
@@ -148,6 +149,7 @@ module_server <- function(input, output, session, ...){
       run_multitaper()
     }
     # run the rest
+    # pipeline$eval()
   }
 
 
