@@ -39,14 +39,14 @@ multitaper_result <- generate_multitaper(repository, load_electrodes, frequency_
                                          time_bandwidth, num_tapers, window_params, min_nfft, 
                                          weighting, detrend_opt, parallel)
 ```
-  
+
 ### Step 4: get heatmap data from multitaper result for each spectral range for a specific condition
 ```{rave find_heatmap, language = "R", export = "heatmap_result"}
 heatmap_result <- generate_heatmap(repository, multitaper_result, time_window,
                              analysis_windows, load_electrodes,
-                             window_params, condition, label) 
+                             window_params, condition, label, normalize) 
 ```
-  
+
   #### Step 5: Visualize Heatmaps for all the generated spectral ranges for a specific condition
 ```{r}
 for(i in 1:length(heatmap_result)) {
@@ -68,14 +68,16 @@ YAEL_data <- electrode_powertime(
 ```
 
   #### Step 6: Analyze data and find start and duration for bands greater than 2 z-scores
-```{rave analyze_zscore, language = "R", export = "analysis_data"}
+```{rave analyze_score, language = "R", export = "analysis_data"}
 for(i in 1:length(heatmap_result)) {
-  analysis_data <- analyze_zscore(
+  analysis_data <- analyze_score(
     heatmap_result[[i]], 
     repository,
     window_params,
     time_stat_start,
-    time_stat_end
+    time_stat_end,
+    threshold_type = threshold_type, 
+    threshold_level = threshold_level
   ) 
   # Print results
   cat("Frequency: ", analysis_windows[[i]]$frequency_range[1], " - ", analysis_windows[[i]]$frequency_range[2], "\n")

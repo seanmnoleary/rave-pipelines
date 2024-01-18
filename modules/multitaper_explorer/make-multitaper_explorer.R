@@ -112,6 +112,15 @@ rm(._._env_._.)
         }), deps = "settings"), input_plot_resect_elec = targets::tar_target_raw("plot_resect_elec", 
         quote({
             settings[["plot_resect_elec"]]
+        }), deps = "settings"), input_normalize = targets::tar_target_raw("normalize", 
+        quote({
+            settings[["normalize"]]
+        }), deps = "settings"), input_threshold_level = targets::tar_target_raw("threshold_level", 
+        quote({
+            settings[["threshold_level"]]
+        }), deps = "settings"), input_threshold_type = targets::tar_target_raw("threshold_type", 
+        quote({
+            settings[["threshold_type"]]
         }), deps = "settings"), input_time_stat_end = targets::tar_target_raw("time_stat_end", 
         quote({
             settings[["time_stat_end"]]
@@ -200,7 +209,7 @@ rm(._._env_._.)
                 heatmap_result <- generate_heatmap(repository, 
                   multitaper_result, time_window, analysis_windows, 
                   load_electrodes, window_params, condition, 
-                  label)
+                  label, normalize)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -215,16 +224,16 @@ rm(._._env_._.)
                   heatmap_result <- generate_heatmap(repository, 
                     multitaper_result, time_window, analysis_windows, 
                     load_electrodes, window_params, condition, 
-                    label)
+                    label, normalize)
                 }
                 heatmap_result
             }), target_depends = c("repository", "multitaper_result", 
             "time_window", "analysis_windows", "load_electrodes", 
-            "window_params", "condition", "label")), deps = c("repository", 
-        "multitaper_result", "time_window", "analysis_windows", 
-        "load_electrodes", "window_params", "condition", "label"
-        ), cue = targets::tar_cue("thorough"), pattern = NULL, 
-        iteration = "list"), electrode_powertime = targets::tar_target_raw(name = "YAEL_data", 
+            "window_params", "condition", "label", "normalize"
+            )), deps = c("repository", "multitaper_result", "time_window", 
+        "analysis_windows", "load_electrodes", "window_params", 
+        "condition", "label", "normalize"), cue = targets::tar_cue("thorough"), 
+        pattern = NULL, iteration = "list"), electrode_powertime = targets::tar_target_raw(name = "YAEL_data", 
         command = quote({
             .__target_expr__. <- quote({
                 YAEL_data <- electrode_powertime(heatmap_result, 
@@ -252,14 +261,17 @@ rm(._._env_._.)
             "analysis_windows", "SOZ_elec", "resect_elec", "load_electrodes"
             )), deps = c("heatmap_result", "subject_code", "analysis_windows", 
         "SOZ_elec", "resect_elec", "load_electrodes"), cue = targets::tar_cue("thorough"), 
-        pattern = NULL, iteration = "list"), analyze_zscore = targets::tar_target_raw(name = "analysis_data", 
+        pattern = NULL, iteration = "list"), analyze_score = targets::tar_target_raw(name = "analysis_data", 
         command = quote({
             .__target_expr__. <- quote({
                 for (i in 1:length(heatmap_result)) {
-                  analysis_data <- analyze_zscore(heatmap_result[[i]], 
+                  analysis_data <- analyze_score(heatmap_result[[i]], 
                     repository, window_params, time_stat_start, 
-                    time_stat_end)
-                  cat("Frequency: ", i)
+                    time_stat_end, threshold_type = threshold_type, 
+                    threshold_level = threshold_level)
+                  cat("Frequency: ", analysis_windows[[i]]$frequency_range[1], 
+                    " - ", analysis_windows[[i]]$frequency_range[2], 
+                    "\n")
                   for (j in 1:length(analysis_data$Start)) {
                     if (!is.na(analysis_data$Start[j])) {
                       cat("Electrode:", analysis_data$Electrodes[j], 
@@ -280,10 +292,13 @@ rm(._._env_._.)
             target_export = "analysis_data", target_expr = quote({
                 {
                   for (i in 1:length(heatmap_result)) {
-                    analysis_data <- analyze_zscore(heatmap_result[[i]], 
+                    analysis_data <- analyze_score(heatmap_result[[i]], 
                       repository, window_params, time_stat_start, 
-                      time_stat_end)
-                    cat("Frequency: ", i)
+                      time_stat_end, threshold_type = threshold_type, 
+                      threshold_level = threshold_level)
+                    cat("Frequency: ", analysis_windows[[i]]$frequency_range[1], 
+                      " - ", analysis_windows[[i]]$frequency_range[2], 
+                      "\n")
                     for (j in 1:length(analysis_data$Start)) {
                       if (!is.na(analysis_data$Start[j])) {
                         cat("Electrode:", analysis_data$Electrodes[j], 
@@ -295,7 +310,9 @@ rm(._._env_._.)
                 }
                 analysis_data
             }), target_depends = c("heatmap_result", "repository", 
-            "window_params", "time_stat_start", "time_stat_end"
+            "window_params", "time_stat_start", "time_stat_end", 
+            "threshold_type", "threshold_level", "analysis_windows"
             )), deps = c("heatmap_result", "repository", "window_params", 
-        "time_stat_start", "time_stat_end"), cue = targets::tar_cue("thorough"), 
+        "time_stat_start", "time_stat_end", "threshold_type", 
+        "threshold_level", "analysis_windows"), cue = targets::tar_cue("thorough"), 
         pattern = NULL, iteration = "list"))

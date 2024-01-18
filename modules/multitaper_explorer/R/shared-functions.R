@@ -22,6 +22,8 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
   conditions <- repository$epoch_table$Condition
   df <- data.frame(Conditions = conditions)
 
+  pCNT <- 1
+
   for(condition in conditions) {
 
     spectrogram_list <- vector("list", length(elecn))
@@ -29,6 +31,9 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
 
 
     for(e in elecn) {
+      cat(paste0(repository$subject$subject_code, " Progress: ", floor(pCNT / (length(elecn) * length(conditions)) * 100), "%\n"))
+
+      pCNT <- pCNT + 1
       #Get voltage data
       voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", e)]]
 
@@ -55,6 +60,7 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
     row_index <- which(df$Conditions == condition)
     df$MultitaperData[row_index] <- list(spectrogram_list)
   }
+
   epoch_table <- repository$epoch_table
   df$Conditions <- sprintf("%s (%s)", df$Conditions, epoch_table$Trial)
   return(df)
@@ -64,7 +70,7 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
 ## Code for computing beta power matrix
 generate_heatmap <- function(repository, multitaper_result, time_window,
                              analysis_windows, load_electrodes,
-                             window_params, condition, label) {
+                             window_params, condition, label, normalize) {
 
   # create frequency and time list
   freq_list <- list()
@@ -116,28 +122,22 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
       cnt <- cnt + 1
     }
 
-    # normalize by max for the whole heatmap
-    maxheatBeta=max(heatmapbeta)
-    heatmapbetcorresponding_labelsan=heatmapbeta/maxheatBeta
-
-    maxcolbetap=apply(heatmapbeta,2,max)
-
     heatmapbetacol=zeros(nel,nwt)
 
-    for(it in 1:nwt){
-      for(ie in 1:nel){
-        heatmapbetacol[ie,it]=heatmapbeta[ie,it]/maxcolbetap[it]
+    # Normalization
+    if (normalize == TRUE) {
+      maxheatBeta <- max(heatmapbeta)
+      heatmapbetcorresponding_labelsan <- heatmapbeta / maxheatBeta
+
+      maxcolbetap <- apply(heatmapbeta, 2, max)
+
+      for (it in 1:nwt) {
+        for (ie in 1:nel) {
+          heatmapbetacol[ie, it] <- heatmapbeta[ie, it] / maxcolbetap[it]
+        }
       }
-    }
-
-    maxcolbetap=apply(heatmapbeta,2,max)
-
-    heatmapbetacol=zeros(nel,nwt)
-
-    for(it in 1:nwt){
-      for(ie in 1:nel){
-        heatmapbetacol[ie,it]=heatmapbeta[ie,it]/maxcolbetap[it]
-      }
+    } else {
+      heatmapbetacol <- heatmapbeta
     }
 
     #Prepare Data ----
@@ -840,7 +840,7 @@ electrode_powertime <- function(heatmapbetacol, subject_code, analysis_windows, 
 }
 
 # Analyze Data
-analyze_zscore <- function (heatmap, repository, window_params, time_stat_start, time_stat_end) {
+analyze_score <- function (heatmap, repository, window_params, time_stat_start, time_stat_end, threshold_type, threshold_level) {
 
   # Cut heatmap based on start and end time
   heatmap <- heatmap[heatmap[, "stimes"] >= time_stat_start & heatmap[, "stimes"] <= time_stat_end, ]
@@ -852,38 +852,70 @@ analyze_zscore <- function (heatmap, repository, window_params, time_stat_start,
   elecnum <- as.character(repository$electrode_list)
   data <- as.matrix(data)
 
-  # Computer Z-Score
-  heatzscore <-(data-mean(data))/sd(data)
-
-  # Calculate start of period above 2nd zscore (start zl),
-  # and length of that band startzl
   lengthzl<-vector(mode="numeric", length=length(elecnum))
   startzl<-vector(mode="numeric", length=length(elecnum))
-  for(ie in 1:length(elecnum)){
-    zl = heatzscore[, ie]
-    seqzl = which(zl > 2.0)
 
-    if(length(seqzl) > 0){
-      # Compute differences of the positions
-      resultzl = rle(diff(seqzl))
+  if (threshold_type == "zscore") {
 
-      # Find the start of the first sequence
-      first_sequence_start = seqzl[1]
-      startzl[ie] = first_sequence_start
+    # Computer Z-Score
+    heatzscore <-(data-mean(data))/sd(data)
 
-      # Identify the lengths of continuous sequences
-      continuous_sequences = resultzl$lengths[resultzl$values == 1] + 1
+    for(ie in 1:length(elecnum)){
+      zl = heatzscore[, ie]
+      seqzl = which(zl > threshold_level)
 
-      # Store the length of the first sequence
-      lengthzl[ie] = if(length(continuous_sequences) > 0) continuous_sequences[1] else 0
+      if(length(seqzl) > 0){
+        # Compute differences of the positions
+        resultzl = rle(diff(seqzl))
 
-      #correct for step size
-      startzl[ie] <- (startzl[ie] * window_params[2])
-      lengthzl[ie] <- (lengthzl[ie] * window_params[2])
-    } else {
-      startzl[ie] = NA  # No sequence found
-      lengthzl[ie] = 0
+        # Find the start of the first sequence
+        first_sequence_start = seqzl[1]
+        startzl[ie] = first_sequence_start
+
+        # Identify the lengths of continuous sequences
+        continuous_sequences = resultzl$lengths[resultzl$values == 1] + 1
+
+        # Store the length of the first sequence
+        lengthzl[ie] = if(length(continuous_sequences) > 0) continuous_sequences[1] else 0
+
+        #correct for step size
+        startzl[ie] <- (startzl[ie] * window_params[2])
+        lengthzl[ie] <- (lengthzl[ie] * window_params[2])
+      } else {
+        startzl[ie] = NA  # No sequence found
+        lengthzl[ie] = 0
+      }
     }
+
+  } else if (threshold_type == "raw") {
+
+    for(ie in 1:length(elecnum)){
+      zl = data[, ie]
+      seqzl = which(zl > threshold_level)
+
+      if(length(seqzl) > 0){
+        # Compute differences of the positions
+        resultzl = rle(diff(seqzl))
+
+        # Find the start of the first sequence
+        first_sequence_start = seqzl[1]
+        startzl[ie] = first_sequence_start
+
+        # Identify the lengths of continuous sequences
+        continuous_sequences = resultzl$lengths[resultzl$values == 1] + 1
+
+        # Store the length of the first sequence
+        lengthzl[ie] = if(length(continuous_sequences) > 0) continuous_sequences[1] else 0
+
+        #correct for step size
+        startzl[ie] <- (startzl[ie] * window_params[2])
+        lengthzl[ie] <- (lengthzl[ie] * window_params[2])
+      } else {
+        startzl[ie] = NA  # No sequence found
+        lengthzl[ie] = 0
+      }
+    }
+
   }
 
   results <- list(
@@ -891,4 +923,5 @@ analyze_zscore <- function (heatmap, repository, window_params, time_stat_start,
     Start = c(startzl),
     Electrodes = c(elecnum)
   )
+
 }

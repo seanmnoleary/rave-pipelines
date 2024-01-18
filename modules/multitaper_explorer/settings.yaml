@@ -1,5 +1,5 @@
 time_stat_start: 0.0
-condition: sz1 (1)
+condition: sz1 (4)
 save_pipeline: yes
 reference: default
 intervals:
@@ -7,13 +7,13 @@ intervals:
   - 2.0
 type: power
 window_params:
-- 2.0
+- 2.5
 - 0.5
 frequency_range:
-- 1
-- 200
-num_tapers: ~
-min_nfft: 0
+- 1.0
+- 50.0
+num_tapers: 5.0
+min_nfft: 0.0
 weighting: unity
 detrend_opt: linear
 parallel: yes
@@ -21,28 +21,31 @@ num_workers: 31.0
 plot_on: no
 verbose: no
 xyflip: no
-time_bandwidth: 3
+time_bandwidth: 3.0
 time_window:
-- -1
-- 1
+- -30
+- 30
 reference_name: common_average
-load_electrodes: 3-38,41-60,65-128
+load_electrodes: 3-88
 SOZ_elec: '0'
 plot_SOZ_elec: no
-epoch_file_name: subHUP130_seizure
+epoch_file_name: subHUP064_seizure
 project_name: Retrostudy
-subject_code: subHUP130
-label: names
+subject_code: subHUP064
+label: numeric
 organize_top: no
 analysis_windows:
   '1':
     frequency_range:
-    - 13
-    - 31
+    - 13.0
+    - 31.0
     time_range:
-    - -1
-    - 1
-text_size: 5
+    - -30.0
+    - 30.0
+text_size: 5.0
 resect_elec: '0'
 plot_resect_elec: no
+normalize: yes
+threshold_level: 2.0
+threshold_type: zscore
 time_stat_end: 10.0
