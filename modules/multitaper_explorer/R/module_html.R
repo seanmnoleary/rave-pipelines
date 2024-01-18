@@ -2,6 +2,20 @@
 
 module_html <- function(){
 
+  current_inputs <- pipeline$get_settings()
+  frequency_range <- unlist(current_inputs$frequency_range)
+  if(length(frequency_range) != 2) {
+    frequency_range <- c(1, 200)
+  }
+  window_params <- current_inputs$window_params
+  if(length(window_params) != 2) {
+    window_params <- c(2, 0.5)
+  }
+  time_bandwidth <- current_inputs$time_bandwidth
+  if(length(time_bandwidth) != 1 || !is.numeric(time_bandwidth)) {
+    time_bandwidth <- 3
+  }
+
   shiny::fluidPage(
     shiny::fluidRow(
 
@@ -24,14 +38,14 @@ module_html <- function(){
                     shiny::numericInput(
                       inputId = ns("mt_frequency_lower_bound"),
                       label = "Frequency from",
-                      min = 0.1, step = 0.1, value = 1, width = "100%"
+                      min = 0.1, step = 0.1, value = frequency_range[[1]], width = "100%"
                     )
                   ),
                   shidashi::flex_item(
                     shiny::numericInput(
                       inputId = ns("mt_frequency_upper_bound"),
                       label = "to (Hz)",
-                      min = 0.1, step = 0.1, value = 200, width = "100%"
+                      min = 0.1, step = 0.1, value = frequency_range[[2]], width = "100%"
                     )
                   )
                 ),
@@ -41,14 +55,14 @@ module_html <- function(){
                     shiny::numericInput(
                       inputId = ns("mt_window_size"),
                       label = "Window size (s)",
-                      min = 0.1, step = 0.1, value = 2.0, width = "100%"
+                      min = 0.1, step = 0.1, value = window_params[[1]], width = "100%"
                     )
                   ),
                   shidashi::flex_item(
                     shiny::numericInput(
                       inputId = ns("mt_step_size"),
                       label = "Step size (s)",
-                      min = 0.1, step = 0.1, value = 0.5, width = "100%"
+                      min = 0.1, step = 0.1, value = window_params[[2]], width = "100%"
                     )
                   )
                 ),
@@ -56,7 +70,7 @@ module_html <- function(){
                 shiny::numericInput(
                   inputId = ns("mt_time_bandwidth"),
                   label = "Time-half bandwidth product (window duration x half bandwidth of main lobe)",
-                  value = 3,
+                  value = time_bandwidth,
                   min = 0.1, width = "100%"
                 )
               ),
@@ -189,12 +203,17 @@ module_html <- function(){
 
                     )
                   )
+                ),
+
+                shiny::column(
+                  width = 12,
+                  ravedash::run_analysis_button("Update analysis", class = "fill-width")
                 )
               )
             ),
 
             ravedash::input_card(
-              title = "Heatmap Options",
+              title = "Plot Options",
               shiny::fluidRow(
                 shiny::column(
                   width = 12,

@@ -1,5 +1,15 @@
 # Put shared functions in `shared-*.R` so the pipeline is clean
 
+`%within%` <- rutabaga::`%within%`
+
+plot_preferences <- pipeline$load_preferences(
+  name = "graphics",
+
+  # default options
+  heatmap_palette = c("#053061", "#2166ac", "#4393c3", "#92c5de", "#d1e5f0", "#ffffff",
+                      "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f")
+)
+
 get_default_cores <- function(round = TRUE) {
   re <- (raveio::raveio_getopt("max_worker") + 1) / 2
   if( round ) {
@@ -9,201 +19,427 @@ get_default_cores <- function(round = TRUE) {
 }
 
 
+# For debug use; see `dipsaus::rs_show_shortcut(1)`
+# DIPSAUS DEBUG START
+# raveio::pipeline_setup_rmd("multitaper_explorer")
+# subject <- raveio::RAVESubject$new(project_name = project_name, subject_code = subject_code)
+# repository <- raveio::prepare_subject_voltage_with_epoch(
+#   subject = subject,
+#   epoch_name = epoch_file_name,
+#   electrodes = load_electrodes,
+#   time_windows = time_window,
+#   reference = reference_name
+# )
+# multitaper_result <- generate_multitaper(
+#   repository, load_electrodes, frequency_range,
+#   time_bandwidth, num_tapers, window_params, min_nfft,
+#   weighting, detrend_opt, parallel)
+# power_over_time_data <- generate_power_over_time_data(multitaper_result, analysis_time_frequencies)
+
 # Generate multitaper for every condition
 generate_multitaper <- function (repository, load_electrodes, frequency_range,
                                  time_bandwidth, num_tapers, window_params, min_nfft,
-                                 weighting, detrend_opt, parallel) {
+                                 weighting, detrend_opt, parallel, verbose = TRUE) {
   fs <- repository$sample_rate
   results <- parse_electrodes(load_electrodes)
   nel <- results$nel
   elecn <-results$elecn
-
-  voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
-
-  # Generate data format for storing epochs and corresponding voltage data
-  conditions <- repository$epoch_table$Condition
-  df <- data.frame(Conditions = conditions)
-
-  for(condition in conditions) {
-
-    spectrogram_list <- vector("list", length(elecn))
-    cnt <- 1
+  nfft <- min_nfft
+  if(!isTRUE(nfft >= 1)) { nfft <- NA }
+  data_length <- length(repository$voltage$dimnames$Time)
 
 
-    for(e in elecn) {
-      #Get voltage data
-      voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", e)]]
+  # generate multitaper with cache
+  repository_signature <- repository$signature
+  electrode_parse <- results
 
-      #collapse voltage for selected condition
-      selector <- repository$epoch_table$Condition %in% c(condition)
-      if(!any(selector)) {
-        stop("Invalid condition selected.")
-      }
-      trial_list <- repository$epoch_table$Trial[selector]
-      selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
-      collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
-
-      # Compute the multitaper spectrogram
-      results = multitaper_spectrogram_R(collapsed_trial, fs, frequency_range, time_bandwidth, num_tapers, window_params,
-                                         min_nfft, weighting, detrend_opt, parallel, num_workers,
-                                         plot_on = FALSE, verbose = FALSE, xyflip = FALSE)
-
-      spect <- results[[1]]
-      spectrogram_list[[cnt]] <- spect
-      cnt <- cnt + 1
-    }
-
-    #add condition to output
-    row_index <- which(df$Conditions == condition)
-    df$MultitaperData[row_index] <- list(spectrogram_list)
-  }
+  filebase <- file.path(pipeline$extdata_path, "karaslab_multitaper_explorer")
+  dnames <- NULL
   epoch_table <- repository$epoch_table
-  df$Conditions <- sprintf("%s (%s)", df$Conditions, epoch_table$Trial)
-  return(df)
+  epoch_table$Condition2 <- sprintf("%s (%s)", epoch_table$Condition, epoch_table$Trial)
+
+  # save meta to the array headers
+  meta <- list()
+  meta$epoch_table <- epoch_table
+  meta$electrode_table <- repository$electrode_table
+  meta$electrodes <- electrode_parse
+  meta$project_name <- repository$subject$project_name
+  meta$subject_code <- repository$subject$subject_code
+
+  time_freq_data <- raveio::cache_to_filearray(
+    filebase = filebase,
+    globals = c("repository_signature", "data_length", "nfft", "electrode_parse", "frequency_range",
+                "time_bandwidth", "num_tapers", "window_params", "weighting", "detrend_opt"),
+    fun = function(){
+      voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
+
+      # Generate data format for storing epochs and corresponding voltage data
+      conditions <- epoch_table$Condition
+
+      multitaper_config <- ravetools::multitaper_config(
+        data_length = data_length,
+        fs = fs,
+        frequency_range = frequency_range,
+        time_bandwidth = time_bandwidth,
+        num_tapers = num_tapers,
+        window_params = window_params,
+        nfft = nfft,
+        detrend_opt = detrend_opt
+      )
+      res <- ravetools:::multitaper_process_input(
+        data_length,
+        fs,
+        frequency_range,
+        time_bandwidth,
+        num_tapers,
+        window_params,
+        nfft,
+        detrend_opt
+      )
+
+      time <- (res$window_start - 1 + res$winsize_samples / 2) / res$fs
+
+      # We want to run multitaper on all of the trials (sz case)
+      if(parallel && num_workers > 1) {
+        lapply2 <- function(X, FUN) {
+          raveio::lapply_async(X, FUN, ncores = num_workers)
+        }
+      } else {
+        lapply2 <- lapply
+      }
+
+      time_freq_data <- lapply2(repository$voltage$data_list, function(voltage_for_analysis) {
+        # load data
+        time_freq_per_chann_data <- filearray::apply(voltage_for_analysis, 2L, function(voltage) {
+          res <- multitaper_spectrogram_R(
+            voltage, fs, frequency_range, time_bandwidth, num_tapers,
+            window_params, min_nfft, weighting, detrend_opt, parallel = FALSE,
+            num_workers = FALSE, plot_on = FALSE, verbose = FALSE, xyflip = FALSE)
+          re <- t(res[[1]])
+          dimnames(re) <- list(
+            Time = res[[2]],
+            Frequency = res[[3]]
+          )
+          re
+        }, simplify = FALSE)
+        dnames <- dimnames(time_freq_per_chann_data[[1]])
+
+        # Time x Frequency x Trial
+        time_freq_per_chann_data <- simplify2array(time_freq_per_chann_data)
+        dimnames(time_freq_per_chann_data) <- c(
+          dnames,
+          list(Trial = epoch_table$Trial)
+        )
+
+        time_freq_per_chann_data
+      })
+
+      dnames <- dimnames(time_freq_data[[1]])
+      dnames <- list(
+        Time = as.numeric(dnames$Time),
+        Frequency = as.numeric(dnames$Frequency),
+        Trial = as.numeric(dnames$Trial),
+        Electrode = repository$electrode_list
+      )
+      time_freq_data <- simplify2array(time_freq_data)
+      dimnames(time_freq_data) <- dnames
+      meta$dnames <- dnames
+
+      # set "extra" headers, this information will be saved
+      attr(time_freq_data, "extra") <- meta
+      time_freq_data
+    },
+    verbose = verbose
+  )
+
+
+  time_freq_data
 }
 
 ## generate all frequency plots for a specific condition
 ## Code for computing beta power matrix
-generate_heatmap <- function(repository, multitaper_result, time_window,
-                             freq_list, load_electrodes,
-                             window_params, condition, label) {
+generate_power_over_time_data <- function(
+    multitaper_result,
+    analysis_time_frequencies
+) {
 
-  fs <- repository$sample_rate
-  results <- parse_electrodes(load_electrodes)
-  nel <- results$nel
-  elecn <-results$elecn
+  # get header information
+  meta <- multitaper_result$get_header("extra")
+  dnames <- meta$dnames
+  epoch_table <- meta$epoch_table
+  electrode_table <- meta$electrode_table
+  electrode_parse <- meta$electrodes
+  project_name <- meta$project_name
+  subject_code <- meta$subject_code
 
-  row_index <- which(multitaper_result$Conditions == condition)
-  spectrogram_list <- multitaper_result$MultitaperData[row_index]
+  nel <- electrode_parse$nel
+  elecn <- electrode_parse$elecn
 
-  voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
-  fs <- repository$sample_rate
-  time_dimnames <- dimnames(voltage_for_analysis)$Time
-  nt <- length(time_dimnames)
-  nwt <- floor((nt/fs-as.numeric(window_params[1]))/as.numeric(window_params[2]))+1
-  t1 <- as.numeric(time_window[1])
-  t2 <- as.numeric(time_window[2])
-  elect <- seq(t1, t2, length.out = nwt)
+  value_range <- c(0, 0)
 
-  heatmap_freq_list <- vector("list", length(freq_list))
+  # collapse over frequency for each time point and condition
+  group_data <- lapply(seq_along(analysis_time_frequencies), function(ii) {
+    # ii <- 1
+    # analysis_item <- list(frequency_range = c(1L, 200L), time_range = c(-1L, 2L))
+    analysis_item <- analysis_time_frequencies[[ ii ]]
 
+    frequency_selection <- dnames$Frequency %within% analysis_item$frequency_range
 
-  for (i in seq_along(freq_list)) {
-
-    freq_temp <- freq_list[[i]]
-    freq_start <- freq_temp[1]
-    freq_end <- freq_temp[2]
-
-    heatmapbeta=zeros(nel,nwt)
-
-    cnt <- 1
-
-    for(e in elecn) {
-      spec <- spectrogram_list[[1]][[cnt]]
-      spectb = spec[freq_start:freq_end,]
-      betaie=colMeans(spectb)
-      heatmapbeta[cnt,1:nwt]=betaie[1:nwt]
-      cnt <- cnt + 1
+    if(!any(frequency_selection)) {
+      # invalid frequency range is selected, return NULL so the visualization
+      # can skip
+      return(NULL)
     }
 
-    # normalize by max for the whole heatmap
-    maxheatBeta=max(heatmapbeta)
-    heatmapbetan=heatmapbeta/maxheatBeta
+    # Time x Frequency x Trial x Electrode,
+    # drop=FALSE will keep the dimensions when there is one frequency selected, otherwise R drops frequency margin
+    sub_array <- multitaper_result[, frequency_selection, , , drop = FALSE, dimnames = NULL]
 
-    maxcolbetap=apply(heatmapbeta,2,max)
+    # Time (keep) x Frequency (collapse) x Trial (keep) x Electrode (keep)
+    data_over_time_trial_per_elec <- ravetools::collapse(sub_array, keep = c(1, 3, 4), average = TRUE)
 
-    heatmapbetacol=zeros(nel,nwt)
-
-    for(it in 1:nwt){
-      for(ie in 1:nel){
-        heatmapbetacol[ie,it]=heatmapbeta[ie,it]/maxcolbetap[it]
+    time_range_for_analysis <- range(unlist(analysis_item$time_range))
+    actual_ranges <- range(dnames$Time)
+    if(anyNA(time_range_for_analysis)) {
+      time_range_for_analysis <- actual_ranges
+    } else {
+      if(time_range_for_analysis[[1]] < actual_ranges[[1]]){
+        time_range_for_analysis[[1]] = actual_ranges[[1]]
+      }
+      if(time_range_for_analysis[[2]] > actual_ranges[[2]]){
+        time_range_for_analysis[[2]] = actual_ranges[[2]]
       }
     }
 
-    maxcolbetap=apply(heatmapbeta,2,max)
+    value_range <<- range(c(range(data_over_time_trial_per_elec, na.rm = TRUE), value_range))
 
-    heatmapbetacol=zeros(nel,nwt)
+    list(
+      group_id = ii,
 
-    for(it in 1:nwt){
-      for(ie in 1:nel){
-        heatmapbetacol[ie,it]=heatmapbeta[ie,it]/maxcolbetap[it]
-      }
-    }
+      data_over_time_trial_per_elec = data_over_time_trial_per_elec,
 
-    #Prepare Data ----
-    heatmapbetacol <- cbind(elecn, heatmapbetacol)
-    heatmapbetacol <- t(heatmapbetacol)
-    # Extract the first row as column names
-    if (label == "numeric") {
-      colnames(heatmapbetacol) <- heatmapbetacol[1, ]
-    } else if (label == "names") {
-      colnames(heatmapbetacol) <- repository$electrode_table$Label[which(heatmapbetacol[1, ]==repository$electrode_table$Electrode)]
-    }
+      # time information
+      time_range_for_analysis = time_range_for_analysis,
 
-    # Remove the first row
-    heatmapbetacol <- heatmapbetacol[-1, ]
-    # Add the times column
-    heatmapbetacol <- cbind(elect, heatmapbetacol)
-    colnames(heatmapbetacol)[1] <- "stimes"
+      # frequency collapsed
+      frequency = dnames$Frequency[frequency_selection]
 
-    heatmap_freq_list[[i]] <- heatmapbetacol
-  }
+    )
 
-  return(heatmap_freq_list)
+  })
+
+
+  list(
+    project_name = project_name,
+    subject_code = subject_code,
+
+    group_data = group_data,
+
+    value_range = value_range,
+
+    time = dnames$Time,
+
+    # epoch
+    epoch_table = epoch_table,
+
+    # channel information
+    electrode_table = electrode_table[electrode_table$Electrode %in% dnames$Electrode, ]
+  )
 
 }
 
 
-# Code for generating heatmap plot for a specific freq heatmap
-# Code for generating heatmap plot
-plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, name_type, repository) {
+plot_power_over_time_data <- function(power_over_time_data, trial = NULL, soz_electrodes = NULL,
+                                      name_type = c("name", "number"),
+                                      value_range = NULL, scale = c("normal", "decibel"),
+                                      palette = plot_preferences$get('heatmap_palette')[6:11]) {
+  # users can and only can select from given choices, i.e. one of c("name", "number")
+  name_type <- match.arg(name_type)
+  scale <- match.arg(scale)
 
-  # Generate list of SOZ electrodes
-  results_soz <- parse_electrodes(SOZ_elec)
-  soz_elec <- results_soz$elecn
+  # # debug use
+  # group_item <- power_over_time_data$group_data[[1]]
+  # name_type <- "name"
+  # soz_electrodes <- 3:4
+  # trial <- 2
+  # palette = plot_preferences$get('heatmap_palette')
+  # scale <- "decibel"
+  # palette = plot_preferences$get('heatmap_palette')[6:11]
+  # value_range=NULL
+  # name_type = "number"
 
-  electrode_table<- repository$electrode_table
-
-  #Validate only correct SOZ_elec were input
-  soz_elec <- soz_elec[soz_elec %in% electrode_table$Electrode]
-
-  if (name_type == "names") {
-    indices <- which(electrode_table$Electrode %in% soz_elec)
-    corresponding_labels <- electrode_table$Label[indices]
-    soz_elec <- corresponding_labels
+  if(length(palette) < 101) {
+    palette <- colorRampPalette(palette)(101)
   }
 
-  # Plot ----
-  data <- as.data.frame(heatmapbetacol)
-  stimes <- data$stimes
-  data <- data[ ,-1]
-  elecnum <- colnames(data)
-
-  heatmapbetacol <- as.matrix(data)
-
-  heatmap_data <- expand.grid(Time = stimes, Electrode = elecnum)
-  heatmap_data$Value <- c(heatmapbetacol)
-  print(str(heatmap_data))
-
-  # Define a custom function to change color of SOZ electrodes
-  color_electrodes <- function(electrode) {
-    if ((electrode %in% soz_elec) & plot_SOZ_elec == TRUE) {
-      return("red")
-    } else {
-      return("black")
+  # copy variables
+  time <- power_over_time_data$time
+  epoch_table <- power_over_time_data$epoch_table
+  electrode_table <- power_over_time_data$electrode_table
+  actual_range <- power_over_time_data$value_range
+  project_name <- power_over_time_data$project_name
+  subject_code <- power_over_time_data$subject_code
+  if(length(value_range) > 0 && !anyNA(value_range)) {
+    value_range <- range(value_range, na.rm = TRUE)
+    if( value_range[[2]] == value_range[[1]] ) {
+      value_range <- actual_range
     }
+  } else {
+    value_range <- actual_range
+  }
+  if(scale == "decibel") {
+    value_range[[1]] <- min(0, 10 * log10(value_range[[2]]))
+    value_range[[2]] <- 10 * log10(value_range[[2]])
   }
 
-  plot <- ggplot(heatmap_data, aes(x = Time, y = Electrode, fill = Value)) +
-    geom_tile() +
-    labs(x = "Time (s)", y = "Electrode") +
-    scale_fill_viridis(option = "turbo") +
-    theme_minimal() +
-    theme(
-      axis.text.y = element_text(size = 5, color = sapply(levels(heatmap_data$Electrode), color_electrodes))
-    )
+  # determine the y-axis labels
+  if( name_type == "name" ) {
+    y_labels <- electrode_table$Label
+  } else {
+    y_labels <- electrode_table$Electrode
+  }
 
-  return(plot)
+  # dipsaus::parse_svec is the builtin function to parse text to integer channels
+  soz_electrodes <- dipsaus::parse_svec(soz_electrodes)
+  is_soz <- electrode_table$Electrode %in% soz_electrodes
+
+  # plot <- ggplot(heatmap_data, aes(x = Time, y = Electrode, fill = Value)) +
+  #   geom_tile() +
+  #   labs(x = "Time (s)", y = "Electrode") +
+  #   scale_fill_viridis(option = "turbo") +
+  #   theme_minimal() +
+  #   theme(
+  #     axis.text.y = element_text(size = 5, color = sapply(levels(heatmap_data$Electrode), color_electrodes))
+  #   )
+
+  if(length(trial)) {
+    if(is.numeric(trial)) {
+      trial_sel <- which(epoch_table$Trial %in% trial)
+    } else {
+      trial_sel <- which(epoch_table$Condition2 %in% trial)
+    }
+  } else {
+    trial_sel <- NULL
+  }
+
+  group_data_is_valid <- !sapply(power_over_time_data$group_data, is.null)
+
+  if(!group_data_is_valid) { stop("No valid data; please check analysis frequency and time range.") }
+
+  layout_heat_maps(sum(group_data_is_valid), max_col = 2, layout_color_bar = TRUE)
+  par("mar" = c(3.1, 4.3, 3, 0.1))
+
+  sapply(power_over_time_data$group_data[group_data_is_valid], function(group_item) {
+    # No data is selected
+    if(is.null(group_item)) { return(FALSE) }
+
+    data <- group_item$data_over_time_trial_per_elec
+    if(length(trial_sel)) {
+      data <- data[, trial_sel ,, drop = FALSE]
+    }
+    ntrials <- dim(data)[[2]]
+    nchanns <- dim(data)[[3]]
+    if(scale == "decibel") {
+      # use abs just in case
+      data[data <= 0] <- min(data[data > 0])
+      data <- 10 * log10(abs(data))
+    }
+    # Time x Trial (collapse) x Electrode
+    data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
+
+    data_over_time_per_elec[data_over_time_per_elec < value_range[[1]]] <- value_range[[1]]
+    data_over_time_per_elec[data_over_time_per_elec > value_range[[2]]] <- value_range[[2]]
+    graphics::image(data_over_time_per_elec, x = time, y = seq_along(y_labels), xlim = group_item$time_range_for_analysis, axes = FALSE, xlab = "", ylab = "", col = palette, zlim = value_range)
+    graphics::axis(side = 1, at = pretty(time))
+    graphics::mtext(text = "Time (s)", side = 1, line = 2.2)
+
+    y_labels_tmp <- y_labels
+    y_labels_tmp[is_soz] <- ""
+    graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1)
+    y_labels_tmp <- y_labels
+    y_labels_tmp[!is_soz] <- ""
+    graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1, col.axis = "red")
+
+    if( name_type == "number" ) {
+      graphics::mtext(text = "Electrode Channel", side = 2, line = 2.7)
+    }
+
+    freq_range <- range(group_item$frequency)
+    graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 1.5)
+    # sub-title
+    graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 0.5, cex.main = 0.8)
+
+    return(TRUE)
+  }, USE.NAMES = FALSE)
+
+  par("mar" = c(3.1, 0.5, 3, 3.1))
+  pal_val <- seq(value_range[[1]], value_range[[2]], length.out = 101)
+  graphics::image(matrix(pal_val, nrow = 1), x = 0, y = pal_val, axes = FALSE, xlab = "", ylab = "", col = palette)
+  graphics::axis(side = 4, at = c(value_range[[2]], 0), labels = c(sprintf("%.1f", value_range[[2]]), "0"), las = 1)
+
+
+  if(scale == "decibel") {
+    actual_range <- 10 * log10(actual_range)
+    actual_range_text <- paste(sprintf("%.1f dB", actual_range), collapse = " ~ ")
+  } else {
+    actual_range_text <- paste(sprintf("%.1f", actual_range), collapse = " ~ ")
+  }
+
+  graphics::title(sprintf("[%s]", actual_range_text), line = 0.6, adj = 0, cex.main = 0.8)
+
+
+}
+
+generate_3dviewer_data <- function(power_over_time_data, trial = NULL) {
+
+  # copy variables
+  time <- power_over_time_data$time
+  epoch_table <- power_over_time_data$epoch_table
+  electrode_table <- power_over_time_data$electrode_table
+  actual_range <- power_over_time_data$value_range
+  subject_code <- power_over_time_data$subject_code
+  if(length(trial)) {
+    if(is.numeric(trial)) {
+      trial_sel <- which(epoch_table$Trial %in% trial)
+    } else {
+      trial_sel <- which(epoch_table$Condition2 %in% trial)
+    }
+  } else {
+    trial_sel <- NULL
+  }
+  viewer_data <- lapply(power_over_time_data$group_data, function(group_item) {
+    # group_item <- power_over_time_data$group_data[[1]]
+    # No data is selected
+    if(is.null(group_item)) { return(FALSE) }
+
+    time_sel <- time %within% group_item$time_range_for_analysis
+
+    if(!any(time_sel)) { return(NULL)}
+
+    time_subset <- time[time_sel]
+
+    data <- group_item$data_over_time_trial_per_elec
+    if(length(trial_sel)) {
+      data <- data[time_sel, trial_sel ,, drop = FALSE]
+    } else {
+      data <- data[time_sel,,, drop = FALSE]
+    }
+    # Time x Trial (collapse) x Electrode -> Time x Electrode
+    data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
+    nchanns <- ncol(data_over_time_per_elec)
+    ntimepts <- sum(time_sel)
+
+    re <- data.frame(
+      Subject = subject_code,
+      Electrode = rep(electrode_table$Electrode, ntimepts),
+      Time = rep(time_subset, each = nchanns)
+    )
+    re[[sprintf("Analysis%dPower", group_item$group_id)]] <- as.vector(data_over_time_per_elec)
+    re
+  })
+  viewer_data <- dipsaus::drop_nulls(viewer_data)
+  # is a list of tables, each table represents a valid group
+  viewer_data
 }
 
 # Multitaper Spectrogram #
@@ -286,7 +522,7 @@ multitaper_spectrogram_R <- function(data, fs, frequency_range=NULL, time_bandwi
   tic <- proc.time() # start timer for multitaper
 
   # Compute DPSS tapers (STEP 1)
-  dpss_tapers <- dpss(winsize_samples, num_tapers, time_bandwidth, returnEigenvalues=TRUE)
+  dpss_tapers <- multitaper::dpss(winsize_samples, num_tapers, time_bandwidth, returnEigenvalues=TRUE)
   dpss_eigen = dpss_tapers$eigen
   dpss_tapers = dpss_tapers$v
 
@@ -295,7 +531,7 @@ multitaper_spectrogram_R <- function(data, fs, frequency_range=NULL, time_bandwi
     wt = dpss_eigen / num_tapers;
   }
   else if(weighting == 'unity'){
-    wt = ones(num_tapers,1) / num_tapers;
+    wt = pracma::ones(num_tapers,1) / num_tapers;
   }
   else{
     wt = 0;
