@@ -98,6 +98,7 @@ module_server <- function(input, output, session, ...){
           names = target_names,
           ...
         )
+
         multitaper_result <- pipeline$read("multitaper_result")
 
         dname <- multitaper_result$get_header("extra", list(dname = dimnames(multitaper_result)))$dname
@@ -113,9 +114,8 @@ module_server <- function(input, output, session, ...){
           inputId = "analysis_settings",
           initialization = list(
             "frequency_range" = list(
-              min = frequency_range[[1]],
-              max = frequency_range[[2]],
-              step = 0.1
+              min = floor(frequency_range[[1]]),
+              max = ceiling(frequency_range[[2]])
             )
           )
         )
@@ -289,13 +289,11 @@ module_server <- function(input, output, session, ...){
         initialization = list(
           "frequency_range" = list(
             min = frequency_range[[1]],
-            max = frequency_range[[2]],
-            step = 0.1
+            max = frequency_range[[2]]
           ),
           "time_range" = list(
             min = time_window_range[[1]],
-            max = time_window_range[[2]],
-            step = 0.1
+            max = time_window_range[[2]]
           )
         ),
         value = analysis_time_frequencies,
@@ -753,6 +751,7 @@ module_server <- function(input, output, session, ...){
       if( has_plot_data ) {
         cols <- plot_preferences$get('heatmap_palette')
         palettes <- list()
+        val_ranges <- list()
         for(value_table in plot_data) {
           if( use_template_brain ) {
             # plot onto template brain
@@ -767,16 +766,20 @@ module_server <- function(input, output, session, ...){
           nms <- names(value_table)
           nms <- nms[!nms %in% c("Subject", "Electrode", "Time", "SubjectCode")]
           for(nm in nms) {
+            v <- value_table[[nm]]
+            v <- v[!is.na(v)]
+
             palettes[[nm]] <- cols
+            if(length(v)) {
+              val_ranges[[nm]] <- c(0, max(v))
+            }
           }
         }
 
 
         brain$plot(
           side_display = FALSE,
-          # val_ranges = list(
-          #   "HeatmapValue" = c(0, 1)
-          # ),
+          val_ranges = val_ranges,
           palettes = palettes
         )
 

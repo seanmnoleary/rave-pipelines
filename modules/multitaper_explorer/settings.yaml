@@ -1,16 +1,16 @@
 analysis_time_frequencies:
   '1':
     frequency_range:
-    - 8
-    - 79.8
+    - 3
+    - 200
     time_range:
     - -1
     - 2
 condition: sz (1)
 reference: default
 window_params:
-- 0.1
-- 0.003
+- 0.2
+- 0.01
 frequency_range:
 - 1
 - 200
@@ -28,9 +28,9 @@ time_window:
 - -1
 - 2
 reference_name: noref
-load_electrodes: 3-10
-epoch_file_name: subHUP064_seizure
-project_name: fingerprinting
-subject_code: subHUP064
+load_electrodes: 13-16,24,100-102
+epoch_file_name: auditory_onset
+project_name: demo
+subject_code: DemoSubject
 soz_electrodes: 3
 heatmap_name_type: number
