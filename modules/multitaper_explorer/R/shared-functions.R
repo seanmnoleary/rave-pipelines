@@ -33,7 +33,7 @@ get_default_cores <- function(round = TRUE) {
 # multitaper_result <- generate_multitaper(
 #   repository, load_electrodes, frequency_range,
 #   time_bandwidth, num_tapers, window_params, min_nfft,
-#   weighting, detrend_opt, parallel)
+#   weighting, detrend_opt, parallel = FALSE)
 # power_over_time_data <- generate_power_over_time_data(multitaper_result, analysis_time_frequencies)
 
 # Generate multitaper for every condition
@@ -105,14 +105,19 @@ generate_multitaper <- function (
 
       # We want to run multitaper on all of the trials (sz case)
       if(parallel && num_workers > 1) {
-        lapply2 <- function(X, FUN) {
-          raveio::lapply_async(X, FUN, ncores = num_workers, callback = function(el) {
-            sprintf("Applying multitaper|Channel %s",
-                    paste(el$dimnames()$Electrode, collapse = ""))
-          })
+        lapply2 <- function(X, FUN, callback) {
+          raveio::lapply_async(X, FUN, ncores = num_workers, callback = callback)
         }
       } else {
-        lapply2 <- lapply
+        lapply2 <- function(X, FUN, callback) {
+          progress <- shidashi::shiny_progress(title = "Applying multitaper", max = length(X),
+                                               shiny_auto_close = TRUE)
+          lapply(X, function(x) {
+            s <- c(rev(strsplit(callback(x), split = "\\|")[[1]]), "Applying multitaper")[c(1,2)]
+            progress$inc(detail = s[[1]], message = s[[2]])
+            FUN(x)
+          })
+        }
       }
 
       time_freq_data <- lapply2(repository$voltage$data_list, function(voltage_for_analysis) {
@@ -143,6 +148,9 @@ generate_multitaper <- function (
         )
 
         time_freq_per_chann_data
+      }, callback = function(el) {
+        sprintf("Applying multitaper|Channel %s",
+                paste(el$dimnames()$Electrode, collapse = ""))
       })
 
       dnames <- dimnames(time_freq_data[[1]])
@@ -345,7 +353,7 @@ plot_power_over_time_data <- function(
   if(!any(group_data_is_valid)) { stop("No valid data; please check analysis frequency and time range.") }
 
   layout_heat_maps(sum(group_data_is_valid), max_col = 2, layout_color_bar = TRUE)
-  par("mar" = c(3.5, 4.3, 3, 0.1), cex = 1.6)
+  par("mar" = c(3.5, 4.3, 3, 0.1), cex = 1.2)
 
   sapply(power_over_time_data$group_data[group_data_is_valid], function(group_item) {
     # No data is selected
@@ -502,6 +510,7 @@ multitaper_spectrogram_R <- function(data, fs, frequency_range=NULL, time_bandwi
   #         sfreqs (numeric vector): frequency values (Hz) in mt_spectrogram
 
   # Process user input
+  names(data) <- NULL
   res <- process_input(data, fs, frequency_range, time_bandwidth, num_tapers, window_params, min_nfft, weighting, detrend_opt,
                        plot_on, verbose)
 
@@ -552,11 +561,9 @@ multitaper_spectrogram_R <- function(data, fs, frequency_range=NULL, time_bandwi
   # pre-compute weights
   if(weighting == 'eigen'){
     wt = dpss_eigen / num_tapers;
-  }
-  else if(weighting == 'unity'){
+  } else if(weighting == 'unity'){
     wt = pracma::ones(num_tapers,1) / num_tapers;
-  }
-  else{
+  } else{
     wt = 0;
   }
 
@@ -916,6 +923,9 @@ calc_mts_segment <- function(data_segment, dpss_tapers, nfft, freq_inds, weighti
   library(pracma)
 
   # If segment has all zeros, return vector of zeros
+  if(anyNA( data_segment )) {
+    data_segment[is.na(data_segment)] <- 0
+  }
   if(all(data_segment==0)){
     ret <- rep(0, sum(freq_inds))
     return(ret)
