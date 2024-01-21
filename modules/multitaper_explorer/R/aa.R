@@ -19,10 +19,19 @@ debug <- TRUE
 #' resulting in calling function \code{loader_html}.
 #' @returns Logical variable of length one.
 check_data_loaded <- function(first_time = FALSE){
-  # if(first_time) { return(FALSE) }
-  # Always use loading screen
+  # Always use loading screen for the first time
+  if(first_time) {
+    ravedash::fire_rave_event('loader_message', NULL)
+    return(FALSE)
+  }
   repository <- pipeline$read("repository")
-  return(inherits(repository, "rave_repository"))
+  if(!inherits(repository, "rave_repository")) {
+    ravedash::fire_rave_event('loader_message', NULL)
+    return(FALSE)
+  }
+  subject <- repository$subject
+  ravedash::fire_rave_event('loader_message', subject$subject_id)
+  return(TRUE)
 }
 
 
