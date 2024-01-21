@@ -218,6 +218,11 @@ module_html <- function(){
                 shiny::column(
                   width = 12,
                   shiny::checkboxInput(
+                    inputId = ns("hm_normalize"),
+                    label = "Normalize Power to 0 ~ 1",
+                    value = TRUE
+                  ),
+                  shiny::checkboxInput(
                     inputId = ns("hm_label"),
                     label = "Show Electrode Labels",
                     value = TRUE

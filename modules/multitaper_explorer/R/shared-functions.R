@@ -6,8 +6,8 @@ plot_preferences <- pipeline$load_preferences(
   name = "graphics",
 
   # default options
-  heatmap_palette = c("#053061", "#2166ac", "#4393c3", "#92c5de", "#d1e5f0", "#ffffff",
-                      "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f")
+  heatmap_palette = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f"),
+  .overwrite = TRUE
 )
 
 get_default_cores <- function(round = TRUE) {
@@ -37,9 +37,13 @@ get_default_cores <- function(round = TRUE) {
 # power_over_time_data <- generate_power_over_time_data(multitaper_result, analysis_time_frequencies)
 
 # Generate multitaper for every condition
-generate_multitaper <- function (repository, load_electrodes, frequency_range,
-                                 time_bandwidth, num_tapers, window_params, min_nfft,
-                                 weighting, detrend_opt, parallel, verbose = TRUE) {
+generate_multitaper <- function (
+    repository, load_electrodes, frequency_range,
+    time_bandwidth = 5, num_tapers = NULL, window_params = c(5,1), min_nfft = 0,
+    weighting = "unity", detrend_opt = "linear", parallel = TRUE,
+    num_workers = raveio::raveio_getopt("max_worker"),
+    verbose = TRUE
+) {
   fs <- repository$sample_rate
   results <- parse_electrodes(load_electrodes)
   nel <- results$nel
@@ -71,11 +75,11 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
     globals = c("repository_signature", "data_length", "nfft", "electrode_parse", "frequency_range",
                 "time_bandwidth", "num_tapers", "window_params", "weighting", "detrend_opt"),
     fun = function(){
-      voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
-
-      # Generate data format for storing epochs and corresponding voltage data
-      conditions <- epoch_table$Condition
-
+      # voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
+      #
+      # # Generate data format for storing epochs and corresponding voltage data
+      # conditions <- epoch_table$Condition
+      #
       # multitaper_config <- ravetools::multitaper_config(
       #   data_length = data_length,
       #   fs = fs,
@@ -112,6 +116,9 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
       }
 
       time_freq_data <- lapply2(repository$voltage$data_list, function(voltage_for_analysis) {
+
+        time_start <- min(as.numeric(dimnames(voltage_for_analysis)$Time))
+
         # load data
         time_freq_per_chann_data <- filearray::apply(voltage_for_analysis, 2L, function(voltage) {
           res <- multitaper_spectrogram_R(
@@ -119,8 +126,9 @@ generate_multitaper <- function (repository, load_electrodes, frequency_range,
             window_params, min_nfft, weighting, detrend_opt, parallel = FALSE,
             num_workers = FALSE, plot_on = FALSE, verbose = FALSE, xyflip = FALSE)
           re <- t(res[[1]])
+          # time <- (res$window_start - 1 + res$winsize_samples / 2) / res$fs
           dimnames(re) <- list(
-            Time = res[[2]],
+            Time = res[[2]] + time_start,
             Frequency = res[[3]]
           )
           re
@@ -258,7 +266,7 @@ plot_power_over_time_data <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
     scale = c("normal", "0-1"),
-    palette = plot_preferences$get('heatmap_palette')[6:11]) {
+    palette = plot_preferences$get('heatmap_palette')) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
   scale <- match.arg(scale)
@@ -270,7 +278,6 @@ plot_power_over_time_data <- function(
   # trial <- 2
   # palette = plot_preferences$get('heatmap_palette')
   # scale <- "0-1"
-  # palette = plot_preferences$get('heatmap_palette')[6:11]
   # value_range=NULL
   # name_type = "number"
 
@@ -338,7 +345,7 @@ plot_power_over_time_data <- function(
   if(!any(group_data_is_valid)) { stop("No valid data; please check analysis frequency and time range.") }
 
   layout_heat_maps(sum(group_data_is_valid), max_col = 2, layout_color_bar = TRUE)
-  par("mar" = c(3.1, 4.3, 3, 0.1))
+  par("mar" = c(3.5, 4.3, 3, 0.1), cex = 1.6)
 
   sapply(power_over_time_data$group_data[group_data_is_valid], function(group_item) {
     # No data is selected
@@ -365,9 +372,12 @@ plot_power_over_time_data <- function(
 
     data_over_time_per_elec[data_over_time_per_elec < value_range[[1]]] <- value_range[[1]]
     data_over_time_per_elec[data_over_time_per_elec > value_range[[2]]] <- value_range[[2]]
-    graphics::image(data_over_time_per_elec, x = time, y = seq_along(y_labels), xlim = group_item$time_range_for_analysis, axes = FALSE, xlab = "", ylab = "", col = palette, zlim = value_range)
+    graphics::image(data_over_time_per_elec,
+                    x = time, y = seq_along(y_labels),
+                    xlim = group_item$time_range_for_analysis, zlim = value_range,
+                    axes = FALSE, xlab = "", ylab = "", col = palette)
     graphics::axis(side = 1, at = pretty(time))
-    graphics::mtext(text = "Time (s)", side = 1, line = 2.2)
+    graphics::mtext(text = "Time (s)", side = 1, line = 2.2, cex = par("cex"))
 
     y_labels_tmp <- y_labels
     y_labels_tmp[is_soz] <- ""
@@ -377,7 +387,7 @@ plot_power_over_time_data <- function(
     graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1, col.axis = "red")
 
     if( name_type == "number" ) {
-      graphics::mtext(text = "Electrode Channel", side = 2, line = 2.7)
+      graphics::mtext(text = "Electrode Channel", side = 2, line = 2.7, cex = par("cex"))
     }
 
     freq_range <- range(group_item$frequency)

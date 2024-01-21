@@ -57,16 +57,10 @@ module_server <- function(input, output, session, ...){
       time_bandwidth = input$mt_time_bandwidth,
 
       parallel = parallel,
-      num_workers = num_workers,
+      num_workers = num_workers
 
-      analysis_time_frequencies = input$analysis_settings
+      # analysis_time_frequencies = input$analysis_settings
 
-      # plot_SOZ_elec = input$hm_showSOZ,
-      # SOZ_elec = input$input_SOZ_electrodes,
-      # label = label_input
-
-      # freqopt
-      # timeopt_range
     )
 
     # stores the multitaper results
@@ -93,7 +87,10 @@ module_server <- function(input, output, session, ...){
 
     res <- tryCatch(
       {
-        local_data$results <- pipeline$run(
+
+        shidashi::clear_notifications(class = "pipeline-error")
+
+        results <- pipeline$run(
           as_promise = FALSE,
           scheduler = "none",
           type = "callr",
@@ -101,9 +98,27 @@ module_server <- function(input, output, session, ...){
           names = target_names,
           ...
         )
+        multitaper_result <- pipeline$read("multitaper_result")
 
-        shidashi::clear_notifications(class = "pipeline-error")
+        dname <- multitaper_result$get_header("extra", list(dname = dimnames(multitaper_result)))$dname
+        frequency_range <- range(dname$Frequency)
 
+        local_data$results <- list(
+          multitaper_result = multitaper_result
+        )
+
+        # need to update `analysis_settings` input
+        dipsaus::updateCompoundInput2(
+          session = session,
+          inputId = "analysis_settings",
+          initialization = list(
+            "frequency_range" = list(
+              min = frequency_range[[1]],
+              max = frequency_range[[2]],
+              step = 0.1
+            )
+          )
+        )
 
         shidashi::card_operate(
           title = "Multitaper Parameters",
@@ -148,8 +163,23 @@ module_server <- function(input, output, session, ...){
     if(!length(output_flags) || isFALSE(output_flags) || !is.list(local_data$results)) {
       run_multitaper()
     }
+    pipeline$set_settings(
+      analysis_time_frequencies = input$analysis_settings
+      # soz_electrodes = soz_electrodes,
+      # heatmap_name_type = heatmap_name_type,
+      # condition = condition
+    )
+
+    # DIPSAUS DEBUG START (run this first for debugging)
+    # pipeline$run("multitaper_result")
+
+    # This is what's needed before visualization
+    res <- pipeline$eval(c("heatmap_result"), shortcut = TRUE)
+
     # run the rest
-    # pipeline$eval()
+    local_data$results$heatmap_result <- res$heatmap_result
+
+    local_reactives$update_outputs <- Sys.time()
   }
 
 
@@ -220,6 +250,13 @@ module_server <- function(input, output, session, ...){
       if(length(frequency_range) != 2 || !is.numeric(frequency_range)) {
         frequency_range <- c(1, nyquist_floor)
       }
+      analysis_time_frequencies <- lapply(pipeline$get_settings("analysis_time_frequencies"), function(item) {
+        list(
+          frequency_range = unlist(item$frequency_range),
+          time_range = unlist(item$time_range)
+        )
+      })
+      if(!length(analysis_time_frequencies)) { analysis_time_frequencies <- NULL }
 
       shiny::updateNumericInput(
         session = session,
@@ -242,19 +279,27 @@ module_server <- function(input, output, session, ...){
       )
 
       # "analysis_settings"
+      ncomp <- length(analysis_time_frequencies)
+      if( ncomp < 1 ) {
+        ncomp <- length(input$analysis_settings)
+      }
       dipsaus::updateCompoundInput2(
         session = session,
         inputId = "analysis_settings",
         initialization = list(
           "frequency_range" = list(
             min = frequency_range[[1]],
-            max = frequency_range[[2]]
+            max = frequency_range[[2]],
+            step = 0.1
           ),
           "time_range" = list(
             min = time_window_range[[1]],
-            max = time_window_range[[2]]
+            max = time_window_range[[2]],
+            step = 0.1
           )
-        )
+        ),
+        value = analysis_time_frequencies,
+        ncomp = ncomp
       )
       shidashi::card_operate(
         title = "Multitaper Parameters",
@@ -635,43 +680,35 @@ module_server <- function(input, output, session, ...){
         shiny::need(
           length(local_reactives$update_outputs) &&
             !isFALSE(local_reactives$update_outputs),
-          message = "Please run the module first"
+          message = "Please run the module first."
         )
       )
 
       shiny::validate(
         shiny::need(
-          isTRUE(is.list(local_data$results)),
-          message = "One or more errors while executing pipeline. Please check the notification."
+          isTRUE(is.list(local_data$results)) &&
+            isTRUE(is.list(local_data$results$heatmap_result)),
+          message = "No heatmap data. Please check analysis options."
         )
       )
 
       heatmap_result <- local_data$results$heatmap_result
-      SOZ_elec <-  local_data$SOZ_elec
-      plot_SOZ_elec <- local_data$plot_SOZ_elec
-      label_type <- local_data$label
-      if (is.null(label_type)) {
-        label_type <- "names"
+      heatmap_name_type <- ifelse(isTRUE(input$hm_label), "name", "number")
+      if(isTRUE(input$hm_showSOZ)) {
+        soz_electrodes <- input$input_SOZ_electrodes
+      } else {
+        soz_electrodes <- NULL
       }
-      if (is.null(SOZ_elec)) {
-        SOZ_elec <- "0"
-      }
-      if (is.null(plot_SOZ_elec)) {
-        plot_SOZ_elec <- FALSE
+      condition <- input$condition
+      scale <- ifelse(isTRUE(input$hm_normalize), "0-1", "normal")
 
-      }
-      repository_plot <- pipeline$read("repository")
-
-      print("**********************")
-      print(SOZ_elec)
-      print("**********************")
-      print(plot_SOZ_elec)
-      print("**********************")
-      print(label_type)
-      print("**********************")
-
-      p <- plot_heatmap(heatmap_result[[1]], SOZ_elec, plot_SOZ_elec, label_type, repository_plot)
-      print(p)
+      plot_power_over_time_data(
+        heatmap_result,
+        soz_electrodes = soz_electrodes,
+        name_type = heatmap_name_type,
+        trial = condition,
+        scale = scale
+      )
     })
   )
 
@@ -692,36 +729,55 @@ module_server <- function(input, output, session, ...){
       has_plot_data <- FALSE
       plot_data <- NULL
       if(is.list(local_data$results)) {
-        plot_data <- local_data$results$YAEL_data[[1]]
-        if(is.data.frame(plot_data)) {
-          has_plot_data <- TRUE
+        heatmap_result <- local_data$results$heatmap_result
+        if(is.list(heatmap_result)) {
+          plot_data <- generate_3dviewer_data(
+            heatmap_result,
+            trial = input$condition
+          )
+          if(length(plot_data)) {
+            has_plot_data <- TRUE
+          }
         }
       }
 
+      use_template_brain <- FALSE
       if(is.null(brain)) {
         brain <- threeBrain::merge_brain()
         electrode_table <- subject$get_electrode_table()
         electrode_table$Subject <- brain$template_subject
         brain$set_electrodes(electrode_table)
-
-        if( has_plot_data ) {
-          # plot onto template brain
-          plot_data$SubjectCode <- plot_data$Subject
-          plot_data$Subject <- brain$template_subject
-        }
+        use_template_brain <- TRUE
       }
 
       if( has_plot_data ) {
-        brain$set_electrode_values(plot_data)
+        cols <- plot_preferences$get('heatmap_palette')
+        palettes <- list()
+        for(value_table in plot_data) {
+          if( use_template_brain ) {
+            # plot onto template brain
+            value_table$SubjectCode <- value_table$Subject
+            value_table$Subject <- brain$template_subject
+            nms <- names(value_table)
+            nms <- unique(c(nms[nms %in% c("Subject", "Electrode", "Time", "SubjectCode")], nms))
+            value_table <- value_table[, nms]
+          }
+
+          brain$set_electrode_values(value_table)
+          nms <- names(value_table)
+          nms <- nms[!nms %in% c("Subject", "Electrode", "Time", "SubjectCode")]
+          for(nm in nms) {
+            palettes[[nm]] <- cols
+          }
+        }
+
 
         brain$plot(
           side_display = FALSE,
-          val_ranges = list(
-            "HeatmapValue" = c(0, 1)
-          ),
-          palettes = list(
-            "HeatmapValue" = viridis::turbo(128)
-          )
+          # val_ranges = list(
+          #   "HeatmapValue" = c(0, 1)
+          # ),
+          palettes = palettes
         )
 
       } else {
