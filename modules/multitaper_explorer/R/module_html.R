@@ -182,9 +182,9 @@ module_html <- function(){
                       shiny::sliderInput(
                         inputId = "frequency_range",
                         label = "Frequency range (Hz)",
-                        min = 0,
-                        max = 2000,
-                        value = c(0, 2000),
+                        min = frequency_range[[1]],
+                        max = frequency_range[[2]],
+                        value = frequency_range,
                         step = 0.1,
                         post = " Hz",
                         width = "100%",
