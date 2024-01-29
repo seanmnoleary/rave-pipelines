@@ -29,8 +29,8 @@ condition: sz (1)
 analysis_time_frequencies:
   '1':
     frequency_range:
-    - 3
-    - 200
+    - 28.5
+    - 79.5
     text_min_frequency_range: 1
     text_max_frequency_range: 200
     time_range:

@@ -2,13 +2,33 @@
 
 `%within%` <- rutabaga::`%within%`
 
+
+COLOR_PALETTES <- list(
+  "Default" = c("#000004FF", "#420A68FF", "#932667FF", "#DD513AFF", "#FCA50AFF", "#FCFFA4FF"),
+  "WhiteRed" = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f")
+)
+
 plot_preferences <- pipeline$load_preferences(
   name = "graphics",
 
   # default options
-  heatmap_palette = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f"),
-  .overwrite = TRUE
+  # heatmap_palette = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f"),
+  heatmap_palette = COLOR_PALETTES$Default,
+  heatmap_palette_name = "Default",
+  .overwrite = FALSE
 )
+
+use_color_map <- function(name) {
+  if(!name %in% names(COLOR_PALETTES)) {
+    name <- "Default"
+  }
+  plot_preferences$set("heatmap_palette_name", name)
+  plot_preferences$set("heatmap_palette", COLOR_PALETTES[[name]])
+  invisible()
+}
+
+# debug, REMOVE it when publishing the code
+# assign("use_color_map", use_color_map, envir = globalenv())
 
 get_default_cores <- function(round = TRUE) {
   re <- (raveio::raveio_getopt("max_worker") + 1) / 2

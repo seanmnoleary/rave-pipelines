@@ -519,6 +519,14 @@ module_server <- function(input, output, session, ...){
     ignoreInit = TRUE
   )
 
+  get_soz_electrodes <- shiny::debounce(
+    shiny::reactive({
+      if(!isTRUE(input$hm_showSOZ)) { return(integer()) }
+      return(as.integer(dipsaus::parse_svec(input$input_SOZ_electrodes)))
+    }),
+    500
+  )
+
   # shiny::bindEvent(
   #   ravedash::safe_observe({
   #
@@ -663,6 +671,17 @@ module_server <- function(input, output, session, ...){
   #   ignoreInit = TRUE
   # )
 
+  shiny::bindEvent(
+    ravedash::safe_observe({
+      use_color_map(input$color_palette)
+      local_reactives$update_outputs <- Sys.time()
+    }),
+    input$color_palette,
+    ignoreNULL = TRUE, ignoreInit = TRUE
+  )
+
+
+
   # ---- Events : END ------------------------------------------
 
 
@@ -692,11 +711,7 @@ module_server <- function(input, output, session, ...){
 
       heatmap_result <- local_data$results$heatmap_result
       heatmap_name_type <- ifelse(isTRUE(input$hm_label), "name", "number")
-      if(isTRUE(input$hm_showSOZ)) {
-        soz_electrodes <- input$input_SOZ_electrodes
-      } else {
-        soz_electrodes <- NULL
-      }
+      soz_electrodes <- get_soz_electrodes()
       condition <- input$condition
       scale <- ifelse(isTRUE(input$hm_normalize), "0-1", "normal")
 
@@ -718,7 +733,11 @@ module_server <- function(input, output, session, ...){
 
       force(local_reactives$update_outputs)
 
+      soz_electrodes <- get_soz_electrodes()
+
       repository <- component_container$data$repository
+
+
       if(is.null(repository)) { return() }
       subject <- repository$subject
       if(is.null(subject)) { return() }
@@ -740,12 +759,29 @@ module_server <- function(input, output, session, ...){
       }
 
       use_template_brain <- FALSE
+      soz_electrodes <- dipsaus::parse_svec(soz_electrodes)
       if(is.null(brain)) {
         brain <- threeBrain::merge_brain()
         electrode_table <- subject$get_electrode_table()
         electrode_table$Subject <- brain$template_subject
         brain$set_electrodes(electrode_table)
         use_template_brain <- TRUE
+        lapply(soz_electrodes, function(elec) {
+          tryCatch({
+
+            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "red", inclusive = FALSE)
+          }, error = function(e) {
+
+          })
+        })
+      } else {
+        lapply(soz_electrodes, function(elec) {
+          tryCatch({
+            brain$electrodes$fix_electrode_color(number = elec, color = "red", inclusive = FALSE)
+          }, error = function(e) {
+
+          })
+        })
       }
 
       if( has_plot_data ) {
@@ -777,11 +813,22 @@ module_server <- function(input, output, session, ...){
         }
 
 
-        brain$plot(
-          side_display = FALSE,
-          val_ranges = val_ranges,
-          palettes = palettes
-        )
+        if( use_template_brain ) {
+          brain$template_object$render(
+            side_display = FALSE,
+            val_ranges = val_ranges,
+            palettes = palettes,
+            outputId = "sz_power_on_brain", session = session
+          )
+        } else {
+
+          brain$render(
+            side_display = FALSE,
+            val_ranges = val_ranges,
+            palettes = palettes,
+            outputId = "sz_power_on_brain", session = session
+          )
+        }
 
       } else {
         brain$plot(

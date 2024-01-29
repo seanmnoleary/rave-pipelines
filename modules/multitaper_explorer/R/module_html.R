@@ -185,7 +185,7 @@ module_html <- function(){
                         min = frequency_range[[1]],
                         max = frequency_range[[2]],
                         value = frequency_range,
-                        step = 0.1,
+                        step = 0.5,
                         post = " Hz",
                         width = "100%",
                         ticks = FALSE
@@ -246,7 +246,13 @@ module_html <- function(){
                   shiny::textInput(
                     inputId = ns("input_SOZ_electrodes"),
                     label = "SOZ electrodes (numeric input)",
-                    value = "0"
+                    value = ""
+                  ),
+                  shiny::selectInput(
+                    inputId = ns("color_palette"),
+                    label = "Color map",
+                    choices = names(COLOR_PALETTES),
+                    selected = plot_preferences$get("heatmap_palette_name", missing_default = "Default")
                   )
                 )
               )
