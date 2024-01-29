@@ -1,27 +1,27 @@
-plot_resect_elec: yes
-resect_elec: 12-13,17-21,25-29,33-37,42-43,51-52
-text_size: 5
+plot_resect_elec: no
+resect_elec: '0'
+text_size: 5.0
 analysis_windows:
   '1':
     frequency_range:
-    - 13
-    - 31
+    - 13.0
+    - 31.0
     time_range:
-    - -30
-    - 30
+    - -30.0
+    - 30.0
 organize_top: no
 label: numeric
 subject_code: subHUP064
 project_name: Retrostudy
 epoch_file_name: subHUP064_seizure
-plot_SOZ_elec: yes
-SOZ_elec: '31,39'
+plot_SOZ_elec: no
+SOZ_elec: '0'
 load_electrodes: 3-88
 reference_name: common_average
 time_window:
 - -30
 - 30
-time_bandwidth: 3
+time_bandwidth: 3.0
 xyflip: no
 verbose: no
 plot_on: no
@@ -29,13 +29,13 @@ num_workers: 31.0
 parallel: yes
 detrend_opt: linear
 weighting: unity
-min_nfft: 0
-num_tapers: ~
+min_nfft: 0.0
+num_tapers: 5.0
 frequency_range:
-- 1
-- 200
+- 0.5
+- 256.0
 window_params:
-- 2.0
+- 2.5
 - 0.5
 type: power
 intervals:
