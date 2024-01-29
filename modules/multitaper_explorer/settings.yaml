@@ -1,36 +1,38 @@
+heatmap_name_type: number
+soz_electrodes: 3
+subject_code: DemoSubject
+project_name: demo
+epoch_file_name: auditory_onset
+load_electrodes: 13-16,24
+reference_name: noref
+time_window:
+- -1
+- 2
+time_bandwidth: 3
+xyflip: no
+verbose: no
+plot_on: no
+num_workers: 31.0
+parallel: yes
+detrend_opt: linear
+weighting: unity
+min_nfft: 0
+num_tapers: ~
+frequency_range:
+- 1
+- 200
+window_params:
+- 0.2
+- 0.01
+reference: default
+condition: sz (1)
 analysis_time_frequencies:
   '1':
     frequency_range:
     - 3
     - 200
+    text_min_frequency_range: 1
+    text_max_frequency_range: 200
     time_range:
     - -1
     - 2
-condition: sz (1)
-reference: default
-window_params:
-- 0.2
-- 0.01
-frequency_range:
-- 1
-- 200
-num_tapers: ~
-min_nfft: 0
-weighting: unity
-detrend_opt: linear
-parallel: yes
-num_workers: 7.0
-plot_on: no
-verbose: no
-xyflip: no
-time_bandwidth: 3
-time_window:
-- -1
-- 2
-reference_name: noref
-load_electrodes: 13-16,24,100-102
-epoch_file_name: auditory_onset
-project_name: demo
-subject_code: DemoSubject
-soz_electrodes: 3
-heatmap_name_type: number

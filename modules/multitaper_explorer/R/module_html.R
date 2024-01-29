@@ -190,6 +190,17 @@ module_html <- function(){
                         width = "100%",
                         ticks = FALSE
                       ),
+                      ##### UPDATE INFO ###############################
+                      shiny::numericInput(
+                        inputId = "text_min_frequency_range",
+                        label = "Min Frequency (numeric input)",
+                        value = frequency_range[[1]]
+                      ),
+                      shiny::numericInput(
+                        inputId = "text_max_frequency_range",
+                        label = "Max Frequency (numeric input)",
+                        value = frequency_range[[2]]
+                      ),
 
                       shiny::sliderInput(
                         inputId = "time_range",
