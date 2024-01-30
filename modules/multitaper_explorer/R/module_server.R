@@ -527,6 +527,22 @@ module_server <- function(input, output, session, ...){
     500
   )
 
+  get_resect_electrodes <- shiny::debounce(
+    shiny::reactive({
+      if(!isTRUE(input$hm_showResect)) { return(integer()) }
+      return(as.integer(dipsaus::parse_svec(input$input_resect_electrodes)))
+    }),
+    500
+  )
+
+  ordered_electrodes <- shiny::debounce(
+    shiny::reactive({
+      if(!isTRUE(input$hm_ordered)) { return(FALSE) }
+      return(TRUE)
+    }),
+    1
+  )
+
   # shiny::bindEvent(
   #   ravedash::safe_observe({
   #
@@ -712,15 +728,19 @@ module_server <- function(input, output, session, ...){
       heatmap_result <- local_data$results$heatmap_result
       heatmap_name_type <- ifelse(isTRUE(input$hm_label), "name", "number")
       soz_electrodes <- get_soz_electrodes()
+      resect_electrodes <- get_resect_electrodes()
+      ordered <- ordered_electrodes()
       condition <- input$condition
       scale <- ifelse(isTRUE(input$hm_normalize), "0-1", "normal")
 
       plot_power_over_time_data(
         heatmap_result,
         soz_electrodes = soz_electrodes,
+        resect_electrodes = resect_electrodes,
         name_type = heatmap_name_type,
         trial = condition,
-        scale = scale
+        scale = scale,
+        ordered = ordered
       )
     })
   )
@@ -734,6 +754,7 @@ module_server <- function(input, output, session, ...){
       force(local_reactives$update_outputs)
 
       soz_electrodes <- get_soz_electrodes()
+      resect_electrodes <- get_resect_electrodes()
 
       repository <- component_container$data$repository
 
@@ -760,6 +781,9 @@ module_server <- function(input, output, session, ...){
 
       use_template_brain <- FALSE
       soz_electrodes <- dipsaus::parse_svec(soz_electrodes)
+      resect_electrodes <- dipsaus::parse_svec(resect_electrodes)
+      resect_or_soz_electrodes <- intersect(soz_electrodes, resect_electrodes)
+
       if(is.null(brain)) {
         brain <- threeBrain::merge_brain()
         electrode_table <- subject$get_electrode_table()
@@ -769,15 +793,47 @@ module_server <- function(input, output, session, ...){
         lapply(soz_electrodes, function(elec) {
           tryCatch({
 
-            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "red", inclusive = FALSE)
+            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "#00bfff", inclusive = FALSE)
           }, error = function(e) {
 
           })
         })
+        lapply(resect_electrodes, function(elec) {
+          tryCatch({
+
+            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "#bf00ff", inclusive = FALSE)
+          }, error = function(e) {
+
+          })
+        })
+        lapply(resect_or_soz_electrodes, function(elec) {
+          tryCatch({
+
+            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "green", inclusive = FALSE)
+          }, error = function(e) {
+
+          })
+        })
+
       } else {
         lapply(soz_electrodes, function(elec) {
           tryCatch({
-            brain$electrodes$fix_electrode_color(number = elec, color = "red", inclusive = FALSE)
+            brain$electrodes$fix_electrode_color(number = elec, color = "#00bfff", inclusive = FALSE)
+          }, error = function(e) {
+
+          })
+        })
+        lapply(resect_electrodes, function(elec) {
+          tryCatch({
+            brain$electrodes$fix_electrode_color(number = elec, color = "#bf00ff", inclusive = FALSE)
+          }, error = function(e) {
+
+          })
+        })
+        lapply(resect_or_soz_electrodes, function(elec) {
+          tryCatch({
+
+            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "green", inclusive = FALSE)
           }, error = function(e) {
 
           })

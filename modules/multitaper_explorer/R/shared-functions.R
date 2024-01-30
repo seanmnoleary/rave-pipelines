@@ -4,9 +4,15 @@
 
 
 COLOR_PALETTES <- list(
-  "Default" = c("#000004FF", "#420A68FF", "#932667FF", "#DD513AFF", "#FCA50AFF", "#FCFFA4FF"),
-  "WhiteRed" = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f")
+  #"Default" = c("#30123BFF", "#3E9BFEFF", "#46F884FF", "#E1DD37FF", "#F05B12FF", "#7A0403FF"),
+  "Default" = c("#f9e5e5", "#ffaaaa", "#d46a6a", "#aa3939", "#550000", "#190909"),
+  "YellowRed" = c("#ffff00", "#ffbf00", "#ff8000", "#ff4000", "#ff0000", "#990000"),
+  "WhitePink" = c("#FFFFFF", "#FFE0E0", "#FFC0CB", "#FFB6C1", "#FF69B4", "#FF1493"),
+  "WhiteBlack" = c("#FFFFFF", "#E6E6E6", "#CCCCCC", "#999999", "#666666", "#333333")
+  #"WhiteRed" = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f")
 )
+
+
 
 plot_preferences <- pipeline$load_preferences(
   name = "graphics",
@@ -291,10 +297,10 @@ generate_power_over_time_data <- function(
 
 
 plot_power_over_time_data <- function(
-    power_over_time_data, trial = NULL, soz_electrodes = NULL,
+    power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
     scale = c("normal", "0-1"),
-    palette = plot_preferences$get('heatmap_palette')) {
+    palette = plot_preferences$get('heatmap_palette'), ordered = FALSE) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
   scale <- match.arg(scale)
@@ -347,7 +353,9 @@ plot_power_over_time_data <- function(
 
   # dipsaus::parse_svec is the builtin function to parse text to integer channels
   soz_electrodes <- dipsaus::parse_svec(soz_electrodes)
+  resect_electrodes <- dipsaus::parse_svec(resect_electrodes)
   is_soz <- electrode_table$Electrode %in% soz_electrodes
+  is_resect <- electrode_table$Electrode %in% resect_electrodes
 
   # plot <- ggplot(heatmap_data, aes(x = Time, y = Electrode, fill = Value)) +
   #   geom_tile() +
@@ -394,10 +402,39 @@ plot_power_over_time_data <- function(
       if( qval <= 0 || qval > 1) {
         qval <- 1
       }
-      data_over_time_per_elec <- data_over_time_per_elec / quantile(data_over_time_per_elec, qval, na.rm = TRUE) * qval
+
+      data_over_time_per_elec <- t(data_over_time_per_elec)
+
+      maxcol <- apply(data_over_time_per_elec, 2, max)
+      data_over_time_per_elec_temp <- data_over_time_per_elec
+
+      for (col in 1:ncol(data_over_time_per_elec_temp)) {
+        for (row in 1:nrow(data_over_time_per_elec_temp)) {
+          data_over_time_per_elec_temp[row, col] <- data_over_time_per_elec[row, col] / maxcol[col]
+        }
+      }
+
+      data_over_time_per_elec <- t(data_over_time_per_elec_temp)
+
       value_range <- c(0, qval)
     }
+    elec_order_temp <- electrode_table$Electrode
 
+    if (ordered == TRUE & (length(soz_electrodes) > 0 | length(resect_electrodes) > 0) ) {
+      all_electrodes <- unique(c(soz_electrodes, resect_electrodes))
+      selected_columns <- match(all_electrodes, electrode_table$Electrode)
+      selected_columns <- na.omit(selected_columns)
+      data_over_time_per_elec_ordered <- data_over_time_per_elec[, selected_columns]
+      remaining_columns <- data_over_time_per_elec[, -selected_columns]
+      data_over_time_per_elec <- cbind(data_over_time_per_elec_ordered, remaining_columns)
+      data_over_time_per_elec <- as.matrix(data_over_time_per_elec)
+      y_labels_ordered <- y_labels[selected_columns]
+      y_labels <- c(y_labels_ordered, y_labels[-selected_columns])
+      elec_order_temp_ordered <- elec_order_temp[selected_columns]
+      elec_order_temp <- c(elec_order_temp_ordered, elec_order_temp[-selected_columns])
+      is_soz <- elec_order_temp %in% soz_electrodes
+      is_resect <- elec_order_temp %in% resect_electrodes
+    }
     data_over_time_per_elec[data_over_time_per_elec < value_range[[1]]] <- value_range[[1]]
     data_over_time_per_elec[data_over_time_per_elec > value_range[[2]]] <- value_range[[2]]
     graphics::image(data_over_time_per_elec,
@@ -408,11 +445,17 @@ plot_power_over_time_data <- function(
     graphics::mtext(text = "Time (s)", side = 1, line = 2.2, cex = par("cex"))
 
     y_labels_tmp <- y_labels
-    y_labels_tmp[is_soz] <- ""
+    y_labels_tmp[is_soz | is_resect] <- ""
     graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1)
     y_labels_tmp <- y_labels
     y_labels_tmp[!is_soz] <- ""
-    graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1, col.axis = "red")
+    graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1, col.axis = "#00bfff")
+    y_labels_tmp <- y_labels
+    y_labels_tmp[!is_resect] <- ""
+    graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1, col.axis = "#bf00ff")
+    y_labels_tmp <- y_labels
+    y_labels_tmp[!is_resect | !is_soz] <- ""
+    graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1, col.axis = "green")
 
     if( name_type == "number" ) {
       graphics::mtext(text = "Electrode Channel", side = 2, line = 2.7, cex = par("cex"))

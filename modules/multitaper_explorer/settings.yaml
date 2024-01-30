@@ -1,13 +1,15 @@
+ordered: yes
 heatmap_name_type: number
-soz_electrodes: 3
-subject_code: DemoSubject
-project_name: demo
-epoch_file_name: auditory_onset
-load_electrodes: 13-16,24
-reference_name: noref
+resect_electrodes: 30-40
+soz_electrodes: 1-30
+subject_code: subHUP064
+project_name: Retrostudy
+epoch_file_name: subHUP064_seizure
+load_electrodes: 3-88
+reference_name: common_average
 time_window:
-- -1
-- 2
+- -20
+- 20
 time_bandwidth: 3
 xyflip: no
 verbose: no
@@ -22,17 +24,29 @@ frequency_range:
 - 1
 - 200
 window_params:
-- 0.2
-- 0.01
+- 2.5
+- 0.5
 reference: default
 condition: sz (1)
 analysis_time_frequencies:
   '1':
     frequency_range:
-    - 28.5
-    - 79.5
-    text_min_frequency_range: 1
-    text_max_frequency_range: 200
+    - 15
+    - 30
     time_range:
-    - -1
-    - 2
+    - -20
+    - 20
+  '2':
+    frequency_range:
+    - 90
+    - 200
+    time_range:
+    - -20
+    - 20
+  '3':
+    frequency_range:
+    - 1
+    - 4
+    time_range:
+    - -20
+    - 20

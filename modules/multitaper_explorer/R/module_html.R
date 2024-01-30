@@ -190,17 +190,6 @@ module_html <- function(){
                         width = "100%",
                         ticks = FALSE
                       ),
-                      ##### UPDATE INFO ###############################
-                      shiny::numericInput(
-                        inputId = "text_min_frequency_range",
-                        label = "Min Frequency (numeric input)",
-                        value = frequency_range[[1]]
-                      ),
-                      shiny::numericInput(
-                        inputId = "text_max_frequency_range",
-                        label = "Max Frequency (numeric input)",
-                        value = frequency_range[[2]]
-                      ),
 
                       shiny::sliderInput(
                         inputId = "time_range",
@@ -234,18 +223,34 @@ module_html <- function(){
                     value = TRUE
                   ),
                   shiny::checkboxInput(
+                    inputId = ns("hm_ordered"),
+                    label = "Group SOZ/Resect",
+                    value = TRUE
+                  ),
+                  shiny::checkboxInput(
                     inputId = ns("hm_label"),
                     label = "Show Electrode Labels",
                     value = TRUE
                   ),
+                  HTML("<label>SOZ, Resect Overlap: Green</label>"),
                   shiny::checkboxInput(
                     inputId = ns("hm_showSOZ"),
-                    label = "Show SOZ",
+                    label = "Show SOZ (Blue)",
                     value = FALSE
                   ),
                   shiny::textInput(
                     inputId = ns("input_SOZ_electrodes"),
                     label = "SOZ electrodes (numeric input)",
+                    value = ""
+                  ),
+                  shiny::checkboxInput(
+                    inputId = ns("hm_showResect"),
+                    label = "Show Resect (Purple)",
+                    value = FALSE
+                  ),
+                  shiny::textInput(
+                    inputId = ns("input_resect_electrodes"),
+                    label = "Resect electrodes (numeric input)",
                     value = ""
                   ),
                   shiny::selectInput(
