@@ -114,9 +114,9 @@ generate_heatmap <- function(repository, multitaper_result, time_window,
       spec <- spectrogram_list[[1]][[cnt]]
       specR <- spec[[1]]
       specF <- spec[[3]]
-      freq_start_index. <- which.min(abs(specF - freq_start))
-      freq_end_index <- freq_end_index <- which.min(abs(specF - freq_end))
-      spectb = specR[freq_start_index.:freq_end_index,]
+      freq_start_index <- which.min(abs(specF - freq_start))
+      freq_end_index  <- which.min(abs(specF - freq_end))
+      spectb = specR[freq_start_index:freq_end_index,]
       betaie=colMeans(spectb)
       heatmapbeta[cnt,1:nwt]=betaie[1:nwt]
       cnt <- cnt + 1
