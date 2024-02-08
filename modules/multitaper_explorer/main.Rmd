@@ -74,7 +74,12 @@ heatmap_result <- generate_power_over_time_data(multitaper_result, analysis_time
 plot_heatmap <- plot_power_over_time_data(heatmap_result, soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, name_type = heatmap_name_type, trial = condition, ordered = ordered)
 ```
 
-#### Step 6: Save file for 3D brain display for each spectral result
+#### Step 6: Visualize Line Plot for all the generated spectral ranges for a specific condition
+```{rave generate_data_for_lineplot, language = "R", export = "plot_lineplot", cue="always"}
+plot_lineplot <- plot_power_over_time_data_line(heatmap_result, soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, name_type = heatmap_name_type, trial = condition, ordered = ordered)
+```
+
+#### Step 7: Save file for 3D brain display for each spectral result
 ```{rave generate_data_for_3d_viewer, language = "R", export = "viewer3d_data"}
 viewer3d_data <- generate_3dviewer_data(heatmap_result, trial = condition)
 ```

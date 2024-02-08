@@ -524,7 +524,7 @@ module_server <- function(input, output, session, ...){
       if(!isTRUE(input$hm_showSOZ)) { return(integer()) }
       return(as.integer(dipsaus::parse_svec(input$input_SOZ_electrodes)))
     }),
-    500
+    1000
   )
 
   get_resect_electrodes <- shiny::debounce(
@@ -532,7 +532,7 @@ module_server <- function(input, output, session, ...){
       if(!isTRUE(input$hm_showResect)) { return(integer()) }
       return(as.integer(dipsaus::parse_svec(input$input_resect_electrodes)))
     }),
-    500
+    1000
   )
 
   ordered_electrodes <- shiny::debounce(
@@ -741,6 +741,84 @@ module_server <- function(input, output, session, ...){
         trial = condition,
         scale = scale,
         ordered = ordered
+      )
+    })
+  )
+
+  ravedash::register_output(
+    outputId = "sz_line_plot",
+    output_type = "image",
+    title = "Download average power over time line plot",
+    shiny::renderPlot({
+      shiny::validate(
+        shiny::need(
+          length(local_reactives$update_outputs) &&
+            !isFALSE(local_reactives$update_outputs),
+          message = "Please run the module first."
+        )
+      )
+
+      shiny::validate(
+        shiny::need(
+          isTRUE(is.list(local_data$results)) &&
+            isTRUE(is.list(local_data$results$heatmap_result)),
+          message = "No heatmap data. Please check analysis options."
+        )
+      )
+
+      heatmap_result <- local_data$results$heatmap_result
+      heatmap_name_type <- ifelse(isTRUE(input$hm_label), "name", "number")
+      soz_electrodes <- get_soz_electrodes()
+      resect_electrodes <- get_resect_electrodes()
+      condition <- input$condition
+      scale <- ifelse(isTRUE(input$hm_normalize), "0-1", "normal")
+
+      plot_power_over_time_data_line(
+        heatmap_result,
+        soz_electrodes = soz_electrodes,
+        resect_electrodes = resect_electrodes,
+        name_type = heatmap_name_type,
+        trial = condition,
+        scale = scale,
+      )
+    })
+  )
+
+  ravedash::register_output(
+    outputId = "sz_statistic_plot",
+    output_type = "image",
+    title = "Download statistic over time line plot",
+    shiny::renderPlot({
+      shiny::validate(
+        shiny::need(
+          length(local_reactives$update_outputs) &&
+            !isFALSE(local_reactives$update_outputs),
+          message = "Please run the module first."
+        )
+      )
+
+      shiny::validate(
+        shiny::need(
+          isTRUE(is.list(local_data$results)) &&
+            isTRUE(is.list(local_data$results$heatmap_result)),
+          message = "No heatmap data. Please check analysis options."
+        )
+      )
+
+      heatmap_result <- local_data$results$heatmap_result
+      heatmap_name_type <- ifelse(isTRUE(input$hm_label), "name", "number")
+      soz_electrodes <- get_soz_electrodes()
+      resect_electrodes <- get_resect_electrodes()
+      condition <- input$condition
+      scale <- ifelse(isTRUE(input$hm_normalize), "0-1", "normal")
+
+      plot_quantile_plot(
+        heatmap_result,
+        soz_electrodes = soz_electrodes,
+        resect_electrodes = resect_electrodes,
+        name_type = heatmap_name_type,
+        trial = condition,
+        scale = scale,
       )
     })
   )

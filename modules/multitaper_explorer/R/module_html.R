@@ -232,7 +232,7 @@ module_html <- function(){
                     label = "Show Electrode Labels",
                     value = TRUE
                   ),
-                  HTML("<label>SOZ, Resect Overlap: Green</label>"),
+                  HTML("<span style='font-weight:normal;'>SOZ, Resect Overlap: Green</span>"),
                   shiny::checkboxInput(
                     inputId = ns("hm_showSOZ"),
                     label = "Show SOZ (Blue)",
@@ -280,6 +280,28 @@ module_html <- function(){
                 class = 'position-relative fill',
                 ravedash::output_gadget_container(
                   shiny::plotOutput(ns("sz_power_plot"), width = '100%', height = "100%")
+                )
+              )
+            ),
+
+            ravedash::output_card(
+              'Average power over time',
+              class_body = "no-padding fill-width height-650 min-height-650 resize-vertical",
+              shiny::div(
+                class = 'position-relative fill',
+                ravedash::output_gadget_container(
+                  shiny::plotOutput(ns("sz_line_plot"), width = '100%', height = "100%")
+                )
+              )
+            ),
+
+            ravedash::output_card(
+              'Statistic over time',
+              class_body = "no-padding fill-width height-650 min-height-650 resize-vertical",
+              shiny::div(
+                class = 'position-relative fill',
+                ravedash::output_gadget_container(
+                  shiny::plotOutput(ns("sz_statistic_plot"), width = '100%', height = "100%")
                 )
               )
             ),
