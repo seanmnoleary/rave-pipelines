@@ -461,9 +461,11 @@ plot_power_over_time_data <- function(
     }
 
     freq_range <- range(group_item$frequency)
-    graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 1.5)
+    graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
     # sub-title
-    graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 0.5, cex.main = 0.8)
+    graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 0.5, cex.main = 0.8)
+
+
 
     return(TRUE)
   }, USE.NAMES = FALSE)
@@ -597,7 +599,6 @@ plot_power_over_time_data_line <- function(
       value_range <- c(0, qval)
     }
 
-    # Compute average power across time for each electrode
     if (any(is_soz) & !any(is_resect)) {
       soz_columns <- which(is_soz)
       soz_data <- data_over_time_per_elec[, soz_columns]
@@ -606,8 +607,7 @@ plot_power_over_time_data_line <- function(
         dimnames(soz_data) <- NULL
       }
       average_power_soz <- apply(soz_data, 1, mean)
-      print(str(average_power_soz))
-      std_dev_soz <- apply(soz_data, 1, sd)
+      std_err_soz <- apply(soz_data, 1, function(x) sd(x) / sqrt(length(x)))
 
       non_soz_columns <- which(!is_soz)
       non_soz_data <- data_over_time_per_elec[, non_soz_columns]
@@ -616,24 +616,24 @@ plot_power_over_time_data_line <- function(
         dimnames(non_soz_data) <- NULL
       }
       average_power_not_soz <- apply(non_soz_data, 1, mean)
-      std_dev_not_soz <- apply(non_soz_data, 1, sd)
+      std_err_not_soz <- apply(non_soz_data, 1, function(x) sd(x) / sqrt(length(x)))
 
       # Plot line plot of average power for SOZ
       graphics::plot(time, average_power_soz, type = "l", xlim = group_item$time_range_for_analysis, ylim = value_range,
-                     col = "#00bfff", lwd = 5, main = sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id),
+                     col = "#00bfff", lwd = 5,
                      xlab = "Time (s)", ylab = "Average Heatmap Value")
 
-      # Add shaded area for standard deviation for SOZ
-      shade_upper_soz <- average_power_soz + std_dev_soz
-      shade_lower_soz <- average_power_soz - std_dev_soz
+      # Add shaded area for standard error for SOZ
+      shade_upper_soz <- average_power_soz + std_err_soz
+      shade_lower_soz <- average_power_soz - std_err_soz
       graphics::polygon(c(time, rev(time)), c(shade_upper_soz, rev(shade_lower_soz)), col = rgb(0, 0, 1, alpha = 0.3), border = NA)
 
       # Plot line plot of average power for non-SOZ
       graphics::lines(time, average_power_not_soz, col = "black", lwd = 5)
 
-      # Add shaded area for standard deviation for non-SOZ
-      shade_upper_not_soz <- average_power_not_soz + std_dev_not_soz
-      shade_lower_not_soz <- average_power_not_soz - std_dev_not_soz
+      # Add shaded area for standard error for non-SOZ
+      shade_upper_not_soz <- average_power_not_soz + std_err_not_soz
+      shade_lower_not_soz <- average_power_not_soz - std_err_not_soz
       graphics::polygon(c(time, rev(time)), c(shade_upper_not_soz, rev(shade_lower_not_soz)), col = rgb(0.7, 0.7, 0.7, alpha = 0.5), border = NA)
 
       # Add legend
@@ -648,7 +648,7 @@ plot_power_over_time_data_line <- function(
         dimnames(resect_data) <- NULL
       }
       average_power_resect <- apply(resect_data, 1, mean)
-      std_dev_resect <- apply(resect_data, 1, sd)
+      std_err_resect <- apply(resect_data, 1, function(x) sd(x) / sqrt(length(x)))
 
       non_resect_columns <- which(!is_resect)
       non_resect_data <- data_over_time_per_elec[, non_resect_columns]
@@ -657,31 +657,31 @@ plot_power_over_time_data_line <- function(
         dimnames(non_resect_data) <- NULL
       }
       average_power_not_resect <- apply(non_resect_data, 1, mean)
-      std_dev_not_resect <- apply(non_resect_data, 1, sd)
+      std_err_not_resect <- apply(non_resect_data, 1, function(x) sd(x) / sqrt(length(x)))
 
       # Plot line plot of average power for SOZ
       graphics::plot(time, average_power_resect, type = "l", xlim = group_item$time_range_for_analysis, ylim = value_range,
-                     col = "#bf00ff", lwd = 5, main = sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id),
+                     col = "#bf00ff", lwd = 5,
                      xlab = "Time (s)", ylab = "Average Heatmap Value")
 
-      # Add shaded area for standard deviation for SOZ
-      shade_upper_resect <- average_power_resect + std_dev_resect
-      shade_lower_resect <- average_power_resect - std_dev_resect
+      # Add shaded area for standard error for SOZ
+      shade_upper_resect <- average_power_resect + std_err_resect
+      shade_lower_resect <- average_power_resect - std_err_resect
       graphics::polygon(c(time, rev(time)), c(shade_upper_resect, rev(shade_lower_resect)),col = rgb(0.75, 0, 1, alpha = 0.3), border = NA)
 
       # Plot line plot of average power for non-SOZ
       graphics::lines(time, average_power_not_resect, col = "black", lwd = 5)
 
-      # Add shaded area for standard deviation for non-SOZ
-      shade_upper_not_resect <- average_power_not_resect + std_dev_not_resect
-      shade_lower_not_resect <- average_power_not_resect - std_dev_not_resect
+      # Add shaded area for standard error for non-SOZ
+      shade_upper_not_resect <- average_power_not_resect + std_err_not_resect
+      shade_lower_not_resect <- average_power_not_resect - std_err_not_resect
       graphics::polygon(c(time, rev(time)), c(shade_upper_not_resect, rev(shade_lower_not_resect)), col = rgb(0.7, 0.7, 0.7, alpha = 0.5), border = NA)
 
       # Add legend
       legend("topright", legend=c("Resect", "Non-Resect"), col=c("#bf00ff", "black"), lwd=5)
 
     } else if (any(is_soz) & any(is_resect)) {
-      # Compute average power and standard deviation for SOZ
+      # Compute average power and standard error for SOZ
       soz_columns <- which(is_soz)
       soz_data <- data_over_time_per_elec[, soz_columns]
       if (is.null(nrow(soz_data))) {
@@ -689,9 +689,9 @@ plot_power_over_time_data_line <- function(
         dimnames(soz_data) <- NULL
       }
       average_power_soz <- apply(soz_data, 1, mean)
-      std_dev_soz <- apply(soz_data, 1, sd)
+      std_err_soz <- apply(soz_data, 1, function(x) sd(x) / sqrt(length(x)))
 
-      # Compute average power and standard deviation for resect
+      # Compute average power and standard error for resect
       resect_columns <- which(is_resect)
       resect_data <- data_over_time_per_elec[, resect_columns]
       if (is.null(nrow(resect_data))) {
@@ -699,9 +699,9 @@ plot_power_over_time_data_line <- function(
         dimnames(resect_data) <- NULL
       }
       average_power_resect <- apply(resect_data, 1, mean)
-      std_dev_resect <- apply(resect_data, 1, sd)
+      std_err_resect <- apply(resect_data, 1, function(x) sd(x) / sqrt(length(x)))
 
-      # Compute average power and standard deviation for non-SOZ and non-resect
+      # Compute average power and standard error for non-SOZ and non-resect
       non_soz_non_resect_columns <- which(!is_soz & !is_resect)
       non_soz_non_resect_data <- data_over_time_per_elec[, non_soz_non_resect_columns]
       if (is.null(nrow(non_soz_non_resect_data))) {
@@ -709,32 +709,32 @@ plot_power_over_time_data_line <- function(
         dimnames(non_soz_non_resect_data) <- NULL
       }
       average_power_not_soz_not_resect <- apply(non_soz_non_resect_data, 1, mean)
-      std_dev_not_soz_not_resect <- apply(non_soz_non_resect_data, 1, sd)
+      std_err_not_soz_not_resect <- apply(non_soz_non_resect_data, 1, function(x) sd(x) / sqrt(length(x)))
 
       # Plot line plot of average power for SOZ
       graphics::plot(time, average_power_soz, type = "l", xlim = group_item$time_range_for_analysis, ylim = value_range,
-                     col = "#00bfff", lwd = 5, main = sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id),
+                     col = "#00bfff", lwd = 5,
                      xlab = "Time (s)", ylab = "Average Heatmap Value")
 
-      # Add shaded area for standard deviation for SOZ
-      shade_upper_soz <- average_power_soz + std_dev_soz
-      shade_lower_soz <- average_power_soz - std_dev_soz
+      # Add shaded area for standard error for SOZ
+      shade_upper_soz <- average_power_soz + std_err_soz
+      shade_lower_soz <- average_power_soz - std_err_soz
       graphics::polygon(c(time, rev(time)), c(shade_upper_soz, rev(shade_lower_soz)), col = rgb(0, 0, 1, alpha = 0.3), border = NA)
 
       # Plot line plot of average power for resect
       graphics::lines(time, average_power_resect, col = "#bf00ff", lwd = 5)
 
-      # Add shaded area for standard deviation for resect
-      shade_upper_resect <- average_power_resect + std_dev_resect
-      shade_lower_resect <- average_power_resect - std_dev_resect
+      # Add shaded area for standard error for resect
+      shade_upper_resect <- average_power_resect + std_err_resect
+      shade_lower_resect <- average_power_resect - std_err_resect
       graphics::polygon(c(time, rev(time)), c(shade_upper_resect, rev(shade_lower_resect)), col = rgb(0.75, 0, 1, alpha = 0.3), border = NA)
 
       # Plot line plot of average power for non-SOZ and non-resect
       graphics::lines(time, average_power_not_soz_not_resect, col = "black", lwd = 5)
 
-      # Add shaded area for standard deviation for non-SOZ and non-resect
-      shade_upper_not_soz_not_resect <- average_power_not_soz_not_resect + std_dev_not_soz_not_resect
-      shade_lower_not_soz_not_resect <- average_power_not_soz_not_resect - std_dev_not_soz_not_resect
+      # Add shaded area for standard error for non-SOZ and non-resect
+      shade_upper_not_soz_not_resect <- average_power_not_soz_not_resect + std_err_not_soz_not_resect
+      shade_lower_not_soz_not_resect <- average_power_not_soz_not_resect - std_err_not_soz_not_resect
       graphics::polygon(c(time, rev(time)), c(shade_upper_not_soz_not_resect, rev(shade_lower_not_soz_not_resect)), col = rgb(0.7, 0.7, 0.7, alpha = 0.5), border = NA)
 
       # Add legend
@@ -747,22 +747,23 @@ plot_power_over_time_data_line <- function(
         dimnames(data_over_time_per_elec) <- NULL
       }
       average_power <- apply(data_over_time_per_elec, 1, mean)
-      std_dev <- apply(data_over_time_per_elec, 1, sd)
+      std_err <- apply(data_over_time_per_elec, 1, function(x) sd(x) / sqrt(length(x)))
 
       # Plot line plot of average power
       graphics::plot(time, average_power, type = "l", xlim = group_item$time_range_for_analysis, ylim = value_range,
-                     col = "black", lwd = 5, main = sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id),
+                     col = "black", lwd = 5,
                      xlab = "Time (s)", ylab = "Average Heatmap Value")
 
-      # Add shaded area for standard deviation
-      shade_upper <- average_power + std_dev
-      shade_lower <- average_power - std_dev
+      # Add shaded area for standard error
+      shade_upper <- average_power + std_err
+      shade_lower <- average_power - std_err
       graphics::polygon(c(time, rev(time)), c(shade_upper, rev(shade_lower)), col = rgb(0.7, 0.7, 0.7, alpha = 0.5), border = NA)
 
       # Add legend
       legend("topright", legend="Overall", col="black", lwd=5)
 
     }
+
 
     # Add axes
     graphics::axis(side = 1, at = pretty(time))
@@ -771,7 +772,11 @@ plot_power_over_time_data_line <- function(
 
     # Add subtitle
     freq_range <- range(group_item$frequency)
-    graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 0.5, cex.main = 0.8)
+
+    graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
+    # sub-title
+    graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 0.5, cex.main = 0.8)
+
 
 
     return(TRUE)
@@ -853,7 +858,7 @@ plot_quantile_plot <- function(
   if(!any(group_data_is_valid)) { stop("No valid data; please check analysis frequency and time range.") }
 
   layout_heat_maps(sum(group_data_is_valid), max_col = 2, layout_color_bar = TRUE)
-  par("mar" = c(4.5, 5.3, 4, 0.1), cex = 1.2)
+  par("mar" = c(4.5, 1, 3, 0.1), cex = 1.2)
 
 
   sapply(power_over_time_data$group_data[group_data_is_valid], function(group_item) {
@@ -959,15 +964,14 @@ plot_quantile_plot <- function(
 
       quantilesname<-c('SOZ(10th)','SOZ(20th)','SOZ(30th)','SOZ(40th)','SOZ(50th)',
                        'SOZ(60th)','SOZ(70th)','SOZ(80th)','SOZ(90th)','SOZ(100th)',
-                       'SOZc(10th)','SOZc(20th)','SOZc(30th)','SOZc(40th)','SOZc(50th)',
-                       'SOZc(60th)','SOZc(70th)','SOZc(80th)','SOZc(90th)','SOZc(100th)')
+                       'OTHER(10th)','OTHER(20th)','OTHER(30th)','OTHER(40th)','OTHER(50th)',
+                       'OTHER(60th)','OTHER(70th)','OTHER(80th)','OTHER(90th)','OTHER(100th)')
 
       time_vector <- seq(from = group_item$time_range_for_analysis[1],
                          to = group_item$time_range_for_analysis[2],
                          length.out = nrow(data_over_time_per_elec))
 
-      print(str(quantilesname))
-      print(str(time_vector))
+
       quantileplot<- expand.grid(Time = time_vector, Stats=quantilesname)
       quantileplot$Value <- c(t(quantilematrixsozsozc))
 
@@ -984,7 +988,10 @@ plot_quantile_plot <- function(
                       ylab = "",
                       axes = FALSE)
 
-      # Add axis labels
+      mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3.5, col = "#00bfff", cex = 1.2)
+      mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "black", cex = 1.2)
+
+      graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
 
       min_time <- min(unique(quantileplot$Time))
       max_time <- max(unique(quantileplot$Time))
@@ -1062,15 +1069,13 @@ plot_quantile_plot <- function(
 
       quantilesname<-c('RESECT(10th)','RESECT(20th)','RESECT(30th)','RESECT(40th)','RESECT(50th)',
                        'RESECT(60th)','RESECT(70th)','RESECT(80th)','RESECT(90th)','RESECT(100th)',
-                       'RESECTc(10th)','RESECTc(20th)','RESECTc(30th)','RESECTc(40th)','RESECTc(50th)',
-                       'RESECTc(60th)','RESECTc(70th)','RESECTc(80th)','RESECTc(90th)','RESECTc(100th)')
+                       'OTHER(10th)','OTHER(20th)','OTHER(30th)','OTHER(40th)','OTHER(50th)',
+                       'OTHER(60th)','OTHER(70th)','OTHER(80th)','OTHER(90th)','OTHER(100th)')
 
       time_vector <- seq(from = group_item$time_range_for_analysis[1],
                          to = group_item$time_range_for_analysis[2],
                          length.out = nrow(data_over_time_per_elec))
 
-      print(str(quantilesname))
-      print(str(time_vector))
       quantileplot<- expand.grid(Time = time_vector, Stats=quantilesname)
       quantileplot$Value <- c(t(quantilematrixresectc))
 
@@ -1086,6 +1091,12 @@ plot_quantile_plot <- function(
                       xlab = "Time (s)",
                       ylab = "",
                       axes = FALSE)
+
+
+      mtext("RESECT", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3.5, col = "#bf00ff", cex = 1.2)
+      mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "black", cex = 1.2)
+
+      graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
 
       # Add axis labels
 
@@ -1218,6 +1229,13 @@ plot_quantile_plot <- function(
                       axes = FALSE)
 
       # Add axis labels
+      mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3.5, col = "#00bfff", cex = 1.2)
+      mtext("RESECT", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "#bf00ff", cex = 1.2)
+      mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 22.5, col = "black", cex = 1.2)
+
+      graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
+      graphics::abline(h = 20 + 0.5, col = "red", lwd = 10, lty = "dashed")
+
 
       min_time <- min(unique(quantileplot$Time))
       max_time <- max(unique(quantileplot$Time))
@@ -1231,11 +1249,25 @@ plot_quantile_plot <- function(
 
     }
 
+    if (any(is_soz) | any(is_resect)) {
+      # Add subtitle
+      freq_range <- range(group_item$frequency)
+      graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
+      # sub-title
+      graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 0.5, cex.main = 0.8)
 
-    # Add subtitle
-    freq_range <- range(group_item$frequency)
-    graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 0.5, cex.main = 0.8)
+      par("mar" = c(3.1, 1, 3, 3.1))
+      pal_val <- seq(value_range[[1]], value_range[[2]], length.out = 101)
+      graphics::image(matrix(pal_val, nrow = 1), x = 0, y = pal_val, axes = FALSE, xlab = "", ylab = "", col = palette, xlim = c(0, 0.1))
+      graphics::axis(side = 4, at = c(value_range[[2]], 0), labels = c(sprintf("%.1f", value_range[[2]]), "0"), las = 1)
 
+      if(scale == "0-1") {
+        graphics::title("Max\nNormalized", line = 0.6, adj = 0, cex.main = 0.8)
+      } else {
+        actual_range_text <- paste(sprintf("%.1f", actual_range), collapse = " ~ ")
+        graphics::title(sprintf("[%s]", actual_range_text), line = 0.6, adj = 0, cex.main = 0.8)
+      }
+    }
 
     return(TRUE)
   }, USE.NAMES = FALSE)
