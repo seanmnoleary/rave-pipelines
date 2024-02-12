@@ -9,14 +9,14 @@ analysis_time_frequencies:
     time_range:
     - -1
     - 2
-condition: sz1 (4)
+condition: sz1 (5)
 reference: common_average
 window_params:
 - 2.5
 - 0.5
 frequency_range:
 - 0
-- 256
+- 250
 num_tapers: ~
 min_nfft: 0
 weighting: unity
@@ -30,15 +30,15 @@ time_bandwidth: 3
 time_window:
 - -20
 - 20
-reference_name: common_average
-load_electrodes: 3-88
-epoch_file_name: subHUP064_seizure
+reference_name: car
+load_electrodes: 1-16,19-41,43-49,51-85,88,91,93-118,120-127
+epoch_file_name: subHUP123_seizure
 project_name: Retrostudy
 soz_electrodes: ''
 resect_electrodes: ''
 heatmap_name_type: number
 ordered: yes
-subject_code: subHUP064
+subject_code: subHUP123
 epoch_name: subHUP064_seizure
 electrodes: 3,4-87
 time_windows:
@@ -61,3 +61,5 @@ text_size: 5.0
 baseline: 60s before sz1 (2)
 scale: None
 baselined: yes
+start_time_baseline: 0
+end_time_baseline: 30

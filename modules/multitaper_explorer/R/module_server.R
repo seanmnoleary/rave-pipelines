@@ -163,11 +163,15 @@ module_server <- function(input, output, session, ...){
     if(!length(output_flags) || isFALSE(output_flags) || !is.list(local_data$results)) {
       run_multitaper()
     }
+    baseline_end <- get_baseline_end()
+    baseline_start <- get_baseline_start()
     pipeline$set_settings(
       analysis_time_frequencies = input$analysis_settings,
       condition = input$condition,
       baseline = input$baseline_condition,
-      baselined = input$hm_baselined
+      baselined = input$hm_baselined,
+      end_time_baseline = baseline_end,
+      start_time_baseline = baseline_start
       # soz_electrodes = soz_electrodes,
       # heatmap_name_type = heatmap_name_type,
       # condition = condition
@@ -542,6 +546,20 @@ module_server <- function(input, output, session, ...){
     input$baseline_condition_next,
     ignoreNULL = TRUE,
     ignoreInit = TRUE
+  )
+
+  get_baseline_end <- shiny::debounce(
+    shiny::reactive({
+      return(input$baseline_end)
+    }),
+    1000
+  )
+
+  get_baseline_start <- shiny::debounce(
+    shiny::reactive({
+      return(input$baseline_start)
+    }),
+    1000
   )
 
   get_soz_electrodes <- shiny::debounce(

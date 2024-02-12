@@ -201,8 +201,23 @@ module_html <- function(){
                     inputId = ns("baseline_condition_next"),
                     label = "Next"
                   )
-                )
-
+                ),
+                shidashi::flex_container(
+                  shidashi::flex_item(
+                    shiny::numericInput(
+                      inputId = ns("baseline_start"),
+                      label = "Baseline from",
+                      value = 0, width = "100%"
+                    )
+                  ),
+                  shidashi::flex_item(
+                    shiny::numericInput(
+                      inputId = ns("baseline_end"),
+                      label = "to (s)",
+                      value = 30, width = "100%"
+                    )
+                  )
+                ),
               )
             ),
 
@@ -261,7 +276,7 @@ module_html <- function(){
                   shiny::selectInput(
                     inputId = ns("hm_normalize"),
                     label = "Select normalization method",
-                    choices = c("None", "Max_Normalized"),
+                    choices = c("None", "Min_Max_Normalized_Column"),
                     selected = "None"
                   ),
                   shiny::checkboxInput(

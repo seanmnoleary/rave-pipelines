@@ -66,7 +66,7 @@ multitaper_result <- generate_multitaper(
   
 ### Step 4: get heatmap data from multitaper result for each spectral range for a specific condition
 ```{rave find_heatmap, language = "R", export = "heatmap_result"}
-heatmap_result <- generate_power_over_time_data(multitaper_result, analysis_time_frequencies, baselined = baselined, baseline = baseline, trial = condition)
+heatmap_result <- generate_power_over_time_data(multitaper_result, analysis_time_frequencies, baselined = baselined, baseline = baseline, start_time_baseline = start_time_baseline, end_time_baseline = end_time_baseline)
 ```
 
 #### Step 5: Visualize Heatmaps for all the generated spectral ranges for a specific condition

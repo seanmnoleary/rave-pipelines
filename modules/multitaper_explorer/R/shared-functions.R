@@ -207,7 +207,8 @@ generate_power_over_time_data <- function(
     analysis_time_frequencies,
     baselined,
     baseline,
-    trial
+    start_time_baseline,
+    end_time_baseline
 ) {
 
   # get header information
@@ -240,6 +241,20 @@ generate_power_over_time_data <- function(
       return(NULL)
     }
 
+    time_range_for_analysis <- range(unlist(analysis_item$time_range))
+    time <- dnames$Time
+    actual_ranges <- range(time)
+    if(anyNA(time_range_for_analysis)) {
+      time_range_for_analysis <- actual_ranges
+    } else {
+      if(time_range_for_analysis[[1]] < actual_ranges[[1]]){
+        time_range_for_analysis[[1]] = actual_ranges[[1]]
+      }
+      if(time_range_for_analysis[[2]] > actual_ranges[[2]]){
+        time_range_for_analysis[[2]] = actual_ranges[[2]]
+      }
+    }
+
     # Time x Frequency x Trial x Electrode,
     # drop=FALSE will keep the dimensions when there is one frequency selected, otherwise R drops frequency margin
     sub_array <- multitaper_result[, frequency_selection, , , drop = FALSE, dimnames = NULL]
@@ -258,23 +273,34 @@ generate_power_over_time_data <- function(
         print("Please set baseline condition")
       }
 
-      if(length(trial)) {
-        if(is.numeric(trial)) {
-          trial_sel <- which(epoch_table$Trial %in% trial)
-        } else {
-          trial_sel <- which(epoch_table$Condition2 %in% trial)
-          print(epoch_table$Condition2 %in% trial)
-        }
-      } else {
-        trial_sel <- NULL
-      }
+      # subset the baselining by the time range for analysis
+      temp_sub_array <- sub_array
+      start_index <- which(time >= start_time_baseline)[1]
+      end_index <- which(time <= end_time_baseline)[length(which(time <= end_time_baseline))]
+      temp_sub_array <- temp_sub_array[start_index:end_index, , , ]
+
 
       dims <- dim(sub_array)
-      temp_sub_array <- sub_array
+
       # run through the frequencies
       for (i in 1:dims[2]) {
+        # run through the conditions
         for (j in 1: dims[3]) {
+
+
           sub_array[,i,j,] <- (sub_array[,i,j,] - mean(temp_sub_array[,i,baseline_sel,])) / sd(temp_sub_array[,i,baseline_sel,])
+          temp_baseline_sel <- temp_sub_array[,i,baseline_sel,]
+          l <- length(temp_baseline_sel)
+          m <- sum(temp_baseline_sel) / l
+          baseline_sd <- sqrt((sum(temp_baseline_sel^2) - sum(temp_baseline_sel)^2 / l)/(l-1))
+
+          fast_z <- function(y) {
+            (y - m) / baseline_sd
+          }
+
+          sub_array[,i,j,] <- fast_z(sub_array[,i,j,])
+
+
         }
       }
 
@@ -284,18 +310,6 @@ generate_power_over_time_data <- function(
     # Time (keep) x Frequency (collapse) x Trial (keep) x Electrode (keep)
     data_over_time_trial_per_elec <- ravetools::collapse(sub_array, keep = c(1, 3, 4), average = TRUE)
 
-    time_range_for_analysis <- range(unlist(analysis_item$time_range))
-    actual_ranges <- range(dnames$Time)
-    if(anyNA(time_range_for_analysis)) {
-      time_range_for_analysis <- actual_ranges
-    } else {
-      if(time_range_for_analysis[[1]] < actual_ranges[[1]]){
-        time_range_for_analysis[[1]] = actual_ranges[[1]]
-      }
-      if(time_range_for_analysis[[2]] > actual_ranges[[2]]){
-        time_range_for_analysis[[2]] = actual_ranges[[2]]
-      }
-    }
 
     value_range <<- range(c(range(data_over_time_trial_per_elec, na.rm = TRUE), value_range))
 
@@ -338,7 +352,7 @@ generate_power_over_time_data <- function(
 plot_power_over_time_data <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
-    scale = c("None", "Max_Normalized"),
+    scale = c("None", "Min_Max_Normalized_Column"),
     palette = plot_preferences$get('heatmap_palette'), ordered = FALSE) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
@@ -350,7 +364,7 @@ plot_power_over_time_data <- function(
   # soz_electrodes <- 3:4
   # trial <- 2
   # palette = plot_preferences$get('heatmap_palette')
-  # scale <- "Max_Normalized"
+  # scale <- "Min_Max_Normalized_Column"
   # value_range=NULL
   # name_type = "number"
 
@@ -369,14 +383,14 @@ plot_power_over_time_data <- function(
   if(length(value_range) > 0 && !anyNA(value_range)) {
     value_range <- range(value_range, na.rm = TRUE)
     if( value_range[[2]] == value_range[[1]] ) {
-      if( scale == "Max_Normalized" ) {
+      if( scale == "Min_Max_Normalized_Column") {
         value_range <- c(0,1)
       } else {
         value_range <- actual_range
       }
     }
   } else {
-    if( scale == "Max_Normalized" ) {
+    if( scale == "Min_Max_Normalized_Column") {
       value_range <- c(0,1)
     } else {
       value_range <- actual_range
@@ -436,7 +450,7 @@ plot_power_over_time_data <- function(
     # Time x Trial (collapse) x Electrode
     data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
 
-    if( scale == "Max_Normalized" ) {
+    if( scale == "Min_Max_Normalized_Column") {
       qval <- value_range[[2]]
       if( qval <= 0 || qval > 1) {
         qval <- 1
@@ -447,9 +461,20 @@ plot_power_over_time_data <- function(
       maxcol <- apply(data_over_time_per_elec, 2, max)
       data_over_time_per_elec_temp <- data_over_time_per_elec
 
+      mincol <- apply(data_over_time_per_elec, 2, min)
+      maxcol <- apply(data_over_time_per_elec, 2, max)
+
+      data_over_time_per_elec_temp <- data_over_time_per_elec
+
       for (col in 1:ncol(data_over_time_per_elec_temp)) {
         for (row in 1:nrow(data_over_time_per_elec_temp)) {
-          data_over_time_per_elec_temp[row, col] <- data_over_time_per_elec[row, col] / maxcol[col]
+          # Avoid division by zero if max equals min
+          if(maxcol[col] != mincol[col]) {
+            data_over_time_per_elec_temp[row, col] <- (data_over_time_per_elec[row, col] - mincol[col]) / (maxcol[col] - mincol[col])
+          } else {
+            # Handle case where max equals min, potentially setting to 0, 0.5, or another appropriate value
+            data_over_time_per_elec_temp[row, col] <- 0
+          }
         }
       }
 
@@ -457,6 +482,7 @@ plot_power_over_time_data <- function(
 
       value_range <- c(0, qval)
     }
+
     elec_order_temp <- electrode_table$Electrode
 
     if (ordered == TRUE & (length(soz_electrodes) > 0 | length(resect_electrodes) > 0) ) {
@@ -516,7 +542,7 @@ plot_power_over_time_data <- function(
   graphics::axis(side = 4, at = c(value_range[[2]], 0), labels = c(sprintf("%.1f", value_range[[2]]), "0"), las = 1)
 
 
-  if(scale == "Max_Normalized") {
+  if(scale == "Min_Max_Normalized_Column") {
     graphics::title("Max Normalized", line = 0.6, adj = 0, cex.main = 0.8)
   } else {
     actual_range_text <- paste(sprintf("%.1f", actual_range), collapse = " ~ ")
@@ -528,7 +554,7 @@ plot_power_over_time_data <- function(
 plot_power_over_time_data_line <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
-    scale = c("None", "Max_Normalized"),
+    scale = c("None", "Min_Max_Normalized_Column"),
     palette = plot_preferences$get('heatmap_palette')) {
     # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
@@ -549,14 +575,14 @@ plot_power_over_time_data_line <- function(
   if(length(value_range) > 0 && !anyNA(value_range)) {
     value_range <- range(value_range, na.rm = TRUE)
     if( value_range[[2]] == value_range[[1]] ) {
-      if( scale == "Max_Normalized" ) {
+      if( scale == "Min_Max_Normalized_Column") {
         value_range <- c(0,1)
       } else {
         value_range <- actual_range
       }
     }
   } else {
-    if( scale == "Max_Normalized" ) {
+    if( scale == "Min_Max_Normalized_Column") {
       value_range <- c(0,1)
     } else {
       value_range <- actual_range
@@ -617,7 +643,7 @@ plot_power_over_time_data_line <- function(
     # Time x Trial (collapse) x Electrode
     data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
 
-    if( scale == "Max_Normalized" ) {
+    if( scale == "Min_Max_Normalized_Column") {
       qval <- value_range[[2]]
       if( qval <= 0 || qval > 1) {
         qval <- 1
@@ -625,12 +651,20 @@ plot_power_over_time_data_line <- function(
 
       data_over_time_per_elec <- t(data_over_time_per_elec)
 
+      mincol <- apply(data_over_time_per_elec, 2, min)
       maxcol <- apply(data_over_time_per_elec, 2, max)
+
       data_over_time_per_elec_temp <- data_over_time_per_elec
 
       for (col in 1:ncol(data_over_time_per_elec_temp)) {
         for (row in 1:nrow(data_over_time_per_elec_temp)) {
-          data_over_time_per_elec_temp[row, col] <- data_over_time_per_elec[row, col] / maxcol[col]
+          # Avoid division by zero if max equals min
+          if(maxcol[col] != mincol[col]) {
+            data_over_time_per_elec_temp[row, col] <- (data_over_time_per_elec[row, col] - mincol[col]) / (maxcol[col] - mincol[col])
+          } else {
+            # Handle case where max equals min, potentially setting to 0, 0.5, or another appropriate value
+            data_over_time_per_elec_temp[row, col] <- 0
+          }
         }
       }
 
@@ -826,7 +860,7 @@ plot_power_over_time_data_line <- function(
 plot_quantile_plot <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
-    scale = c("None", "Max_Normalized"),
+    scale = c("None", "Min_Max_Normalized_Column"),
     palette = plot_preferences$get('heatmap_palette')) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
@@ -847,14 +881,14 @@ plot_quantile_plot <- function(
   if(length(value_range) > 0 && !anyNA(value_range)) {
     value_range <- range(value_range, na.rm = TRUE)
     if( value_range[[2]] == value_range[[1]] ) {
-      if( scale == "Max_Normalized" ) {
+      if( scale == "Min_Max_Normalized_Column") {
         value_range <- c(0,1)
       } else {
         value_range <- actual_range
       }
     }
   } else {
-    if( scale == "Max_Normalized" ) {
+    if( scale == "Min_Max_Normalized_Column") {
       value_range <- c(0,1)
     } else {
       value_range <- actual_range
@@ -898,7 +932,7 @@ plot_quantile_plot <- function(
   if(!any(group_data_is_valid)) { stop("No valid data; please check analysis frequency and time range.") }
 
   layout_heat_maps(sum(group_data_is_valid), max_col = 2, layout_color_bar = TRUE)
-  par("mar" = c(4.5, 1, 3, 0.1), cex = 1.2)
+  par("mar" = c(4.5, 5, 3, 0.2), cex = 1.2)
 
 
   sapply(power_over_time_data$group_data[group_data_is_valid], function(group_item) {
@@ -915,7 +949,7 @@ plot_quantile_plot <- function(
     # Time x Trial (collapse) x Electrode
     data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
 
-    if( scale == "Max_Normalized" ) {
+    if( scale == "Min_Max_Normalized_Column") {
       qval <- value_range[[2]]
       if( qval <= 0 || qval > 1) {
         qval <- 1
@@ -923,12 +957,20 @@ plot_quantile_plot <- function(
 
       data_over_time_per_elec <- t(data_over_time_per_elec)
 
+      mincol <- apply(data_over_time_per_elec, 2, min)
       maxcol <- apply(data_over_time_per_elec, 2, max)
+
       data_over_time_per_elec_temp <- data_over_time_per_elec
 
       for (col in 1:ncol(data_over_time_per_elec_temp)) {
         for (row in 1:nrow(data_over_time_per_elec_temp)) {
-          data_over_time_per_elec_temp[row, col] <- data_over_time_per_elec[row, col] / maxcol[col]
+          # Avoid division by zero if max equals min
+          if(maxcol[col] != mincol[col]) {
+            data_over_time_per_elec_temp[row, col] <- (data_over_time_per_elec[row, col] - mincol[col]) / (maxcol[col] - mincol[col])
+          } else {
+            # Handle case where max equals min, potentially setting to 0, 0.5, or another appropriate value
+            data_over_time_per_elec_temp[row, col] <- 0
+          }
         }
       }
 
@@ -1027,8 +1069,7 @@ plot_quantile_plot <- function(
                       xlab = "Time (s)",
                       ylab = "",
                       axes = FALSE)
-
-      mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3.5, col = "#00bfff", cex = 1.2)
+      mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3, col = "#00bfff", cex = 1.2)
       mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "black", cex = 1.2)
 
       graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
@@ -1301,7 +1342,7 @@ plot_quantile_plot <- function(
       graphics::image(matrix(pal_val, nrow = 1), x = 0, y = pal_val, axes = FALSE, xlab = "", ylab = "", col = palette, xlim = c(0, 0.1))
       graphics::axis(side = 4, at = c(value_range[[2]], 0), labels = c(sprintf("%.1f", value_range[[2]]), "0"), las = 1)
 
-      if(scale == "Max_Normalized") {
+      if(scale == "Min_Max_Normalized_Column") {
         graphics::title("Max\nNormalized", line = 0.6, adj = 0, cex.main = 0.8)
       } else {
         actual_range_text <- paste(sprintf("%.1f", actual_range), collapse = " ~ ")
