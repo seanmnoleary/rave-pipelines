@@ -731,7 +731,7 @@ module_server <- function(input, output, session, ...){
       resect_electrodes <- get_resect_electrodes()
       ordered <- ordered_electrodes()
       condition <- input$condition
-      scale <- ifelse(isTRUE(input$hm_normalize), "0-1", "normal")
+      scale <- ifelse(isTRUE(input$hm_normalize), "Max_Normalized", "None")
 
       plot_power_over_time_data(
         heatmap_result,
@@ -771,7 +771,7 @@ module_server <- function(input, output, session, ...){
       soz_electrodes <- get_soz_electrodes()
       resect_electrodes <- get_resect_electrodes()
       condition <- input$condition
-      scale <- ifelse(isTRUE(input$hm_normalize), "0-1", "normal")
+      scale <- ifelse(isTRUE(input$hm_normalize), "Max_Normalized", "None")
 
       plot_power_over_time_data_line(
         heatmap_result,
@@ -810,7 +810,7 @@ module_server <- function(input, output, session, ...){
       soz_electrodes <- get_soz_electrodes()
       resect_electrodes <- get_resect_electrodes()
       condition <- input$condition
-      scale <- ifelse(isTRUE(input$hm_normalize), "0-1", "normal")
+      scale <- ifelse(isTRUE(input$hm_normalize), "Max_Normalized", "None")
 
       plot_quantile_plot(
         heatmap_result,

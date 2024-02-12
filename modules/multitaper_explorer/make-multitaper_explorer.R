@@ -113,6 +113,9 @@ rm(._._env_._.)
         }), deps = "settings"), input_SOZ_elec = targets::tar_target_raw("SOZ_elec", 
         quote({
             settings[["SOZ_elec"]]
+        }), deps = "settings"), input_baseline = targets::tar_target_raw("baseline", 
+        quote({
+            settings[["baseline"]]
         }), deps = "settings"), input_text_size = targets::tar_target_raw("text_size", 
         quote({
             settings[["text_size"]]
@@ -131,6 +134,9 @@ rm(._._env_._.)
         }), deps = "settings"), input_time_stat_start = targets::tar_target_raw("time_stat_start", 
         quote({
             settings[["time_stat_start"]]
+        }), deps = "settings"), input_scale = targets::tar_target_raw("scale", 
+        quote({
+            settings[["scale"]]
         }), deps = "settings"), load_subject = targets::tar_target_raw(name = "subject", 
         command = quote({
             .__target_expr__. <- quote({
@@ -214,7 +220,8 @@ rm(._._env_._.)
         command = quote({
             .__target_expr__. <- quote({
                 heatmap_result <- generate_power_over_time_data(multitaper_result, 
-                  analysis_time_frequencies)
+                  analysis_time_frequencies, scale = scale, baseline = baseline, 
+                  trial = condition)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -227,11 +234,13 @@ rm(._._env_._.)
             target_export = "heatmap_result", target_expr = quote({
                 {
                   heatmap_result <- generate_power_over_time_data(multitaper_result, 
-                    analysis_time_frequencies)
+                    analysis_time_frequencies, scale = scale, 
+                    baseline = baseline, trial = condition)
                 }
                 heatmap_result
-            }), target_depends = c("multitaper_result", "analysis_time_frequencies"
-            )), deps = c("multitaper_result", "analysis_time_frequencies"
+            }), target_depends = c("multitaper_result", "analysis_time_frequencies", 
+            "scale", "baseline", "condition")), deps = c("multitaper_result", 
+        "analysis_time_frequencies", "scale", "baseline", "condition"
         ), cue = targets::tar_cue("thorough"), pattern = NULL, 
         iteration = "list"), generate_data_for_heatmap = targets::tar_target_raw(name = "plot_heatmap", 
         command = quote({
@@ -267,8 +276,7 @@ rm(._._env_._.)
             .__target_expr__. <- quote({
                 plot_lineplot <- plot_power_over_time_data_line(heatmap_result, 
                   soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
-                  name_type = heatmap_name_type, trial = condition, 
-                  ordered = ordered)
+                  name_type = heatmap_name_type, trial = condition)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -282,15 +290,14 @@ rm(._._env_._.)
                 {
                   plot_lineplot <- plot_power_over_time_data_line(heatmap_result, 
                     soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
-                    name_type = heatmap_name_type, trial = condition, 
-                    ordered = ordered)
+                    name_type = heatmap_name_type, trial = condition)
                 }
                 plot_lineplot
             }), target_depends = c("heatmap_result", "soz_electrodes", 
-            "resect_electrodes", "heatmap_name_type", "condition", 
-            "ordered")), deps = c("heatmap_result", "soz_electrodes", 
-        "resect_electrodes", "heatmap_name_type", "condition", 
-        "ordered"), cue = targets::tar_cue("always"), pattern = NULL, 
+            "resect_electrodes", "heatmap_name_type", "condition"
+            )), deps = c("heatmap_result", "soz_electrodes", 
+        "resect_electrodes", "heatmap_name_type", "condition"
+        ), cue = targets::tar_cue("always"), pattern = NULL, 
         iteration = "list"), generate_data_for_3d_viewer = targets::tar_target_raw(name = "viewer3d_data", 
         command = quote({
             .__target_expr__. <- quote({

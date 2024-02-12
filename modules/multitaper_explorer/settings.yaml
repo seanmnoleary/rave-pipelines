@@ -1,52 +1,55 @@
-SOZ_elec: '0'
-resect_elec: '0'
-plot_resect_elec: no
-analysis_time_frequencies:
-  '1':
-    frequency_range:
-    - 15
-    - 30
-    time_range:
-    - -1
-    - 2
-condition: sz (1)
-reference: common_average
-window_params:
-- 2.5
-- 0.5
-frequency_range:
-- 1
-- 256
-num_tapers: ~
-min_nfft: 0
-weighting: unity
-detrend_opt: linear
-parallel: yes
-num_workers: 31.0
-plot_on: no
-verbose: no
-xyflip: no
-time_bandwidth: 3
-time_window:
-- -1
-- 2
-reference_name: common_average
-load_electrodes: 1-14,17-22,25-55,57-89,91-95,97-100,102-122
-epoch_file_name: subHUP074_seizure
-project_name: Retrostudy
-soz_electrodes: ''
-resect_electrodes: 1-2
-heatmap_name_type: number
-ordered: yes
-subject_code: subHUP074
-epoch_name: subHUP064_seizure
-electrodes: 3,4-88
+time_stat_end: 10.0
 time_windows:
 - -30.0
 - 30.0
-time_stat_end: 10.0
-subject: subHUP064
-time_stat_start: 0.0
+electrodes: 3,4-87
+epoch_name: subHUP064_seizure
+subject_code: subHUP064
+ordered: yes
+heatmap_name_type: number
+resect_electrodes: ''
+soz_electrodes: ''
+project_name: Retrostudy
+epoch_file_name: subHUP064_seizure
+load_electrodes: 3,4-88
+reference_name: common_average
+time_window:
+- -30.0
+- 30.0
+time_bandwidth: 3
+xyflip: no
+verbose: no
+plot_on: no
+num_workers: 31.0
+parallel: yes
+detrend_opt: linear
+weighting: unity
+min_nfft: 0
+num_tapers: ~
+frequency_range:
+- 0.0
+- 256.0
+window_params:
+- 2.5
+- 0.5
+reference: common_average
+condition: sz1 (4)
+analysis_time_frequencies:
+  '1':
+    frequency_range:
+    - 13.0
+    - 30.0
+    time_range:
+    - -30.0
+    - 30.0
+plot_resect_elec: no
+resect_elec: '0'
+SOZ_elec: '0'
+baseline: 60s before sz1 (2)
+text_size: 5.0
+organize_top: no
+label: numeric
+plot_SOZ_elec: no
 analysis_windows:
   '1':
     frequency_range:
@@ -55,7 +58,5 @@ analysis_windows:
     time_range:
     - 0.0
     - 30.0
-plot_SOZ_elec: no
-label: numeric
-organize_top: no
-text_size: 5.0
+time_stat_start: 0.0
+scale: None
