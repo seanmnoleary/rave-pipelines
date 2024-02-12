@@ -134,7 +134,7 @@ module_html <- function(){
             ),
 
             ravedash::input_card(
-              title = "Condition Selector",
+              title = "Analysis Condition Selector",
 
               shiny::fluidRow(
 
@@ -158,6 +158,47 @@ module_html <- function(){
                   width = 6,
                   shiny::actionButton(
                     inputId = ns("condition_next"),
+                    label = "Next"
+                  )
+                )
+
+              )
+            ),
+
+            ravedash::input_card(
+              title = "Baseline Condition Selector",
+
+              shiny::fluidRow(
+
+                shiny::column(
+                  width = 12,
+                  shiny::checkboxInput(
+                    inputId = ns("hm_baselined"),
+                    label = "Baseline data",
+                    value = FALSE
+                  )
+                ),
+
+                shiny::column(
+                  width = 12,
+                  shiny::selectInput(
+                    inputId = ns("baseline_condition"),
+                    label = "Select a baseline condition",
+                    choices = character()
+                  )
+                ),
+
+                shiny::column(
+                  width = 6,
+                  shiny::actionButton(
+                    inputId = ns("baseline_condition_prev"),
+                    label = "Prev"
+                  )
+                ),
+                shiny::column(
+                  width = 6,
+                  shiny::actionButton(
+                    inputId = ns("baseline_condition_next"),
                     label = "Next"
                   )
                 )
@@ -217,10 +258,11 @@ module_html <- function(){
               shiny::fluidRow(
                 shiny::column(
                   width = 12,
-                  shiny::checkboxInput(
+                  shiny::selectInput(
                     inputId = ns("hm_normalize"),
-                    label = "Normalize Power to 0 ~ 1",
-                    value = TRUE
+                    label = "Select normalization method",
+                    choices = c("None", "Max_Normalized"),
+                    selected = "None"
                   ),
                   shiny::checkboxInput(
                     inputId = ns("hm_ordered"),

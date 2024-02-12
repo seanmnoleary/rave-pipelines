@@ -164,7 +164,10 @@ module_server <- function(input, output, session, ...){
       run_multitaper()
     }
     pipeline$set_settings(
-      analysis_time_frequencies = input$analysis_settings
+      analysis_time_frequencies = input$analysis_settings,
+      condition = input$condition,
+      baseline = input$baseline_condition,
+      baselined = input$hm_baselined
       # soz_electrodes = soz_electrodes,
       # heatmap_name_type = heatmap_name_type,
       # condition = condition
@@ -274,6 +277,13 @@ module_server <- function(input, output, session, ...){
       shiny::updateSelectInput(
         session = session,
         inputId = "condition",
+        choices = epoch_table$Condition2,
+        selected = input$condition %OF% epoch_table$Condition2
+      )
+
+      shiny::updateSelectInput(
+        session = session,
+        inputId = "baseline_condition",
         choices = epoch_table$Condition2,
         selected = input$condition %OF% epoch_table$Condition2
       )
@@ -405,70 +415,6 @@ module_server <- function(input, output, session, ...){
     ignoreInit = TRUE
   )
 
-  # shiny::bindEvent(
-  #   ravedash::safe_observe({
-  #     pipeline$set_settings(
-  #       condition = input$condition
-  #     )
-  #
-  #     dipsaus::shiny_alert2(
-  #       title = "Updating...",
-  #       text = ravedash::be_patient_text(),
-  #       icon = "info",
-  #       danger_mode = FALSE,
-  #       auto_close = FALSE,
-  #       buttons = FALSE,
-  #       session = session
-  #     )
-  #
-  #     results <- pipeline$run(
-  #       as_promise = TRUE,
-  #       scheduler = "none",
-  #       type = "callr",
-  #       callr_function = NULL,
-  #       # shortcut = TRUE,
-  #       names = c("heatmap_result", "YAEL_data")
-  #     )
-  #
-  #     results$promise$then(
-  #       onFulfilled = function(...){
-  #
-  #         local_data$results <- pipeline$read(c("heatmap_result", "YAEL_data"))
-  #
-  #
-  #         Sys.sleep(0.5)
-  #         ravedash::logger("Fulfilled: ", pipeline$pipeline_name,
-  #                          level = 'debug')
-  #         shidashi::clear_notifications(class = "pipeline-error")
-  #         dipsaus::close_alert2()
-  #
-  #         local_reactives$update_outputs <- Sys.time()
-  #         return(TRUE)
-  #       },
-  #       onRejected = function(e, ...){
-  #         msg <- paste(e$message, collapse = "\n")
-  #         if(inherits(e, "error")){
-  #           ravedash::logger(msg, level = 'error')
-  #           ravedash::logger(traceback(e), level = 'error', .sep = "\n")
-  #           shidashi::show_notification(
-  #             message = msg,
-  #             title = "Error while running pipeline", type = "danger",
-  #             autohide = FALSE, close = TRUE, class = "pipeline-error"
-  #           )
-  #         }
-  #         Sys.sleep(0.5)
-  #         dipsaus::close_alert2()
-  #         return(msg)
-  #       }
-  #     )
-  #     return()
-  #
-  #   }),
-  #   input$condition,
-  #   ignoreNULL = TRUE,
-  #   ignoreInit = TRUE
-  # )
-
   shiny::bindEvent(
     ravedash::safe_observe({
       epoch_table <- component_container$data$epoch_table
@@ -488,6 +434,7 @@ module_server <- function(input, output, session, ...){
         inputId = "condition",
         selected = new_condition
       )
+      run_analysis()
     }),
     input$condition_prev,
     ignoreNULL = TRUE,
@@ -513,8 +460,86 @@ module_server <- function(input, output, session, ...){
         inputId = "condition",
         selected = new_condition
       )
+      run_analysis()
     }),
     input$condition_next,
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE
+  )
+
+  shiny::bindEvent(
+    ravedash::safe_observe({
+      run_analysis()
+    }),
+    input$baseline_condition,
+    ignoreNULL = TRUE, ignoreInit = TRUE
+  )
+
+  shiny::bindEvent(
+    ravedash::safe_observe({
+      run_analysis()
+    }),
+    input$baseline_condition,
+    ignoreNULL = TRUE, ignoreInit = TRUE
+  )
+
+  shiny::bindEvent(
+    ravedash::safe_observe({
+      run_analysis()
+    }),
+    input$hm_baselined,
+    ignoreNULL = TRUE, ignoreInit = TRUE
+  )
+
+
+  shiny::bindEvent(
+    ravedash::safe_observe({
+      epoch_table <- component_container$data$epoch_table
+      current_condition <- input$baseline_condition
+      current_idx <- which(epoch_table$Condition2 == current_condition)
+      if(!length(current_idx)) {
+        current_idx <- 1
+      } else {
+        current_idx <- current_idx - 1
+        if( current_idx <= 0 ) {
+          current_idx <- nrow(epoch_table)
+        }
+      }
+      new_condition <- epoch_table$Condition2[[ current_idx ]]
+      shiny::updateSelectInput(
+        session = session,
+        inputId = "baseline_condition",
+        selected = new_condition
+      )
+      run_analysis()
+    }),
+    input$baseline_condition_prev,
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE
+  )
+
+  shiny::bindEvent(
+    ravedash::safe_observe({
+      epoch_table <- component_container$data$epoch_table
+      current_condition <- input$baseline_condition
+      current_idx <- which(epoch_table$Condition2 == current_condition)
+      if(!length(current_idx)) {
+        current_idx <- 1
+      } else {
+        current_idx <- current_idx + 1
+        if( current_idx > nrow(epoch_table) ) {
+          current_idx <- 1
+        }
+      }
+      new_condition <- epoch_table$Condition2[[ current_idx ]]
+      shiny::updateSelectInput(
+        session = session,
+        inputId = "baseline_condition",
+        selected = new_condition
+      )
+      run_analysis()
+    }),
+    input$baseline_condition_next,
     ignoreNULL = TRUE,
     ignoreInit = TRUE
   )
@@ -731,7 +756,7 @@ module_server <- function(input, output, session, ...){
       resect_electrodes <- get_resect_electrodes()
       ordered <- ordered_electrodes()
       condition <- input$condition
-      scale <- ifelse(isTRUE(input$hm_normalize), "Max_Normalized", "None")
+      scale <- input$hm_normalize
 
       plot_power_over_time_data(
         heatmap_result,
@@ -771,7 +796,7 @@ module_server <- function(input, output, session, ...){
       soz_electrodes <- get_soz_electrodes()
       resect_electrodes <- get_resect_electrodes()
       condition <- input$condition
-      scale <- ifelse(isTRUE(input$hm_normalize), "Max_Normalized", "None")
+      scale <- input$hm_normalize
 
       plot_power_over_time_data_line(
         heatmap_result,
@@ -810,7 +835,7 @@ module_server <- function(input, output, session, ...){
       soz_electrodes <- get_soz_electrodes()
       resect_electrodes <- get_resect_electrodes()
       condition <- input$condition
-      scale <- ifelse(isTRUE(input$hm_normalize), "Max_Normalized", "None")
+      scale <- input$hm_normalize
 
       plot_quantile_plot(
         heatmap_result,

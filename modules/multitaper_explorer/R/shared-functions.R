@@ -205,7 +205,7 @@ generate_multitaper <- function (
 generate_power_over_time_data <- function(
     multitaper_result,
     analysis_time_frequencies,
-    scale = c("None", "Max_Normalized", "Baselined"),
+    baselined,
     baseline,
     trial
 ) {
@@ -245,7 +245,7 @@ generate_power_over_time_data <- function(
     sub_array <- multitaper_result[, frequency_selection, , , drop = FALSE, dimnames = NULL]
 
     #Perform baselining here if needed
-    if (scale == "Baselined") {
+    if (baselined) {
 
       if(length(baseline)) {
         if(is.numeric(baseline)) {
@@ -335,7 +335,7 @@ generate_power_over_time_data <- function(
 plot_power_over_time_data <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
-    scale = c("None", "Max_Normalized", "Baselined"),
+    scale = c("None", "Max_Normalized"),
     palette = plot_preferences$get('heatmap_palette'), ordered = FALSE) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
@@ -525,7 +525,7 @@ plot_power_over_time_data <- function(
 plot_power_over_time_data_line <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
-    scale = c("None", "Max_Normalized", "Baselined"),
+    scale = c("None", "Max_Normalized"),
     palette = plot_preferences$get('heatmap_palette')) {
     # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
@@ -823,7 +823,7 @@ plot_power_over_time_data_line <- function(
 plot_quantile_plot <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
-    scale = c("None", "Max_Normalized", "Baselined"),
+    scale = c("None", "Max_Normalized"),
     palette = plot_preferences$get('heatmap_palette')) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
