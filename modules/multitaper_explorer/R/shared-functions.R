@@ -270,9 +270,12 @@ generate_power_over_time_data <- function(
       }
 
       dims <- dim(sub_array)
+      temp_sub_array <- sub_array
       # run through the frequencies
       for (i in 1:dims[2]) {
-        sub_array[,i,trial_sel,] <- (sub_array[,i,trial_sel,] - mean(sub_array[,i,baseline_sel,])) / sd(sub_array[,i,baseline_sel,])
+        for (j in 1: dims[3]) {
+          sub_array[,i,j,] <- (sub_array[,i,j,] - mean(temp_sub_array[,i,baseline_sel,])) / sd(temp_sub_array[,i,baseline_sel,])
+        }
       }
 
     }

@@ -9,7 +9,7 @@ analysis_time_frequencies:
     time_range:
     - -1
     - 2
-condition: 60s before sz1 (2)
+condition: sz1 (4)
 reference: common_average
 window_params:
 - 2.5
@@ -60,4 +60,4 @@ organize_top: no
 text_size: 5.0
 baseline: 60s before sz1 (2)
 scale: None
-baselined: no
+baselined: yes
