@@ -8,10 +8,11 @@ COLOR_PALETTES <- list(
   "YellowRed" = c("#ffff00", "#ffbf00", "#ff8000", "#ff4000", "#ff0000", "#990000"),
   "WhitePink" = c("#FFFFFF", "#FFE0E0", "#FFC0CB", "#FFB6C1", "#FF69B4", "#FF1493"),
   "WhiteBlack" = c("#FFFFFF", "#E6E6E6", "#CCCCCC", "#999999", "#666666", "#333333"),
-  "Turbo" = c("#30123BFF", "#3E9BFEFF", "#46F884FF", "#E1DD37FF", "#F05B12FF", "#7A0403FF")
+  "Turbo" = c("#30123BFF", "#3E9BFEFF", "#46F884FF", "#E1DD37FF", "#F05B12FF", "#7A0403FF"),
+  "BlueGrayRed" = rev(c("#67001f", "#b2182b", "#d6604d",
+                      "#f4a582", "#b4b4b4", "#92c5de", "#4393c3", "#2166ac",
+                      "#053061"))
 )
-
-
 
 plot_preferences <- pipeline$load_preferences(
   name = "graphics",
@@ -19,8 +20,8 @@ plot_preferences <- pipeline$load_preferences(
   # default options
   # heatmap_palette = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f"),
   heatmap_palette = COLOR_PALETTES$Default,
-  heatmap_palette_name = "Default",
-  .overwrite = FALSE
+  heatmap_palette_name = "BlueGrayRed",
+  .overwrite = TRUE
 )
 
 use_color_map <- function(name) {
@@ -339,6 +340,8 @@ generate_power_over_time_data <- function(
 
     time = dnames$Time,
 
+    baselined = baselined,
+
     # epoch
     epoch_table = epoch_table,
 
@@ -436,9 +439,10 @@ plot_power_over_time_data <- function(
   layout_heat_maps(sum(group_data_is_valid), max_col = 2, layout_color_bar = TRUE)
   par("mar" = c(3.5, 4.3, 3, 0.1), cex = 1.2)
 
-  sapply(power_over_time_data$group_data[group_data_is_valid], function(group_item) {
+  # loop 1: calculate value ranges & data for figures
+  plot_data <- lapply(power_over_time_data$group_data[group_data_is_valid], function(group_item) {
     # No data is selected
-    if(is.null(group_item)) { return(FALSE) }
+    if(is.null(group_item)) { return(NULL) }
 
     data <- group_item$data_over_time_trial_per_elec
     if(length(trial_sel)) {
@@ -450,38 +454,38 @@ plot_power_over_time_data <- function(
     # Time x Trial (collapse) x Electrode
     data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
 
-    if( scale == "Min_Max_Normalized_Column") {
-      qval <- value_range[[2]]
-      if( qval <= 0 || qval > 1) {
-        qval <- 1
-      }
-
-      data_over_time_per_elec <- t(data_over_time_per_elec)
-
-      maxcol <- apply(data_over_time_per_elec, 2, max)
-      data_over_time_per_elec_temp <- data_over_time_per_elec
-
-      mincol <- apply(data_over_time_per_elec, 2, min)
-      maxcol <- apply(data_over_time_per_elec, 2, max)
-
-      data_over_time_per_elec_temp <- data_over_time_per_elec
-
-      for (col in 1:ncol(data_over_time_per_elec_temp)) {
-        for (row in 1:nrow(data_over_time_per_elec_temp)) {
-          # Avoid division by zero if max equals min
-          if(maxcol[col] != mincol[col]) {
-            data_over_time_per_elec_temp[row, col] <- (data_over_time_per_elec[row, col] - mincol[col]) / (maxcol[col] - mincol[col])
-          } else {
-            # Handle case where max equals min, potentially setting to 0, 0.5, or another appropriate value
-            data_over_time_per_elec_temp[row, col] <- 0
-          }
-        }
-      }
-
-      data_over_time_per_elec <- t(data_over_time_per_elec_temp)
-
-      value_range <- c(0, qval)
-    }
+    # if( scale == "Min_Max_Normalized_Column") {
+    #   qval <- value_range[[2]]
+    #   if( qval <= 0 || qval > 1) {
+    #     qval <- 1
+    #   }
+    #
+    #   data_over_time_per_elec <- t(data_over_time_per_elec)
+    #
+    #   maxcol <- apply(data_over_time_per_elec, 2, max)
+    #   data_over_time_per_elec_temp <- data_over_time_per_elec
+    #
+    #   mincol <- apply(data_over_time_per_elec, 2, min)
+    #   maxcol <- apply(data_over_time_per_elec, 2, max)
+    #
+    #   data_over_time_per_elec_temp <- data_over_time_per_elec
+    #
+    #   for (col in 1:ncol(data_over_time_per_elec_temp)) {
+    #     for (row in 1:nrow(data_over_time_per_elec_temp)) {
+    #       # Avoid division by zero if max equals min
+    #       if(maxcol[col] != mincol[col]) {
+    #         data_over_time_per_elec_temp[row, col] <- (data_over_time_per_elec[row, col] - mincol[col]) / (maxcol[col] - mincol[col])
+    #       } else {
+    #         # Handle case where max equals min, potentially setting to 0, 0.5, or another appropriate value
+    #         data_over_time_per_elec_temp[row, col] <- 0
+    #       }
+    #     }
+    #   }
+    #
+    #   data_over_time_per_elec <- t(data_over_time_per_elec_temp)
+    #
+    #   value_range <- c(0, qval)
+    # }
 
     elec_order_temp <- electrode_table$Electrode
 
@@ -500,8 +504,113 @@ plot_power_over_time_data <- function(
       is_soz <- elec_order_temp %in% soz_electrodes
       is_resect <- elec_order_temp %in% resect_electrodes
     }
-    data_over_time_per_elec[data_over_time_per_elec < value_range[[1]]] <- value_range[[1]]
-    data_over_time_per_elec[data_over_time_per_elec > value_range[[2]]] <- value_range[[2]]
+
+    # calculate the value range
+    time_range <- group_item$time_range_for_analysis
+    time_range <- time_range[!is.na(time_range)]
+    if(length(time_range) < 2) {
+      time_range <- range(time)
+    } else {
+      time_range <- range(time_range)
+    }
+    # which time points are within the analysis time range
+    time_selection <- time >= time_range[[1]] & time <= time_range[[2]]
+
+    # overall data range
+    data_range_all <- range(data_over_time_per_elec, na.rm = TRUE)
+
+    # data range within the analysis window
+    data_range_analysis <- range(data_over_time_per_elec[time_selection, ], na.rm = TRUE)
+
+
+    list(
+      # Time x Trial (collapse) x Electrode
+      data_over_time_per_elec = data_over_time_per_elec,
+      # bind two data ranges in one vector
+      data_ranges = c(max(abs(data_range_all)), max(abs(data_range_analysis))),
+
+      # Tiem related
+      time = time,
+      time_range_for_analysis = group_item$time_range_for_analysis,
+
+      # label-related
+      labels = y_labels,
+      is_soz = is_soz,
+      is_resect = is_resect,
+
+      # sub-title
+      freq_range = range(group_item$frequency),
+      nchanns = nchanns,
+      ntrials = ntrials,
+      group_id = group_item$group_id
+    )
+  })
+
+  # get ranges
+  plot_data <- dipsaus::drop_nulls(plot_data)
+  data_ranges <- sapply(plot_data, "[[", "data_ranges")
+  data_max <- max(data_ranges[2, ])
+  baselined <- power_over_time_data$baselined
+
+  lapply(plot_data, function(group_item) {
+
+    # list(
+    #   # Time x Trial (collapse) x Electrode
+    #   data_over_time_per_elec = data_over_time_per_elec,
+    #   # bind two data ranges in one vector
+    #   data_ranges = c(max(abs(data_range_all)), max(abs(data_range_analysis))),
+    #
+    #   # Tiem related
+    #   time = time,
+    #   time_range_for_analysis = group_item$time_range_for_analysis,
+    #
+    #   # label-related
+    #   labels = y_labels,
+    #   is_soz = is_soz,
+    #   is_resect = is_resect,
+    #
+    #   # sub-title
+    #   freq_range = range(group_item$frequency),
+    #   nchanns = nchanns,
+    #   ntrials = ntrials,
+    #   group_id = group_item$group_id
+    # )
+
+    data_over_time_per_elec <- group_item$data_over_time_per_elec
+    time <- group_item$time
+    y_labels <- group_item$labels
+    is_soz <- group_item$is_soz
+    is_resect <- group_item$is_resect
+    freq_range <- group_item$freq_range
+    ntrials <- group_item$ntrials
+    nchanns <- group_item$nchanns
+    group_id <- group_item$group_id
+
+    if( scale == "Min_Max_Normalized_Column") {
+      # use group_item$data_ranges[2] as the value cap
+      max_value <- group_item$data_ranges[2]
+      data_over_time_per_elec <- data_over_time_per_elec / max_value
+      data_over_time_per_elec[data_over_time_per_elec > 1] <- 1
+
+      if( baselined ) {
+        data_over_time_per_elec[data_over_time_per_elec < -1] <- -1
+        value_range <- c(-1, 1)
+      } else {
+        data_over_time_per_elec[data_over_time_per_elec < 0] <- 0
+        value_range <- c(0, 1)
+      }
+
+    } else {
+      data_over_time_per_elec[data_over_time_per_elec > data_max] <- data_max
+      if( baselined ) {
+        data_over_time_per_elec[data_over_time_per_elec < -data_max] <- -data_max
+        value_range <- c(-data_max, data_max)
+      } else {
+        data_over_time_per_elec[data_over_time_per_elec < 0] <- 0
+        value_range <- c(0, data_max)
+      }
+    }
+
     graphics::image(data_over_time_per_elec,
                     x = time, y = seq_along(y_labels),
                     xlim = group_item$time_range_for_analysis, zlim = value_range,
@@ -534,18 +643,140 @@ plot_power_over_time_data <- function(
 
 
     return(TRUE)
-  }, USE.NAMES = FALSE)
+  })
 
+  # lapply(power_over_time_data$group_data[group_data_is_valid], function(group_item) {
+  #   # No data is selected
+  #   if(is.null(group_item)) { return(FALSE) }
+  #
+  #   data <- group_item$data_over_time_trial_per_elec
+  #   if(length(trial_sel)) {
+  #     data <- data[, trial_sel ,, drop = FALSE]
+  #   }
+  #   ntrials <- dim(data)[[2]]
+  #   nchanns <- dim(data)[[3]]
+  #
+  #   # Time x Trial (collapse) x Electrode
+  #   data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
+  #
+  #   if( scale == "Min_Max_Normalized_Column") {
+  #     qval <- value_range[[2]]
+  #     if( qval <= 0 || qval > 1) {
+  #       qval <- 1
+  #     }
+  #
+  #     data_over_time_per_elec <- t(data_over_time_per_elec)
+  #
+  #     maxcol <- apply(data_over_time_per_elec, 2, max)
+  #     data_over_time_per_elec_temp <- data_over_time_per_elec
+  #
+  #     mincol <- apply(data_over_time_per_elec, 2, min)
+  #     maxcol <- apply(data_over_time_per_elec, 2, max)
+  #
+  #     data_over_time_per_elec_temp <- data_over_time_per_elec
+  #
+  #     for (col in 1:ncol(data_over_time_per_elec_temp)) {
+  #       for (row in 1:nrow(data_over_time_per_elec_temp)) {
+  #         # Avoid division by zero if max equals min
+  #         if(maxcol[col] != mincol[col]) {
+  #           data_over_time_per_elec_temp[row, col] <- (data_over_time_per_elec[row, col] - mincol[col]) / (maxcol[col] - mincol[col])
+  #         } else {
+  #           # Handle case where max equals min, potentially setting to 0, 0.5, or another appropriate value
+  #           data_over_time_per_elec_temp[row, col] <- 0
+  #         }
+  #       }
+  #     }
+  #
+  #     data_over_time_per_elec <- t(data_over_time_per_elec_temp)
+  #
+  #     value_range <- c(0, qval)
+  #   }
+  #
+  #   elec_order_temp <- electrode_table$Electrode
+  #
+  #   if (ordered == TRUE & (length(soz_electrodes) > 0 | length(resect_electrodes) > 0) ) {
+  #     all_electrodes <- unique(c(soz_electrodes, resect_electrodes))
+  #     selected_columns <- match(all_electrodes, electrode_table$Electrode)
+  #     selected_columns <- na.omit(selected_columns)
+  #     data_over_time_per_elec_ordered <- data_over_time_per_elec[, selected_columns]
+  #     remaining_columns <- data_over_time_per_elec[, -selected_columns]
+  #     data_over_time_per_elec <- cbind(data_over_time_per_elec_ordered, remaining_columns)
+  #     data_over_time_per_elec <- as.matrix(data_over_time_per_elec)
+  #     y_labels_ordered <- y_labels[selected_columns]
+  #     y_labels <- c(y_labels_ordered, y_labels[-selected_columns])
+  #     elec_order_temp_ordered <- elec_order_temp[selected_columns]
+  #     elec_order_temp <- c(elec_order_temp_ordered, elec_order_temp[-selected_columns])
+  #     is_soz <- elec_order_temp %in% soz_electrodes
+  #     is_resect <- elec_order_temp %in% resect_electrodes
+  #   }
+  #   data_over_time_per_elec[data_over_time_per_elec < value_range[[1]]] <- value_range[[1]]
+  #   data_over_time_per_elec[data_over_time_per_elec > value_range[[2]]] <- value_range[[2]]
+  #   graphics::image(data_over_time_per_elec,
+  #                   x = time, y = seq_along(y_labels),
+  #                   xlim = group_item$time_range_for_analysis, zlim = value_range,
+  #                   axes = FALSE, xlab = "", ylab = "", col = palette)
+  #   graphics::axis(side = 1, at = pretty(time))
+  #   graphics::mtext(text = "Time (s)", side = 1, line = 2.2, cex = par("cex"))
+  #
+  #   y_labels_tmp <- y_labels
+  #   y_labels_tmp[is_soz | is_resect] <- ""
+  #   graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1)
+  #   y_labels_tmp <- y_labels
+  #   y_labels_tmp[!is_soz] <- ""
+  #   graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1, col.axis = "#00bfff")
+  #   y_labels_tmp <- y_labels
+  #   y_labels_tmp[!is_resect] <- ""
+  #   graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1, col.axis = "#bf00ff")
+  #   y_labels_tmp <- y_labels
+  #   y_labels_tmp[!is_resect | !is_soz] <- ""
+  #   graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1, col.axis = "green")
+  #
+  #   if( name_type == "number" ) {
+  #     graphics::mtext(text = "Electrode Channel", side = 2, line = 2.7, cex = par("cex"))
+  #   }
+  #
+  #   freq_range <- range(group_item$frequency)
+  #   graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
+  #   # sub-title
+  #   graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 0.5, cex.main = 0.8)
+  #
+  #
+  #
+  #   return(TRUE)
+  # })
+
+
+  if( scale == "Min_Max_Normalized_Column" ) {
+    if( baselined ) {
+      legend_range <- c(-1, 1)
+    } else {
+      legend_range <- c(0, 1)
+    }
+
+  } else {
+    if( baselined ) {
+      legend_range <- c(-data_max, data_max)
+    } else {
+      legend_range <- c(0, data_max)
+    }
+  }
   par("mar" = c(3.1, 0.5, 3, 3.1))
-  pal_val <- seq(value_range[[1]], value_range[[2]], length.out = 101)
+  pal_val <- seq(legend_range[[1]], legend_range[[2]], length.out = 101)
   graphics::image(matrix(pal_val, nrow = 1), x = 0, y = pal_val, axes = FALSE, xlab = "", ylab = "", col = palette)
-  graphics::axis(side = 4, at = c(value_range[[2]], 0), labels = c(sprintf("%.1f", value_range[[2]]), "0"), las = 1)
+  legend_at <- unique(c(legend_range, 0))
+  graphics::axis(side = 4, at = legend_at, labels = sprintf("%.1f", legend_at), las = 1)
 
 
   if(scale == "Min_Max_Normalized_Column") {
     graphics::title("Max Normalized", line = 0.6, adj = 0, cex.main = 0.8)
   } else {
-    actual_range_text <- paste(sprintf("%.1f", actual_range), collapse = " ~ ")
+    data_max_text <- sprintf("%.1f", data_max)
+    if( baselined ) {
+      actual_range_text <- paste0("-", data_max_text, " ~ ", data_max_text)
+    } else {
+      actual_range_text <- paste(c("0", data_max_text), collapse = " ~ ")
+    }
+
     graphics::title(sprintf("[%s]", actual_range_text), line = 0.6, adj = 0, cex.main = 0.8)
   }
 
