@@ -1,12 +1,8 @@
-subject_code: subHUP123
-reference_name: _unsaved
-project_name: Retrostudy
+changes: []
 electrode_group:
   '1':
     name: NoLabel
-    electrodes: 1-16,19-41,43-49,51-85,88,91,93-118,120-127
-changes:
-- group_name: NoLabel
-  electrodes: 1-16,19-41,43-49,51-85,88,91,93-118,120-127
-  reference_type: Common Average Reference
-  reference_signal: ref_1-16,19-41,43-49,51-85,88,91,93-118,120-127
+    electrodes: 1-165
+project_name: Retrostudy
+reference_name: _unsaved
+subject_code: NIH055
