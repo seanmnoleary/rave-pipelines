@@ -20,7 +20,7 @@ plot_preferences <- pipeline$load_preferences(
   # heatmap_palette = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f"),
   heatmap_palette = COLOR_PALETTES$Turbo,
   # heatmap_palette_name = "BlueGrayRed",
-  .overwrite = TRUE
+  .overwrite = FALSE
 )
 
 use_color_map <- function(name) {
