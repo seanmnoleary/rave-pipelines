@@ -15,6 +15,18 @@
 turbo <- viridis::turbo
 `%OF%` <- dipsaus::`%OF%`
 
+FREQUENCY_BAND_PRESTS <- list(
+  delta = list(
+    range = c(0.5, 4)
+  ),
+  theta = list(
+    range = c(4, 8)
+  ),
+  high_gamma = list(
+    range = c(90, NA)
+  )
+)
+
 
 layout_heat_maps <- function (k, max_col, ratio = 4, layout_color_bar = TRUE, colorbar_cm = 3.5) {
   opars <- par(no.readonly = TRUE)

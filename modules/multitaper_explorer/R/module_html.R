@@ -232,7 +232,7 @@ module_html <- function(){
                   dipsaus::compoundInput2(
                     inputId = ns("analysis_settings"),
                     label = "Group",
-                    initial_ncomp = 1, min_ncomp = 1, max_ncomp = 4,
+                    initial_ncomp = 1, min_ncomp = 1, max_ncomp = 6,
                     components = shiny::div(
 
                       shiny::sliderInput(
@@ -246,7 +246,28 @@ module_html <- function(){
                         width = "100%",
                         ticks = FALSE
                       ),
-
+                      shiny::div(
+                        # Don't forget to go to shared-aa.R and edit `FREQUENCY_BAND_PRESTS`
+                        #
+                        shiny::actionButton(
+                          inputId = "frequency_preset_delta",
+                          label = "Delta (0.5-4)",
+                          type = c("default"),
+                          class = "margin-2 btn-xs bg-cyan"
+                        ),
+                        shiny::actionButton(
+                          inputId = "frequency_preset_theta",
+                          label = "Theta (4-8)",
+                          type = c("default"),
+                          class = "margin-2 btn-xs bg-blue"
+                        ),
+                        shiny::actionButton(
+                          inputId = "frequency_preset_high_gamma",
+                          label = "High-Gamma (90+)",
+                          type = c("default"),
+                          class = "margin-2 btn-xs bg-yellow"
+                        )
+                      ),
                       shiny::sliderInput(
                         inputId = "time_range",
                         label = 'Time range (s)',

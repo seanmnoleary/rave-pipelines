@@ -191,6 +191,24 @@ module_server <- function(input, output, session, ...){
 
 
   # Register event: main pipeline need to run
+  lapply(seq_len(6), function(ii) {
+    lapply(names(FREQUENCY_BAND_PRESTS), function(nm) {
+
+      fb_preset <- FREQUENCY_BAND_PRESTS[[nm]]
+
+      shiny::bindEvent(
+        ravedash::safe_observe({
+          shiny::updateSliderInput(
+            session = session, value = fb_preset$range,
+            inputId = sprintf("analysis_settings_frequency_range_%d", ii))
+        }),
+        input[[sprintf("analysis_settings_frequency_preset_%s_%d", nm, ii)]],
+        ignoreNULL = TRUE, ignoreInit = TRUE
+      )
+    })
+
+  })
+
   shiny::bindEvent(
     ravedash::safe_observe({
 
