@@ -4,23 +4,22 @@
 
 
 COLOR_PALETTES <- list(
-  "Default" = c("#f9e5e5", "#ffaaaa", "#d46a6a", "#aa3939", "#550000", "#190909"),
+  "BlueGrayRed" = rev(c("#67001f", "#b2182b", "#d6604d",
+                        "#f4a582", "#b4b4b4", "#92c5de", "#4393c3", "#2166ac",
+                        "#053061")),
+  "WhiteRed" = c("#f9e5e5", "#ffaaaa", "#d46a6a", "#aa3939", "#550000", "#190909"),
   "YellowRed" = c("#ffff00", "#ffbf00", "#ff8000", "#ff4000", "#ff0000", "#990000"),
   "WhitePink" = c("#FFFFFF", "#FFE0E0", "#FFC0CB", "#FFB6C1", "#FF69B4", "#FF1493"),
   "WhiteBlack" = c("#FFFFFF", "#E6E6E6", "#CCCCCC", "#999999", "#666666", "#333333"),
-  "Turbo" = c("#30123BFF", "#3E9BFEFF", "#46F884FF", "#E1DD37FF", "#F05B12FF", "#7A0403FF"),
-  "BlueGrayRed" = rev(c("#67001f", "#b2182b", "#d6604d",
-                      "#f4a582", "#b4b4b4", "#92c5de", "#4393c3", "#2166ac",
-                      "#053061"))
+  "Turbo" = c("#30123BFF", "#3E9BFEFF", "#46F884FF", "#E1DD37FF", "#F05B12FF", "#7A0403FF")
 )
 
 plot_preferences <- pipeline$load_preferences(
   name = "graphics",
-
   # default options
   # heatmap_palette = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f"),
-  heatmap_palette = COLOR_PALETTES$Default,
-  heatmap_palette_name = "BlueGrayRed",
+  heatmap_palette = COLOR_PALETTES$Turbo,
+  # heatmap_palette_name = "BlueGrayRed",
   .overwrite = TRUE
 )
 
@@ -260,6 +259,9 @@ generate_power_over_time_data <- function(
     # drop=FALSE will keep the dimensions when there is one frequency selected, otherwise R drops frequency margin
     sub_array <- multitaper_result[, frequency_selection, , , drop = FALSE, dimnames = NULL]
 
+    # Time (keep) x Frequency (collapse) x Trial (keep) x Electrode (keep)
+    data_over_time_trial_per_elec <- ravetools::collapse(sub_array, keep = c(1, 3, 4), average = TRUE)
+
     #Perform baselining here if needed
     if (baselined) {
 
@@ -275,42 +277,25 @@ generate_power_over_time_data <- function(
       }
 
       # subset the baselining by the time range for analysis
-      temp_sub_array <- sub_array
+
       start_index <- which(time >= start_time_baseline)[1]
       end_index <- which(time <= end_time_baseline)[length(which(time <= end_time_baseline))]
-      temp_sub_array <- temp_sub_array[start_index:end_index, , , ]
+      baseline_matrix <- data_over_time_trial_per_elec[start_index:end_index,baseline_sel,]
 
+      dims <- dim(data_over_time_trial_per_elec)
 
-      dims <- dim(sub_array)
+      # run through the conditions
+      for (j in 1:dims[2]) {
+        #data_over_time_trial_per_elec[,j,] <- ((data_over_time_trial_per_elec[,j,] - mean(baselined_temp)) / sd(baselined_temp))
 
-      # run through the frequencies
-      for (i in 1:dims[2]) {
-        # run through the conditions
-        for (j in 1: dims[3]) {
+        m <- mean(baseline_matrix)
+        baseline_sd <- sd(baseline_matrix)
 
+        # Apply baseline correction (Z-score transformation)
+        data_over_time_trial_per_elec[, j, ] <- (data_over_time_trial_per_elec[, j, ] - m) / baseline_sd
 
-          sub_array[,i,j,] <- (sub_array[,i,j,] - mean(temp_sub_array[,i,baseline_sel,])) / sd(temp_sub_array[,i,baseline_sel,])
-          temp_baseline_sel <- temp_sub_array[,i,baseline_sel,]
-          l <- length(temp_baseline_sel)
-          m <- sum(temp_baseline_sel) / l
-          baseline_sd <- sqrt((sum(temp_baseline_sel^2) - sum(temp_baseline_sel)^2 / l)/(l-1))
-
-          fast_z <- function(y) {
-            (y - m) / baseline_sd
-          }
-
-          sub_array[,i,j,] <- fast_z(sub_array[,i,j,])
-
-
-        }
       }
-
     }
-
-
-    # Time (keep) x Frequency (collapse) x Trial (keep) x Electrode (keep)
-    data_over_time_trial_per_elec <- ravetools::collapse(sub_array, keep = c(1, 3, 4), average = TRUE)
-
 
     value_range <<- range(c(range(data_over_time_trial_per_elec, na.rm = TRUE), value_range))
 
@@ -351,12 +336,11 @@ generate_power_over_time_data <- function(
 
 }
 
-
 plot_power_over_time_data <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
     scale = c("None", "Min_Max_Normalized_Column"),
-    palette = plot_preferences$get('heatmap_palette'), ordered = FALSE) {
+    palette = plot_preferences$get('heatmap_palette'), ordered = FALSE, save_path = NULL) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
   scale <- match.arg(scale)
@@ -479,12 +463,12 @@ plot_power_over_time_data <- function(
     # data range within the analysis window
     data_range_analysis <- range(data_over_time_per_elec[time_selection, ], na.rm = TRUE)
 
-
     list(
       # Time x Trial (collapse) x Electrode
       data_over_time_per_elec = data_over_time_per_elec,
       # bind two data ranges in one vector
       data_ranges_max = c(max(abs(data_range_all)), max(abs(data_range_analysis))),
+      data_ranges_min = c(min(data_range_all), min(data_range_analysis)),
 
       # Tiem related
       time = time,
@@ -499,14 +483,17 @@ plot_power_over_time_data <- function(
       freq_range = range(group_item$frequency),
       nchanns = nchanns,
       ntrials = ntrials,
-      group_id = group_item$group_id
+      group_id = group_item$group_id,
+      epoch = trial_sel
     )
   })
 
   # get ranges
   plot_data <- dipsaus::drop_nulls(plot_data)
   data_ranges_max <- sapply(plot_data, "[[", "data_ranges_max")
+  data_ranges_min <- sapply(plot_data, "[[", "data_ranges_min")
   data_max <- max(data_ranges_max[2, ])
+  data_min <- min(data_ranges_min[2, ])
   baselined <- power_over_time_data$baselined
 
   lapply(plot_data, function(group_item) {
@@ -520,6 +507,7 @@ plot_power_over_time_data <- function(
     ntrials <- group_item$ntrials
     nchanns <- group_item$nchanns
     group_id <- group_item$group_id
+    epoch <- group_item$epoch
 
     if( scale == "Min_Max_Normalized_Column") {
       # use group_item$data_ranges_max[2] as the value cap
@@ -559,11 +547,11 @@ plot_power_over_time_data <- function(
     } else {
       data_over_time_per_elec[data_over_time_per_elec > data_max] <- data_max
       if( baselined ) {
-        data_over_time_per_elec[data_over_time_per_elec < -data_max] <- -data_max
-        value_range <- c(-data_max, data_max)
+        data_over_time_per_elec[data_over_time_per_elec < data_min] <- data_min
+        value_range <- c(data_min, data_max)
       } else {
-        data_over_time_per_elec[data_over_time_per_elec < 0] <- 0
-        value_range <- c(0, data_max)
+        data_over_time_per_elec[data_over_time_per_elec < data_min] <- data_min
+        value_range <- c(data_min, data_max)
       }
     }
 
@@ -591,10 +579,18 @@ plot_power_over_time_data <- function(
       graphics::mtext(text = "Electrode Channel", side = 2, line = 2.7, cex = par("cex"))
     }
 
-    freq_range <- range(group_item$frequency)
     graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
     # sub-title
     graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 0.5, cex.main = 0.8)
+
+    if(!is.null(save_path)) {
+      data_over_time_per_elec <- t(data_over_time_per_elec)
+      colnames(data_over_time_per_elec) <- time
+      rownames(data_over_time_per_elec) <- seq_along(y_labels)
+      filename <- paste0(subject_code, "_", trial, ".csv")
+      filename <- paste0(save_path, filename)
+      write.csv(data_over_time_per_elec, filename, row.names = TRUE)
+    }
 
     return(TRUE)
   })
@@ -607,11 +603,12 @@ plot_power_over_time_data <- function(
     }
 
   } else {
-    if( baselined ) {
-      legend_range <- c(-data_max, data_max)
-    } else {
-      legend_range <- c(0, data_max)
-    }
+    # if( baselined ) {
+    #   legend_range <- c(data_min, data_max)
+    # } else {
+    #   legend_range <- c(0, data_max)
+    # }
+    legend_range <- c(data_min, data_max)
   }
   par("mar" = c(3.1, 0.5, 3, 3.1))
   pal_val <- seq(legend_range[[1]], legend_range[[2]], length.out = 101)
@@ -619,13 +616,13 @@ plot_power_over_time_data <- function(
   legend_at <- unique(c(legend_range, 0))
   graphics::axis(side = 4, at = legend_at, labels = sprintf("%.1f", legend_at), las = 1)
 
-
   if(scale == "Min_Max_Normalized_Column") {
     graphics::title("Max Normalized", line = 0.6, adj = 0, cex.main = 0.8)
   } else {
     data_max_text <- sprintf("%.1f", data_max)
+    data_min_text <- sprintf("%.1f", data_min)
     if( baselined ) {
-      actual_range_text <- paste0("-", data_max_text, " ~ ", data_max_text)
+      actual_range_text <- paste0("-", data_min_text, " ~ ", data_max_text)
     } else {
       actual_range_text <- paste(c("0", data_max_text), collapse = " ~ ")
     }
@@ -639,7 +636,7 @@ plot_power_over_time_data_line <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
     scale = c("None", "Min_Max_Normalized_Column"),
-    palette = plot_preferences$get('heatmap_palette')) {
+    palette = plot_preferences$get('heatmap_palette'), save_path = NULL) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
   scale <- match.arg(scale)
@@ -909,6 +906,7 @@ plot_power_over_time_data_line <- function(
     ntrials <- group_item$ntrials
     nchanns <- group_item$nchanns
     group_id <- group_item$group_id
+    epoch <- group_item$epoch
 
     if( scale == "Min_Max_Normalized_Column") {
       # use group_item$data_ranges_max[2] as the value cap
@@ -991,6 +989,19 @@ plot_power_over_time_data_line <- function(
       # Add legend
       legend("topright", legend=c("SOZ", "Non-SOZ"), col=c("#00bfff", "black"), lwd=5)
 
+      if(!(is.null(save_path))) {
+        save_data <- data.frame(
+          soz_std_err = std_err_soz,
+          average_power_soz = average_power_soz,
+          average_power_other = average_power_not_soz,
+          other_std_err = std_err_not_soz,
+          time = time
+        )
+        filename <- paste0(subject_code, "_epoch_line_plot_", trial, ".csv")
+        filename <- paste0(save_path, filename)
+        write.csv(save_data, filename)
+      }
+
     } else if (!any(is_soz) & any(is_resect)) {
 
       resect_columns <- which(is_resect)
@@ -1031,6 +1042,19 @@ plot_power_over_time_data_line <- function(
 
       # Add legend
       legend("topright", legend=c("Resect", "Non-Resect"), col=c("#bf00ff", "black"), lwd=5)
+
+      if(!(is.null(save_path))) {
+        save_data <- data.frame(
+          std_err_resect = std_err_resect,
+          average_power_resect = average_power_resect,
+          average_power_other = average_power_not_resect,
+          other_std_err = std_err_not_resect,
+          time = time
+        )
+        filename <- paste0(subject_code, "_epoch_line_plot_", trial, ".csv")
+        filename <- paste0(save_path, filename)
+        write.csv(save_data, filename)
+      }
 
     } else if (any(is_soz) & any(is_resect)) {
       # Compute average power and standard error for SOZ
@@ -1092,6 +1116,21 @@ plot_power_over_time_data_line <- function(
       # Add legend
       legend("topright", legend=c("SOZ", "Resect", "Non-SOZ & Non-Resect"), col=c("#00bfff", "#bf00ff", "black"), lwd=5)
 
+      if(!(is.null(save_path))) {
+        save_data <- data.frame(
+          average_power_resect = average_power_resect,
+          std_err_resect = std_err_resect,
+          average_power_soz = average_power_soz,
+          std_err_soz = std_err_soz,
+          average_power_other = average_power_not_soz_not_resect,
+          other_std_err = std_err_not_soz_not_resect,
+          time = time
+        )
+        filename <- paste0(subject_code, "_epoch_line_plot_", trial, ".csv")
+        filename <- paste0(save_path, filename)
+        write.csv(save_data, filename)
+      }
+
     } else {
       # Compute average power across time for each electrode
       if (is.null(nrow(data_over_time_per_elec))) {
@@ -1114,6 +1153,16 @@ plot_power_over_time_data_line <- function(
       # Add legend
       legend("topright", legend="Overall", col="black", lwd=5)
 
+      if(!(is.null(save_path))) {
+        save_data <- data.frame(
+          average_power_all = average_power,
+          std_err_all = std_err
+        )
+        filename <- paste0(subject_code, "_epoch_line_plot_", trial, ".csv")
+        filename <- paste0(save_path, filename)
+        write.csv(save_data, filename)
+      }
+
     }
 
 
@@ -1121,9 +1170,6 @@ plot_power_over_time_data_line <- function(
     graphics::axis(side = 1, at = pretty(time))
     graphics::axis(side = 2)
 
-
-    # Add subtitle
-    freq_range <- range(group_item$frequency)
 
     graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
     # sub-title
@@ -1140,7 +1186,7 @@ plot_quantile_plot <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
     scale = c("None", "Min_Max_Normalized_Column"),
-    palette = plot_preferences$get('heatmap_palette')) {
+    palette = plot_preferences$get('heatmap_palette'), save_path = NULL) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
   scale <- match.arg(scale)
@@ -1350,6 +1396,17 @@ plot_quantile_plot <- function(
                       axes = FALSE)
       mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3, col = "#00bfff", cex = 1.2)
       mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "black", cex = 1.2)
+
+      if(!is.null(save_path)) {
+        save_data <- matrix(quantileplot$Value,
+                              ncol = length(unique(quantileplot$Time)),
+                              byrow = TRUE)
+        colnames(save_data) <- unique(quantileplot$Time)
+        rownames(save_data) <- all_stats_labels
+        filename <- paste0(subject_code, "_epoch_statistical_plot_", trial, ".csv")
+        filename <- paste0(save_path, filename)
+        write.csv(save_data, filename, row.names = TRUE)
+      }
 
       graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
 
@@ -1671,6 +1728,7 @@ generate_3dviewer_data <- function(power_over_time_data, trial = NULL) {
     # Time x Trial (collapse) x Electrode -> Time x Electrode
     data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
     nchanns <- ncol(data_over_time_per_elec)
+    data_over_time_per_elec <- t(data_over_time_per_elec)
     ntimepts <- sum(time_sel)
 
     re <- data.frame(
