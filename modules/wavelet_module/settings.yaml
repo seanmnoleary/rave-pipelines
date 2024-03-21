@@ -1,8 +1,3 @@
-target_sample_rate: 100.0
-subject_code: PAV020
-project_name: YAEL
-precision: float
-pre_downsample: 4.0
 kernel_table:
   Frequency:
   - 2
@@ -206,3 +201,8 @@ kernel_table:
   - 20.0
   - 20.0
   - 20.0
+pre_downsample: 4.0
+precision: float
+project_name: Retrostudy
+subject_code: subHUP114
+target_sample_rate: 100.0

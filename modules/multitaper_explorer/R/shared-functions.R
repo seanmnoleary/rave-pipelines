@@ -339,7 +339,7 @@ generate_power_over_time_data <- function(
 plot_power_over_time_data <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
-    scale = c("None", "Min_Max_Normalized_Column"),
+    scale = c("None", "Min_Max_Normalized_Time_Window"),
     palette = plot_preferences$get('heatmap_palette'), ordered = FALSE, save_path = NULL) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
@@ -360,14 +360,14 @@ plot_power_over_time_data <- function(
   if(length(value_range) > 0 && !anyNA(value_range)) {
     value_range <- range(value_range, na.rm = TRUE)
     if( value_range[[2]] == value_range[[1]] ) {
-      if( scale == "Min_Max_Normalized_Column") {
+      if( scale == "Min_Max_Normalized_Time_Window") {
         value_range <- c(0,1)
       } else {
         value_range <- actual_range
       }
     }
   } else {
-    if( scale == "Min_Max_Normalized_Column") {
+    if( scale == "Min_Max_Normalized_Time_Window") {
       value_range <- c(0,1)
     } else {
       value_range <- actual_range
@@ -509,7 +509,7 @@ plot_power_over_time_data <- function(
     group_id <- group_item$group_id
     epoch <- group_item$epoch
 
-    if( scale == "Min_Max_Normalized_Column") {
+    if( scale == "Min_Max_Normalized_Time_Window") {
       # use group_item$data_ranges_max[2] as the value cap
       max_value <- group_item$data_ranges_max[2]
       data_over_time_per_elec <- t(data_over_time_per_elec)
@@ -579,7 +579,7 @@ plot_power_over_time_data <- function(
       graphics::mtext(text = "Electrode Channel", side = 2, line = 2.7, cex = par("cex"))
     }
 
-    graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
+    graphics::title(sprintf("# Channel=%s, # Epoch=%s, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, trial, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
     # sub-title
     graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 0.5, cex.main = 0.8)
 
@@ -595,7 +595,7 @@ plot_power_over_time_data <- function(
     return(TRUE)
   })
 
-  if( scale == "Min_Max_Normalized_Column" ) {
+  if( scale == "Min_Max_Normalized_Time_Window" ) {
     if( baselined ) {
       legend_range <- c(-1, 1)
     } else {
@@ -616,7 +616,7 @@ plot_power_over_time_data <- function(
   legend_at <- unique(c(legend_range, 0))
   graphics::axis(side = 4, at = legend_at, labels = sprintf("%.1f", legend_at), las = 1)
 
-  if(scale == "Min_Max_Normalized_Column") {
+  if(scale == "Min_Max_Normalized_Time_Window") {
     graphics::title("Max Normalized", line = 0.6, adj = 0, cex.main = 0.8)
   } else {
     data_max_text <- sprintf("%.1f", data_max)
@@ -635,7 +635,7 @@ plot_power_over_time_data <- function(
 plot_power_over_time_data_line <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
-    scale = c("None", "Min_Max_Normalized_Column"),
+    scale = c("None", "Min_Max_Normalized_Time_Window"),
     palette = plot_preferences$get('heatmap_palette'), save_path = NULL) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
@@ -656,14 +656,14 @@ plot_power_over_time_data_line <- function(
   if(length(value_range) > 0 && !anyNA(value_range)) {
     value_range <- range(value_range, na.rm = TRUE)
     if( value_range[[2]] == value_range[[1]] ) {
-      if( scale == "Min_Max_Normalized_Column") {
+      if( scale == "Min_Max_Normalized_Time_Window") {
         value_range <- c(0,1)
       } else {
         value_range <- actual_range
       }
     }
   } else {
-    if( scale == "Min_Max_Normalized_Column") {
+    if( scale == "Min_Max_Normalized_Time_Window") {
       value_range <- c(0,1)
     } else {
       value_range <- actual_range
@@ -707,7 +707,7 @@ plot_power_over_time_data_line <- function(
   if(!any(group_data_is_valid)) { stop("No valid data; please check analysis frequency and time range.") }
 
   layout_heat_maps(sum(group_data_is_valid), max_col = 2, layout_color_bar = TRUE)
-  par("mar" = c(3.5, 4.3, 3, 0.1), cex = 1.2)
+  par("mar" = c(5, 4.3, 3, 0.1), cex = 1.2)
 
   # loop 1: calculate value ranges & data for figures
   plot_data <- lapply(power_over_time_data$group_data[group_data_is_valid], function(group_item) {
@@ -908,7 +908,7 @@ plot_power_over_time_data_line <- function(
     group_id <- group_item$group_id
     epoch <- group_item$epoch
 
-    if( scale == "Min_Max_Normalized_Column") {
+    if( scale == "Min_Max_Normalized_Time_Window") {
       # use group_item$data_ranges_max[2] as the value cap
       max_value <- group_item$data_ranges_max[2]
       data_over_time_per_elec <- t(data_over_time_per_elec)
@@ -971,7 +971,7 @@ plot_power_over_time_data_line <- function(
       # Plot line plot of average power for SOZ
       graphics::plot(time, average_power_soz, type = "l", xlim = group_item$time_range_for_analysis, ylim = value_range,
                      col = "#00bfff", lwd = 5,
-                     xlab = "Time (s)", ylab = "Average Heatmap Value")
+                     xlab = "Time (s)", ylab = "Average Power")
 
       # Add shaded area for standard error for SOZ
       shade_upper_soz <- average_power_soz + std_err_soz
@@ -1025,7 +1025,7 @@ plot_power_over_time_data_line <- function(
       # Plot line plot of average power for SOZ
       graphics::plot(time, average_power_resect, type = "l", xlim = group_item$time_range_for_analysis, ylim = value_range,
                      col = "#bf00ff", lwd = 5,
-                     xlab = "Time (s)", ylab = "Average Heatmap Value")
+                     xlab = "Time (s)", ylab = "Average Power")
 
       # Add shaded area for standard error for SOZ
       shade_upper_resect <- average_power_resect + std_err_resect
@@ -1090,7 +1090,7 @@ plot_power_over_time_data_line <- function(
       # Plot line plot of average power for SOZ
       graphics::plot(time, average_power_soz, type = "l", xlim = group_item$time_range_for_analysis, ylim = value_range,
                      col = "#00bfff", lwd = 5,
-                     xlab = "Time (s)", ylab = "Average Heatmap Value")
+                     xlab = "Time (s)", ylab = "Average Power")
 
       # Add shaded area for standard error for SOZ
       shade_upper_soz <- average_power_soz + std_err_soz
@@ -1143,7 +1143,7 @@ plot_power_over_time_data_line <- function(
       # Plot line plot of average power
       graphics::plot(time, average_power, type = "l", xlim = group_item$time_range_for_analysis, ylim = value_range,
                      col = "black", lwd = 5,
-                     xlab = "Time (s)", ylab = "Average Heatmap Value")
+                     xlab = "Time (s)", ylab = "Average Power")
 
       # Add shaded area for standard error
       shade_upper <- average_power + std_err
@@ -1171,7 +1171,7 @@ plot_power_over_time_data_line <- function(
     graphics::axis(side = 2)
 
 
-    graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
+    graphics::title(sprintf("# Channel=%s, # Epoch=%s, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, trial, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
     # sub-title
     graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 0.5, cex.main = 0.8)
 
@@ -1185,7 +1185,7 @@ plot_power_over_time_data_line <- function(
 # plot_quantile_plot <- function(
 #     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
 #     name_type = c("name", "number"), value_range = NULL,
-#     scale = c("None", "Min_Max_Normalized_Column"),
+#     scale = c("None", "Min_Max_Normalized_Time_Window"),
 #     palette = plot_preferences$get('heatmap_palette'), save_path = NULL) {
 #   # users can and only can select from given choices, i.e. one of c("name", "number")
 #   name_type <- match.arg(name_type)
@@ -1206,14 +1206,14 @@ plot_power_over_time_data_line <- function(
 #   if(length(value_range) > 0 && !anyNA(value_range)) {
 #     value_range <- range(value_range, na.rm = TRUE)
 #     if( value_range[[2]] == value_range[[1]] ) {
-#       if( scale == "Min_Max_Normalized_Column") {
+#       if( scale == "Min_Max_Normalized_Time_Window") {
 #         value_range <- c(0,1)
 #       } else {
 #         value_range <- actual_range
 #       }
 #     }
 #   } else {
-#     if( scale == "Min_Max_Normalized_Column") {
+#     if( scale == "Min_Max_Normalized_Time_Window") {
 #       value_range <- c(0,1)
 #     } else {
 #       value_range <- actual_range
@@ -1274,7 +1274,7 @@ plot_power_over_time_data_line <- function(
 #     # Time x Trial (collapse) x Electrode
 #     data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
 #
-#     if( scale == "Min_Max_Normalized_Column") {
+#     if( scale == "Min_Max_Normalized_Time_Window") {
 #       qval <- value_range[[2]]
 #       if( qval <= 0 || qval > 1) {
 #         qval <- 1
@@ -1669,7 +1669,7 @@ plot_power_over_time_data_line <- function(
 #     if (any(is_soz) | any(is_resect)) {
 #       # Add subtitle
 #       freq_range <- range(group_item$frequency)
-#       graphics::title(sprintf("# Channel=%s, # Epoch=%d, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
+#       graphics::title(sprintf("# Channel=%s, # Epoch=%s, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
 #       # sub-title
 #       graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 0.5, cex.main = 0.8)
 #
@@ -1678,7 +1678,7 @@ plot_power_over_time_data_line <- function(
 #       graphics::image(matrix(pal_val, nrow = 1), x = 0, y = pal_val, axes = FALSE, xlab = "", ylab = "", col = palette, xlim = c(0, 0.1))
 #       graphics::axis(side = 4, at = c(value_range[[2]], 0), labels = c(sprintf("%.1f", value_range[[2]]), "0"), las = 1)
 #
-#       if(scale == "Min_Max_Normalized_Column") {
+#       if(scale == "Min_Max_Normalized_Time_Window") {
 #         graphics::title("Max\nNormalized", line = 0.6, adj = 0, cex.main = 0.8)
 #       } else {
 #         actual_range_text <- paste(sprintf("%.1f", actual_range), collapse = " ~ ")

@@ -4,18 +4,18 @@ time_windows:
 - 10.0
 electrodes: 3,4-87
 epoch_name: subHUP064_seizure
-subject_code: subpt01
+subject_code: subpt11
 ordered: yes
 heatmap_name_type: number
 resect_electrodes: ''
 soz_electrodes: ''
 project_name: Retrostudy
-epoch_file_name: subpt01_seizure
-load_electrodes: 1-4,7-36,42-43,46-69,72-95
+epoch_file_name: subpt11_seizure
+load_electrodes: 1-4,7-9,12-19,21-35,37,39-40,43-74,117-128
 reference_name: car
 time_window:
-- -1
-- 2
+- -10
+- 60
 time_bandwidth: 3
 xyflip: no
 verbose: no
@@ -33,48 +33,21 @@ window_params:
 - 2.5
 - 0.5
 reference: common_average
-condition: 30s before sz1 (1)
+condition: sz1 (2)
 analysis_time_frequencies:
   '1':
     frequency_range:
-    - 90
-    - 250
-    frequency_preset_delta: 0
-    frequency_preset_theta: 0
-    frequency_preset_high_gamma: 0
+    - 13
+    - 30
+    frequency_preset_delta: 14
+    frequency_preset_theta: 12
+    frequency_preset_alpha: 12
+    frequency_preset_beta: 26
+    frequency_preset_gamma: 24
+    frequency_preset_high_gamma: 10
     time_range:
-    - 0
-    - 2
-  '2':
-    frequency_range:
-    - 0.5
-    - 4
-    frequency_preset_delta: 2
-    frequency_preset_theta: 0
-    frequency_preset_high_gamma: 0
-    time_range:
-    - -1
-    - 2
-  '3':
-    frequency_range:
-    - 4
-    - 8
-    frequency_preset_delta: 0
-    frequency_preset_theta: 4
-    frequency_preset_high_gamma: 0
-    time_range:
-    - -1
-    - 2
-  '4':
-    frequency_range:
-    - 90
-    - 250
-    frequency_preset_delta: 0
-    frequency_preset_theta: 0
-    frequency_preset_high_gamma: 2
-    time_range:
-    - -1
-    - 2
+    - 30
+    - 40
 plot_resect_elec: no
 resect_elec: '0'
 SOZ_elec: '0'
@@ -94,5 +67,5 @@ analysis_windows:
 time_stat_start: 0.0
 end_time_baseline: 30
 start_time_baseline: 0
-baselined: no
+baselined: yes
 scale: None

@@ -22,6 +22,15 @@ FREQUENCY_BAND_PRESTS <- list(
   theta = list(
     range = c(4, 8)
   ),
+  alpha = list(
+    range = c(8, 13)
+  ),
+  beta = list(
+    range = c(13, 30)
+  ),
+  gamma = list(
+    range = c(30, 90)
+  ),
   high_gamma = list(
     range = c(90, NA)
   )

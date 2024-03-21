@@ -253,19 +253,37 @@ module_html <- function(){
                           inputId = "frequency_preset_delta",
                           label = "Delta (0.5-4)",
                           type = c("default"),
-                          class = "margin-2 btn-xs bg-cyan"
+                          class = "margin-2 btn-xs bg-blue"
                         ),
                         shiny::actionButton(
                           inputId = "frequency_preset_theta",
                           label = "Theta (4-8)",
                           type = c("default"),
-                          class = "margin-2 btn-xs bg-blue"
+                          class = "margin-2 btn-xs bg-cyan"
+                        ),
+                        shiny::actionButton(
+                          inputId = "frequency_preset_alpha",
+                          label = "Alpha (8-13)",
+                          type = c("default"),
+                          class = "margin-2 btn-xs bg-green"
+                        ),
+                        shiny::actionButton(
+                          inputId = "frequency_preset_beta",
+                          label = "Beta (13-30)",
+                          type = c("default"),
+                          class = "margin-2 btn-xs bg-yellow"
+                        ),
+                        shiny::actionButton(
+                          inputId = "frequency_preset_gamma",
+                          label = "Gamma (30-90)",
+                          type = c("default"),
+                          class = "margin-2 btn-xs bg-orange"
                         ),
                         shiny::actionButton(
                           inputId = "frequency_preset_high_gamma",
                           label = "High-Gamma (90+)",
                           type = c("default"),
-                          class = "margin-2 btn-xs bg-yellow"
+                          class = "margin-2 btn-xs bg-red"
                         )
                       ),
                       shiny::sliderInput(
@@ -294,48 +312,57 @@ module_html <- function(){
               shiny::fluidRow(
                 shiny::column(
                   width = 12,
-                  shiny::selectInput(
-                    inputId = ns("hm_normalize"),
-                    label = "Select normalization method",
-                    choices = c("None", "Min_Max_Normalized_Column"),
-                    selected = "None"
+
+                  ravedash::flex_group_box(
+                    title = "All plots",
+                    shiny::selectInput(
+                      inputId = ns("hm_normalize"),
+                      label = "Select normalization method",
+                      choices = c("None", "Min_Max_Normalized_Time_Window"),
+                      selected = "None"
+                    ),
+                    shiny::selectInput(
+                      inputId = ns("color_palette"),
+                      label = "Color map",
+                      choices = names(COLOR_PALETTES),
+                      selected = plot_preferences$get("heatmap_palette_name", missing_default = "Default")
+                    )
                   ),
-                  shiny::checkboxInput(
-                    inputId = ns("hm_ordered"),
-                    label = "Group SOZ/Resect",
-                    value = TRUE
+                  ravedash::flex_group_box(
+                    title = "SOZ: Blue – Resect: Purple – Overlap: Green",
+                    shiny::checkboxInput(
+                      inputId = ns("hm_showSOZ"),
+                      label = "Show SOZ",
+                      value = FALSE
+                    ),
+                    shiny::textInput(
+                      inputId = ns("input_SOZ_electrodes"),
+                      label = "SOZ electrodes (numeric input)",
+                      value = ""
+                    ),
+                    shiny::checkboxInput(
+                      inputId = ns("hm_showResect"),
+                      label = "Show Resect",
+                      value = FALSE
+                    ),
+                    shiny::textInput(
+                      inputId = ns("input_resect_electrodes"),
+                      label = "Resect electrodes (numeric input)",
+                      value = ""
+                    )
                   ),
-                  shiny::checkboxInput(
-                    inputId = ns("hm_label"),
-                    label = "Show Electrode Labels",
-                    value = TRUE
-                  ),
-                  HTML("<span style='font-weight:normal;'>SOZ, Resect Overlap: Green</span>"),
-                  shiny::checkboxInput(
-                    inputId = ns("hm_showSOZ"),
-                    label = "Show SOZ (Blue)",
-                    value = FALSE
-                  ),
-                  shiny::textInput(
-                    inputId = ns("input_SOZ_electrodes"),
-                    label = "SOZ electrodes (numeric input)",
-                    value = ""
-                  ),
-                  shiny::checkboxInput(
-                    inputId = ns("hm_showResect"),
-                    label = "Show Resect (Purple)",
-                    value = FALSE
-                  ),
-                  shiny::textInput(
-                    inputId = ns("input_resect_electrodes"),
-                    label = "Resect electrodes (numeric input)",
-                    value = ""
-                  ),
-                  shiny::selectInput(
-                    inputId = ns("color_palette"),
-                    label = "Color map",
-                    choices = names(COLOR_PALETTES),
-                    selected = plot_preferences$get("heatmap_palette_name", missing_default = "Default")
+                  ravedash::flex_group_box(
+                    title = "Power-over-time per electrode plot",
+                    shiny::checkboxInput(
+                      inputId = ns("hm_ordered"),
+                      label = "Group SOZ/Resect",
+                      value = TRUE
+                    ),
+                    shiny::checkboxInput(
+                      inputId = ns("hm_label"),
+                      label = "Show Electrode Labels",
+                      value = TRUE
+                    )
                   )
                 )
               )
