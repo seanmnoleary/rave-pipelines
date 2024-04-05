@@ -766,6 +766,44 @@ module_server <- function(input, output, session, ...){
   # ---- Output renderers: BEGIN ------------------------------------------
 
   ravedash::register_output(
+    outputId = "sz_signal_plot",
+    output_type = "image",
+    title = "Download signal over time plot",
+    shiny::renderPlot({
+      shiny::validate(
+        shiny::need(
+          length(local_reactives$update_outputs) &&
+            !isFALSE(local_reactives$update_outputs),
+          message = "Please run the module first."
+        )
+      )
+
+      shiny::validate(
+        shiny::need(
+          isTRUE(is.list(local_data$results)) &&
+            isTRUE(is.list(local_data$results$heatmap_result)),
+          message = "No heatmap data. Please check analysis options."
+        )
+      )
+
+      # soz_electrodes <- get_soz_electrodes()
+      # resect_electrodes <- get_resect_electrodes()
+      # ordered <- ordered_electrodes()
+      condition <- input$condition
+
+      plot_signal_data(
+        repository = component_container$data$repository,
+        load_electrodes = pipeline$get_settings()$load_electrodes,
+        subject = pipeline$get_settings()$subject,
+        condition = pipeline$get_settings()$condition,
+        time_windows = pipeline$get_settings()$time_window,
+        reference = pipeline$get_settings()$reference_name,
+        analysis_time_frequencies = pipeline$get_settings()$analysis_time_frequencies
+      )
+    })
+  )
+
+  ravedash::register_output(
     outputId = "sz_power_plot",
     output_type = "image",
     title = "Download power over time plot",

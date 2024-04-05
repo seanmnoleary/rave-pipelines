@@ -288,12 +288,22 @@ generate_power_over_time_data <- function(
       for (j in 1:dims[2]) {
         #data_over_time_trial_per_elec[,j,] <- ((data_over_time_trial_per_elec[,j,] - mean(baselined_temp)) / sd(baselined_temp))
 
-        m <- mean(baseline_matrix)
-        baseline_sd <- sd(baseline_matrix)
+        # Baseline method 1
+        # m <- mean(baseline_matrix)
+        # baseline_sd <- sd(baseline_matrix)
+        # data_over_time_trial_per_elec[, j, ] <- (data_over_time_trial_per_elec[, j, ] - m) / baseline_sd
 
-        # Apply baseline correction (Z-score transformation)
-        data_over_time_trial_per_elec[, j, ] <- (data_over_time_trial_per_elec[, j, ] - m) / baseline_sd
+        # Baseline method 2
+        analysis_condition <- data_over_time_trial_per_elec[, j, ]
+        for (bi in 1: ncol(analysis_condition)) {
+          m <- mean(baseline_matrix[, bi])
+          baseline_sd <- sd(baseline_matrix[, bi])
 
+          # Apply baseline correction (Z-score transformation)
+          analysis_condition[, bi] <- (analysis_condition[, bi] - m)#/ baseline_sd
+
+        }
+        data_over_time_trial_per_elec[, j, ] <- analysis_condition
       }
     }
 
@@ -335,6 +345,118 @@ generate_power_over_time_data <- function(
   )
 
 }
+
+plot_signal_data <- function(repository,
+                             load_electrodes,
+                             subject,
+                             condition,
+                             time_windows,
+                             reference,
+                             analysis_time_frequencies
+                             ) {
+  # Extract necessary variables
+  condition <- condition
+  plot_electrodes <- dipsaus::parse_svec(load_electrodes)
+  time_window <- as.numeric(time_windows)
+  time_range_analysis <- analysis_time_frequencies[[1]][["time_range"]]
+
+
+  voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", plot_electrodes[1])]]
+  condition <- gsub("\\s\\(\\d+\\)", "", condition)
+  selector <- repository$epoch_table$Condition %in% c(condition)
+  if(!any(selector)) {
+    stop("Invalid condition selected.")
+  }
+  trial_list <- repository$epoch_table$Trial[selector]
+  selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
+  collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
+
+  collapsed_trials_matrix <- matrix(nrow = 0, ncol = length(collapsed_trial))
+
+  # Loop through each 'e' in 'elecn'
+  for(e in plot_electrodes) {
+    voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", e)]]
+    #collapse voltage for selected condition
+    condition <- gsub("\\s\\(\\d+\\)", "", condition)
+    selector <- repository$epoch_table$Condition %in% c(condition)
+    if(!any(selector)) {
+      stop("Invalid condition selected.")
+    }
+    trial_list <- repository$epoch_table$Trial[selector]
+    selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
+    collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
+    collapsed_trial <- t(matrix(collapsed_trial))
+    collapsed_trials_matrix <- rbind(collapsed_trial, collapsed_trials_matrix)
+  }
+
+  electrode_names <- repository$electrode_table$Electrode
+  rownames(collapsed_trials_matrix) <- rev(electrode_names)
+
+  t1 <- as.numeric(time_window[1])
+  t2 <- as.numeric(time_window[2])
+  elect <- seq(t1, t2, length.out = ncol(collapsed_trials_matrix))
+
+  # Use analysis windows for this
+  subset_index <- (elect >= time_range_analysis[1]) & (elect <= time_range_analysis[2])
+  collapsed_trials_matrix <- collapsed_trials_matrix[, subset_index]
+  elect <- elect[subset_index]
+
+  # Define the data and gaps
+  plotData <- data.frame(t(collapsed_trials_matrix))
+  elec_names_plot <- as.character(plot_electrodes)
+  colnames(plotData) <- plot_electrodes
+
+  # Define the data and gaps
+  plotData <- data.frame(t(collapsed_trials_matrix))
+  elec_names_plot <- as.character(plot_electrodes)
+  colnames(plotData) <- plot_electrodes
+
+  gaps <- 1
+
+  # Loop through each electrode
+  for (i in seq_along(plotData)) {
+    # Adjust the data for each electrode
+    plotData[, i] <- (plotData[, i] - mean(plotData[, i])) +
+      (ncol(plotData) - i) * gaps
+  }
+
+  ############## save group of electrodes
+  scalingdata= (max(plotData)/2)
+
+  plotData=plotData/scalingdata
+
+  gaps <- 2
+
+  for(i in seq_along(plotData)){
+    plotData[, i] <- (plotData[, i]- mean(plotData[, i]))+
+      (ncol(plotData)-i)*gaps
+  }
+
+  # Reverse the order of electrode names
+  elec_names_plot <- rev(elec_names_plot)
+
+  # Set up ticks and positions for the y-axis
+  num_ticks <- 7
+  tick_positions <- seq(1, nrow(plotData), length.out = num_ticks)
+
+  # Plot the data
+  plot(plotData[, 1], type = "l", cex = 0.1,
+       ylim = range(plotData), yaxt = "n", xaxt = "n", xlab = paste("Time"),
+       ylab = paste("Electrode"))
+  for(i in 2:ncol(plotData)){
+    lines(plotData[, i])
+  }
+
+  # Set up labels for the y-axis in reverse order
+  axis(2, at = rev(seq_along(elec_names_plot) - 1) * gaps,
+       labels = elec_names_plot, las = 1)
+
+  # Set up ticks for the x-axis
+  axis(side = 1, at = tick_positions, labels = elect[tick_positions])
+
+
+}
+
 
 plot_power_over_time_data <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
@@ -1182,514 +1304,43 @@ plot_power_over_time_data_line <- function(
 
 }
 
-# plot_quantile_plot <- function(
-#     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
-#     name_type = c("name", "number"), value_range = NULL,
-#     scale = c("None", "Min_Max_Normalized_Time_Window"),
-#     palette = plot_preferences$get('heatmap_palette'), save_path = NULL) {
-#   # users can and only can select from given choices, i.e. one of c("name", "number")
-#   name_type <- match.arg(name_type)
-#   scale <- match.arg(scale)
-#
-#   if(length(palette) < 101) {
-#     palette <- colorRampPalette(palette)(101)
-#   }
-#
-#   # copy variables
-#   time <- power_over_time_data$time
-#   epoch_table <- power_over_time_data$epoch_table
-#   electrode_table <- power_over_time_data$electrode_table
-#   actual_range <- power_over_time_data$value_range
-#   project_name <- power_over_time_data$project_name
-#   subject_code <- power_over_time_data$subject_code
-#
-#   if(length(value_range) > 0 && !anyNA(value_range)) {
-#     value_range <- range(value_range, na.rm = TRUE)
-#     if( value_range[[2]] == value_range[[1]] ) {
-#       if( scale == "Min_Max_Normalized_Time_Window") {
-#         value_range <- c(0,1)
-#       } else {
-#         value_range <- actual_range
-#       }
-#     }
-#   } else {
-#     if( scale == "Min_Max_Normalized_Time_Window") {
-#       value_range <- c(0,1)
-#     } else {
-#       value_range <- actual_range
-#     }
-#   }
-#
-#   # determine the y-axis labels
-#   if( name_type == "name" ) {
-#     y_labels <- electrode_table$Label
-#   } else {
-#     y_labels <- electrode_table$Electrode
-#   }
-#
-#   # dipsaus::parse_svec is the builtin function to parse text to integer channels
-#   soz_electrodes <- dipsaus::parse_svec(soz_electrodes)
-#   resect_electrodes <- dipsaus::parse_svec(resect_electrodes)
-#   is_soz <- electrode_table$Electrode %in% soz_electrodes
-#   is_resect <- electrode_table$Electrode %in% resect_electrodes
-#
-#   # plot <- ggplot(heatmap_data, aes(x = Time, y = Electrode, fill = Value)) +
-#   #   geom_tile() +
-#   #   labs(x = "Time (s)", y = "Electrode") +
-#   #   scale_fill_viridis(option = "turbo") +
-#   #   theme_minimal() +
-#   #   theme(
-#   #     axis.text.y = element_text(size = 5, color = sapply(levels(heatmap_data$Electrode), color_electrodes))
-#   #   )
-#
-#   if(length(trial)) {
-#     if(is.numeric(trial)) {
-#       trial_sel <- which(epoch_table$Trial %in% trial)
-#     } else {
-#       trial_sel <- which(epoch_table$Condition2 %in% trial)
-#     }
-#   } else {
-#     trial_sel <- NULL
-#   }
-#
-#   group_data_is_valid <- !sapply(power_over_time_data$group_data, is.null)
-#
-#   if(!any(group_data_is_valid)) { stop("No valid data; please check analysis frequency and time range.") }
-#
-#   layout_heat_maps(sum(group_data_is_valid), max_col = 2, layout_color_bar = TRUE)
-#   par("mar" = c(4.5, 5, 3, 0.2), cex = 1.2)
-#
-#
-#   sapply(power_over_time_data$group_data[group_data_is_valid], function(group_item) {
-#     # No data is selected
-#     if(is.null(group_item)) { return(FALSE) }
-#
-#     data <- group_item$data_over_time_trial_per_elec
-#     if(length(trial_sel)) {
-#       data <- data[, trial_sel ,, drop = FALSE]
-#     }
-#     ntrials <- dim(data)[[2]]
-#     nchanns <- dim(data)[[3]]
-#
-#     # Time x Trial (collapse) x Electrode
-#     data_over_time_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
-#
-#     if( scale == "Min_Max_Normalized_Time_Window") {
-#       qval <- value_range[[2]]
-#       if( qval <= 0 || qval > 1) {
-#         qval <- 1
-#       }
-#
-#       data_over_time_per_elec <- t(data_over_time_per_elec)
-#
-#       mincol <- apply(data_over_time_per_elec, 2, min)
-#       maxcol <- apply(data_over_time_per_elec, 2, max)
-#
-#       data_over_time_per_elec_temp <- data_over_time_per_elec
-#
-#       for (col in 1:ncol(data_over_time_per_elec_temp)) {
-#         for (row in 1:nrow(data_over_time_per_elec_temp)) {
-#           # Avoid division by zero if max equals min
-#           if(maxcol[col] != mincol[col]) {
-#             data_over_time_per_elec_temp[row, col] <- (data_over_time_per_elec[row, col] - mincol[col]) / (maxcol[col] - mincol[col])
-#           } else {
-#             # Handle case where max equals min, potentially setting to 0, 0.5, or another appropriate value
-#             data_over_time_per_elec_temp[row, col] <- 0
-#           }
-#         }
-#       }
-#
-#       data_over_time_per_elec <- t(data_over_time_per_elec_temp)
-#
-#       value_range <- c(0, qval)
-#     }
-#
-#     # Compute average power across time for each electrode
-#     if (any(is_soz) & !any(is_resect)) {
-#
-#       soz_columns <- which(is_soz)
-#       soz_data <- data_over_time_per_elec[, soz_columns]
-#
-#       non_soz_columns <- which(!is_soz)
-#       non_soz_data <- data_over_time_per_elec[, non_soz_columns]
-#
-#       target_electrodes <- t(soz_data)
-#       other_electrodes <- t(non_soz_data)
-#
-#       quantilematrixsozsozc=matrix(0,20,nrow(data_over_time_per_elec))
-#
-#
-#       for(i in 1:nrow(data_over_time_per_elec)){
-#
-#         colsoz=target_electrodes[,i]
-#         colsozc=other_electrodes[,i]
-#
-#         f10colsoz<-quantile(colsoz,probs=c(0.1))
-#         f20colsoz<-quantile(colsoz,probs=c(0.2))
-#         f30colsoz<-quantile(colsoz,probs=c(0.3))
-#         f40colsoz<-quantile(colsoz,probs=c(0.4))
-#         f50colsoz<-quantile(colsoz,probs=c(0.5))
-#         f60colsoz<-quantile(colsoz,probs=c(0.6))
-#         f70colsoz<-quantile(colsoz,probs=c(0.7))
-#         f80colsoz<-quantile(colsoz,probs=c(0.8))
-#         f90colsoz<-quantile(colsoz,probs=c(0.9))
-#         f100colsoz<-quantile(colsoz,probs=c(1.0))
-#
-#         f10colsozc<-quantile(colsozc,probs=c(0.1))
-#         f20colsozc<-quantile(colsozc,probs=c(0.2))
-#         f30colsozc<-quantile(colsozc,probs=c(0.3))
-#         f40colsozc<-quantile(colsozc,probs=c(0.4))
-#         f50colsozc<-quantile(colsozc,probs=c(0.5))
-#         f60colsozc<-quantile(colsozc,probs=c(0.6))
-#         f70colsozc<-quantile(colsozc,probs=c(0.7))
-#         f80colsozc<-quantile(colsozc,probs=c(0.8))
-#         f90colsozc<-quantile(colsozc,probs=c(0.9))
-#         f100colsozc<-quantile(colsoz,probs=c(1.0))
-#
-#         quantilematrixsozsozc[1,i]=f10colsoz
-#         quantilematrixsozsozc[2,i]=f20colsoz
-#         quantilematrixsozsozc[3,i]=f30colsoz
-#         quantilematrixsozsozc[4,i]=f40colsoz
-#         quantilematrixsozsozc[5,i]=f50colsoz
-#         quantilematrixsozsozc[6,i]=f60colsoz
-#         quantilematrixsozsozc[7,i]=f70colsoz
-#         quantilematrixsozsozc[8,i]=f80colsoz
-#         quantilematrixsozsozc[9,i]=f90colsoz
-#         quantilematrixsozsozc[10,i]=f100colsoz
-#         quantilematrixsozsozc[11,i]=f10colsozc
-#         quantilematrixsozsozc[12,i]=f20colsozc
-#         quantilematrixsozsozc[13,i]=f30colsozc
-#         quantilematrixsozsozc[14,i]=f40colsozc
-#         quantilematrixsozsozc[15,i]=f50colsozc
-#         quantilematrixsozsozc[16,i]=f60colsozc
-#         quantilematrixsozsozc[17,i]=f70colsozc
-#         quantilematrixsozsozc[18,i]=f80colsozc
-#         quantilematrixsozsozc[19,i]=f90colsozc
-#         quantilematrixsozsozc[20,i]=f100colsozc
-#
-#       }
-#
-#       quantilesname<-c('SOZ(10th)','SOZ(20th)','SOZ(30th)','SOZ(40th)','SOZ(50th)',
-#                        'SOZ(60th)','SOZ(70th)','SOZ(80th)','SOZ(90th)','SOZ(100th)',
-#                        'OTHER(10th)','OTHER(20th)','OTHER(30th)','OTHER(40th)','OTHER(50th)',
-#                        'OTHER(60th)','OTHER(70th)','OTHER(80th)','OTHER(90th)','OTHER(100th)')
-#
-#       time_vector <- seq(from = group_item$time_range_for_analysis[1],
-#                          to = group_item$time_range_for_analysis[2],
-#                          length.out = nrow(data_over_time_per_elec))
-#
-#
-#       quantileplot<- expand.grid(Time = time_vector, Stats=quantilesname)
-#       quantileplot$Value <- c(t(quantilematrixsozsozc))
-#
-#       all_stats_labels <- levels(quantileplot$Stats)
-#
-#       # Plot the heatmap using image()
-#       graphics::image(1:length(unique(quantileplot$Time)),
-#                       1:length(all_stats_labels),
-#                       t(matrix(quantileplot$Value,
-#                                ncol = length(unique(quantileplot$Time)),
-#                                byrow = TRUE)),
-#                       col = palette,
-#                       xlab = "Time (s)",
-#                       ylab = "",
-#                       axes = FALSE)
-#       mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3, col = "#00bfff", cex = 1.2)
-#       mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "black", cex = 1.2)
-#
-#       if(!is.null(save_path)) {
-#         save_data <- matrix(quantileplot$Value,
-#                               ncol = length(unique(quantileplot$Time)),
-#                               byrow = TRUE)
-#         colnames(save_data) <- unique(quantileplot$Time)
-#         rownames(save_data) <- all_stats_labels
-#         filename <- paste0(subject_code, "_epoch_statistical_plot_", trial, ".csv")
-#         filename <- paste0(save_path, filename)
-#         write.csv(save_data, filename, row.names = TRUE)
-#       }
-#
-#       graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
-#
-#       min_time <- min(unique(quantileplot$Time))
-#       max_time <- max(unique(quantileplot$Time))
-#
-#       graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
-#                      labels = unique(quantileplot$Time), cex.axis = 1)
-#
-#       graphics::axis(2, at = 1:length(all_stats_labels),
-#                      labels = all_stats_labels,
-#                      las = 2, cex.axis = 0.6)
-#
-#     } else if (!any(is_soz) & any(is_resect)) {
-#
-#       resect_columns <- which(is_resect)
-#       resect_data <- data_over_time_per_elec[, resect_columns]
-#
-#       non_resect_columns <- which(!is_resect)
-#       non_resect_data <- data_over_time_per_elec[, non_resect_columns]
-#
-#       target_electrodes <- t(resect_data)
-#       other_electrodes <- t(non_resect_data)
-#
-#       quantilematrixresectc=matrix(0,20,nrow(data_over_time_per_elec))
-#
-#
-#       for(i in 1:nrow(data_over_time_per_elec)){
-#
-#         colresect=target_electrodes[,i]
-#         colresectc=other_electrodes[,i]
-#
-#         f10colresect<-quantile(colresect,probs=c(0.1))
-#         f20colresect<-quantile(colresect,probs=c(0.2))
-#         f30colresect<-quantile(colresect,probs=c(0.3))
-#         f40colresect<-quantile(colresect,probs=c(0.4))
-#         f50colresect<-quantile(colresect,probs=c(0.5))
-#         f60colresect<-quantile(colresect,probs=c(0.6))
-#         f70colresect<-quantile(colresect,probs=c(0.7))
-#         f80colresect<-quantile(colresect,probs=c(0.8))
-#         f90colresect<-quantile(colresect,probs=c(0.9))
-#         f100colresect<-quantile(colresect,probs=c(1.0))
-#
-#         f10colresectc<-quantile(colresectc,probs=c(0.1))
-#         f20colresectc<-quantile(colresectc,probs=c(0.2))
-#         f30colresectc<-quantile(colresectc,probs=c(0.3))
-#         f40colresectc<-quantile(colresectc,probs=c(0.4))
-#         f50colresectc<-quantile(colresectc,probs=c(0.5))
-#         f60colresectc<-quantile(colresectc,probs=c(0.6))
-#         f70colresectc<-quantile(colresectc,probs=c(0.7))
-#         f80colresectc<-quantile(colresectc,probs=c(0.8))
-#         f90colresectc<-quantile(colresectc,probs=c(0.9))
-#         f100colresectc<-quantile(colresect,probs=c(1.0))
-#
-#         quantilematrixresectc[1,i]=f10colresect
-#         quantilematrixresectc[2,i]=f20colresect
-#         quantilematrixresectc[3,i]=f30colresect
-#         quantilematrixresectc[4,i]=f40colresect
-#         quantilematrixresectc[5,i]=f50colresect
-#         quantilematrixresectc[6,i]=f60colresect
-#         quantilematrixresectc[7,i]=f70colresect
-#         quantilematrixresectc[8,i]=f80colresect
-#         quantilematrixresectc[9,i]=f90colresect
-#         quantilematrixresectc[10,i]=f100colresect
-#         quantilematrixresectc[11,i]=f10colresectc
-#         quantilematrixresectc[12,i]=f20colresectc
-#         quantilematrixresectc[13,i]=f30colresectc
-#         quantilematrixresectc[14,i]=f40colresectc
-#         quantilematrixresectc[15,i]=f50colresectc
-#         quantilematrixresectc[16,i]=f60colresectc
-#         quantilematrixresectc[17,i]=f70colresectc
-#         quantilematrixresectc[18,i]=f80colresectc
-#         quantilematrixresectc[19,i]=f90colresectc
-#         quantilematrixresectc[20,i]=f100colresectc
-#
-#       }
-#
-#       quantilesname<-c('RESECT(10th)','RESECT(20th)','RESECT(30th)','RESECT(40th)','RESECT(50th)',
-#                        'RESECT(60th)','RESECT(70th)','RESECT(80th)','RESECT(90th)','RESECT(100th)',
-#                        'OTHER(10th)','OTHER(20th)','OTHER(30th)','OTHER(40th)','OTHER(50th)',
-#                        'OTHER(60th)','OTHER(70th)','OTHER(80th)','OTHER(90th)','OTHER(100th)')
-#
-#       time_vector <- seq(from = group_item$time_range_for_analysis[1],
-#                          to = group_item$time_range_for_analysis[2],
-#                          length.out = nrow(data_over_time_per_elec))
-#
-#       quantileplot<- expand.grid(Time = time_vector, Stats=quantilesname)
-#       quantileplot$Value <- c(t(quantilematrixresectc))
-#
-#       all_stats_labels <- levels(quantileplot$Stats)
-#
-#       # Plot the heatmap using image()
-#       graphics::image(1:length(unique(quantileplot$Time)),
-#                       1:length(all_stats_labels),
-#                       t(matrix(quantileplot$Value,
-#                                ncol = length(unique(quantileplot$Time)),
-#                                byrow = TRUE)),
-#                       col = palette,
-#                       xlab = "Time (s)",
-#                       ylab = "",
-#                       axes = FALSE)
-#
-#
-#       mtext("RESECT", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3.5, col = "#bf00ff", cex = 1.2)
-#       mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "black", cex = 1.2)
-#
-#       graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
-#
-#       # Add axis labels
-#
-#       min_time <- min(unique(quantileplot$Time))
-#       max_time <- max(unique(quantileplot$Time))
-#
-#       graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
-#                      labels = unique(quantileplot$Time), cex.axis = 1)
-#
-#       graphics::axis(2, at = 1:length(all_stats_labels),
-#                      labels = all_stats_labels,
-#                      las = 2, cex.axis = 0.6)
-#
-#     } else if (any(is_soz) & any(is_resect)) {
-#       resect_columns <- which(is_resect)
-#       resect_data <- data_over_time_per_elec[, resect_columns]
-#       resect_data <- t(resect_data)
-#       soz_columns <- which(is_soz)
-#       soz_data <- data_over_time_per_elec[, soz_columns]
-#       soz_data <- t(soz_data)
-#
-#       non_resect_and_soz_columns <- which(!is_resect & !is_soz)
-#       non_resect_and_soz_data <- data_over_time_per_elec[, non_resect_and_soz_columns]
-#       non_resect_and_soz_data <- t(non_resect_and_soz_data)
-#
-#       quantilematrixresectsozc=matrix(0,30,nrow(data_over_time_per_elec))
-#
-#
-#       for(i in 1:nrow(data_over_time_per_elec)){
-#
-#         colresect=resect_data[,i]
-#         colsoz=soz_data[,i]
-#         colother=non_resect_and_soz_data[,i]
-#
-#         f10colsoz<-quantile(colsoz,probs=c(0.1))
-#         f20colsoz<-quantile(colsoz,probs=c(0.2))
-#         f30colsoz<-quantile(colsoz,probs=c(0.3))
-#         f40colsoz<-quantile(colsoz,probs=c(0.4))
-#         f50colsoz<-quantile(colsoz,probs=c(0.5))
-#         f60colsoz<-quantile(colsoz,probs=c(0.6))
-#         f70colsoz<-quantile(colsoz,probs=c(0.7))
-#         f80colsoz<-quantile(colsoz,probs=c(0.8))
-#         f90colsoz<-quantile(colsoz,probs=c(0.9))
-#         f100colsoz<-quantile(colsoz,probs=c(1.0))
-#
-#         f10colresect<-quantile(colresect,probs=c(0.1))
-#         f20colresect<-quantile(colresect,probs=c(0.2))
-#         f30colresect<-quantile(colresect,probs=c(0.3))
-#         f40colresect<-quantile(colresect,probs=c(0.4))
-#         f50colresect<-quantile(colresect,probs=c(0.5))
-#         f60colresect<-quantile(colresect,probs=c(0.6))
-#         f70colresect<-quantile(colresect,probs=c(0.7))
-#         f80colresect<-quantile(colresect,probs=c(0.8))
-#         f90colresect<-quantile(colresect,probs=c(0.9))
-#         f100colresect<-quantile(colresect,probs=c(1.0))
-#
-#         f10colresectsozc<-quantile(colother,probs=c(0.1))
-#         f20colresectsozc<-quantile(colother,probs=c(0.2))
-#         f30colresectsozc<-quantile(colother,probs=c(0.3))
-#         f40colresectsozc<-quantile(colother,probs=c(0.4))
-#         f50colresectsozc<-quantile(colother,probs=c(0.5))
-#         f60colresectsozc<-quantile(colother,probs=c(0.6))
-#         f70colresectsozc<-quantile(colother,probs=c(0.7))
-#         f80colresectsozc<-quantile(colother,probs=c(0.8))
-#         f90colresectsozc<-quantile(colother,probs=c(0.9))
-#         f100colresectsozc<-quantile(colother,probs=c(1.0))
-#
-#         quantilematrixresectsozc[1,i]=f10colsoz
-#         quantilematrixresectsozc[2,i]=f20colsoz
-#         quantilematrixresectsozc[3,i]=f30colsoz
-#         quantilematrixresectsozc[4,i]=f40colsoz
-#         quantilematrixresectsozc[5,i]=f50colsoz
-#         quantilematrixresectsozc[6,i]=f60colsoz
-#         quantilematrixresectsozc[7,i]=f70colsoz
-#         quantilematrixresectsozc[8,i]=f80colsoz
-#         quantilematrixresectsozc[9,i]=f90colsoz
-#         quantilematrixresectsozc[10,i]=f100colsoz
-#         quantilematrixresectsozc[11,i]=f10colresect
-#         quantilematrixresectsozc[12,i]=f20colresect
-#         quantilematrixresectsozc[13,i]=f30colresect
-#         quantilematrixresectsozc[14,i]=f40colresect
-#         quantilematrixresectsozc[15,i]=f50colresect
-#         quantilematrixresectsozc[16,i]=f60colresect
-#         quantilematrixresectsozc[17,i]=f70colresect
-#         quantilematrixresectsozc[18,i]=f80colresect
-#         quantilematrixresectsozc[19,i]=f90colresect
-#         quantilematrixresectsozc[20,i]=f100colresect
-#         quantilematrixresectsozc[21,i]=f10colresectsozc
-#         quantilematrixresectsozc[22,i]=f20colresectsozc
-#         quantilematrixresectsozc[23,i]=f30colresectsozc
-#         quantilematrixresectsozc[24,i]=f40colresectsozc
-#         quantilematrixresectsozc[25,i]=f50colresectsozc
-#         quantilematrixresectsozc[26,i]=f60colresectsozc
-#         quantilematrixresectsozc[27,i]=f70colresectsozc
-#         quantilematrixresectsozc[28,i]=f80colresectsozc
-#         quantilematrixresectsozc[29,i]=f90colresectsozc
-#         quantilematrixresectsozc[30,i]=f100colresectsozc
-#
-#       }
-#
-#       quantilesname<-c('SOZ(10th)','SOZ(20th)','SOZ(30th)','SOZ(40th)','SOZ(50th)',
-#                        'SOZ(60th)','SOZ(70th)','SOZ(80th)','SOZ(90th)','SOZ(100th)',
-#                        'RESECT(10th)','RESECT(20th)','RESECT(30th)','RESECT(40th)','RESECT(50th)',
-#                        'RESECT(60th)','RESECT(70th)','RESECT(80th)','RESECT(90th)','RESECT(100th)',
-#                        'OTHERc(10th)','OTHERc(20th)','OTHERc(30th)','OTHERc(40th)','OTHERc(50th)',
-#                        'OTHERc(60th)','OTHERc(70th)','OTHERc(80th)','OTHERc(90th)','OTHERc(100th)')
-#
-#       time_vector <- seq(from = group_item$time_range_for_analysis[1],
-#                          to = group_item$time_range_for_analysis[2],
-#                          length.out = nrow(data_over_time_per_elec))
-#
-#
-#
-#       quantileplot<- expand.grid(Time = time_vector, Stats=quantilesname)
-#       quantileplot$Value <- c(t(quantilematrixresectsozc))
-#
-#       all_stats_labels <- levels(quantileplot$Stats)
-#
-#
-#
-#       # Plot the heatmap using image()
-#       graphics::image(1:length(unique(quantileplot$Time)),
-#                       1:length(all_stats_labels),
-#                       t(matrix(quantileplot$Value,
-#                                ncol = length(unique(quantileplot$Time)),
-#                                byrow = TRUE)),
-#                       col = palette,
-#                       xlab = "Time (s)",
-#                       ylab = "",
-#                       axes = FALSE)
-#
-#       # Add axis labels
-#       mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3.5, col = "#00bfff", cex = 1.2)
-#       mtext("RESECT", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "#bf00ff", cex = 1.2)
-#       mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 22.5, col = "black", cex = 1.2)
-#
-#       graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
-#       graphics::abline(h = 20 + 0.5, col = "red", lwd = 10, lty = "dashed")
-#
-#
-#       min_time <- min(unique(quantileplot$Time))
-#       max_time <- max(unique(quantileplot$Time))
-#
-#       graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
-#                      labels = unique(quantileplot$Time), cex.axis = 1)
-#
-#       graphics::axis(2, at = 1:length(all_stats_labels),
-#                      labels = all_stats_labels,
-#                      las = 2, cex.axis = 0.6)
-#
-#     }
-#
-#     if (any(is_soz) | any(is_resect)) {
-#       # Add subtitle
-#       freq_range <- range(group_item$frequency)
-#       graphics::title(sprintf("# Channel=%s, # Epoch=%s, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, ntrials, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
-#       # sub-title
-#       graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 0.5, cex.main = 0.8)
-#
-#       par("mar" = c(3.1, 1, 3, 3.1))
-#       pal_val <- seq(value_range[[1]], value_range[[2]], length.out = 101)
-#       graphics::image(matrix(pal_val, nrow = 1), x = 0, y = pal_val, axes = FALSE, xlab = "", ylab = "", col = palette, xlim = c(0, 0.1))
-#       graphics::axis(side = 4, at = c(value_range[[2]], 0), labels = c(sprintf("%.1f", value_range[[2]]), "0"), las = 1)
-#
-#       if(scale == "Min_Max_Normalized_Time_Window") {
-#         graphics::title("Max\nNormalized", line = 0.6, adj = 0, cex.main = 0.8)
-#       } else {
-#         actual_range_text <- paste(sprintf("%.1f", actual_range), collapse = " ~ ")
-#         graphics::title(sprintf("[%s]", actual_range_text), line = 0.6, adj = 0, cex.main = 0.8)
-#       }
-#     }
-#
-#     return(TRUE)
-#   }, USE.NAMES = FALSE)
-# }
+plot_time_frequency <- function(selected_electrode, load_electrodes, repository_power, palette = plot_preferences$get('heatmap_palette')) {
 
+      electrodes <- dipsaus::parse_svec(load_electrodes)
+      index <- which(selected_electrode %in% electrodes)
+      subarray <- repository_power$power$data_list[[index]]
+
+      # keep margin 2 and 1 (order matters): time by frequency
+      time_freq_average <- subarray$collapse(keep = c(2, 1))
+
+      time_freq_matrix <- as.matrix(time_freq_average)
+
+      # Calculate the 95th percentile
+      q <- quantile(time_freq_matrix, .95)
+
+      # # Clip the values to the 95th percentile
+      time_freq_matrix_clipped <- pmax(time_freq_matrix, q)
+
+      # Define x and y axis labels
+      time <- as.numeric(rownames(time_freq_matrix))
+      frequency <- as.numeric(colnames(time_freq_matrix))
+
+      if(length(palette) < 101) {
+        palette <- colorRampPalette(palette)(101)
+      }
+
+      # Plot the heatmap using graphics::image()
+      graphics::image(x = time, y = frequency, z = time_freq_matrix,
+                      axes = FALSE, xlab = "", ylab = "", col = palette)
+
+      # Add x-axis ticks and label
+      graphics::axis(side = 1, at = pretty(time))
+      graphics::mtext(text = "Time (s)", side = 1, line = 2.2, cex = par("cex"))
+
+      # Add y-axis ticks and label
+      graphics::axis(side = 2, at = pretty(frequency))
+      graphics::mtext(text = "Frequency", side = 2, line = 2.2, cex = par("cex"))
+}
 
 generate_3dviewer_data <- function(power_over_time_data, trial = NULL) {
 

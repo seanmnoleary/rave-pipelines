@@ -17,10 +17,7 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_time_stat_end = targets::tar_target_raw("time_stat_end", 
-        quote({
-            settings[["time_stat_end"]]
-        }), deps = "settings"), input_time_windows = targets::tar_target_raw("time_windows", 
+    input_time_windows = targets::tar_target_raw("time_windows", 
         quote({
             settings[["time_windows"]]
         }), deps = "settings"), input_electrodes = targets::tar_target_raw("electrodes", 
@@ -50,6 +47,9 @@ rm(._._env_._.)
         }), deps = "settings"), input_epoch_file_name = targets::tar_target_raw("epoch_file_name", 
         quote({
             settings[["epoch_file_name"]]
+        }), deps = "settings"), input_selected_electrode = targets::tar_target_raw("selected_electrode", 
+        quote({
+            settings[["selected_electrode"]]
         }), deps = "settings"), input_load_electrodes = targets::tar_target_raw("load_electrodes", 
         quote({
             settings[["load_electrodes"]]
@@ -113,9 +113,6 @@ rm(._._env_._.)
         }), deps = "settings"), input_SOZ_elec = targets::tar_target_raw("SOZ_elec", 
         quote({
             settings[["SOZ_elec"]]
-        }), deps = "settings"), input_baseline = targets::tar_target_raw("baseline", 
-        quote({
-            settings[["baseline"]]
         }), deps = "settings"), input_text_size = targets::tar_target_raw("text_size", 
         quote({
             settings[["text_size"]]
@@ -134,6 +131,9 @@ rm(._._env_._.)
         }), deps = "settings"), input_time_stat_start = targets::tar_target_raw("time_stat_start", 
         quote({
             settings[["time_stat_start"]]
+        }), deps = "settings"), input_time_stat_end = targets::tar_target_raw("time_stat_end", 
+        quote({
+            settings[["time_stat_end"]]
         }), deps = "settings"), input_end_time_baseline = targets::tar_target_raw("end_time_baseline", 
         quote({
             settings[["end_time_baseline"]]
@@ -146,6 +146,9 @@ rm(._._env_._.)
         }), deps = "settings"), input_scale = targets::tar_target_raw("scale", 
         quote({
             settings[["scale"]]
+        }), deps = "settings"), input_baseline = targets::tar_target_raw("baseline", 
+        quote({
+            settings[["baseline"]]
         }), deps = "settings"), load_subject = targets::tar_target_raw(name = "subject", 
         command = quote({
             .__target_expr__. <- quote({
@@ -190,6 +193,32 @@ rm(._._env_._.)
                     time_windows = time_window, reference = reference_name)
                 }
                 repository
+            }), target_depends = c("subject", "epoch_file_name", 
+            "load_electrodes", "time_window", "reference_name"
+            )), deps = c("subject", "epoch_file_name", "load_electrodes", 
+        "time_window", "reference_name"), cue = targets::tar_cue("always"), 
+        pattern = NULL, iteration = "list"), load_power = targets::tar_target_raw(name = "repository_power", 
+        command = quote({
+            .__target_expr__. <- quote({
+                repository_power <- raveio::prepare_subject_power(subject = subject, 
+                  epoch_name = epoch_file_name, electrodes = load_electrodes, 
+                  time_windows = time_window, reference = reference_name)
+            })
+            tryCatch({
+                eval(.__target_expr__.)
+                return(repository_power)
+            }, error = function(e) {
+                asNamespace("raveio")$resolve_pipeline_error(name = "repository_power", 
+                  condition = e, expr = .__target_expr__.)
+            })
+        }), format = asNamespace("raveio")$target_format_dynamic(name = "rave_prepare_subject_power", 
+            target_export = "repository_power", target_expr = quote({
+                {
+                  repository_power <- raveio::prepare_subject_power(subject = subject, 
+                    epoch_name = epoch_file_name, electrodes = load_electrodes, 
+                    time_windows = time_window, reference = reference_name)
+                }
+                repository_power
             }), target_depends = c("subject", "epoch_file_name", 
             "load_electrodes", "time_window", "reference_name"
             )), deps = c("subject", "epoch_file_name", "load_electrodes", 
@@ -254,7 +283,35 @@ rm(._._env_._.)
             )), deps = c("multitaper_result", "analysis_time_frequencies", 
         "baselined", "baseline", "start_time_baseline", "end_time_baseline"
         ), cue = targets::tar_cue("thorough"), pattern = NULL, 
-        iteration = "list"), generate_data_for_heatmap = targets::tar_target_raw(name = "plot_heatmap", 
+        iteration = "list"), generate_signal_plot = targets::tar_target_raw(name = "plot_signal", 
+        command = quote({
+            .__target_expr__. <- quote({
+                plot_signal <- plot_signal_data(repository, load_electrodes = load_electrodes, 
+                  subject = subject, condition = condition, time_windows = time_window, 
+                  reference = reference_name, analysis_time_frequencies = analysis_time_frequencies)
+            })
+            tryCatch({
+                eval(.__target_expr__.)
+                return(plot_signal)
+            }, error = function(e) {
+                asNamespace("raveio")$resolve_pipeline_error(name = "plot_signal", 
+                  condition = e, expr = .__target_expr__.)
+            })
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+            target_export = "plot_signal", target_expr = quote({
+                {
+                  plot_signal <- plot_signal_data(repository, 
+                    load_electrodes = load_electrodes, subject = subject, 
+                    condition = condition, time_windows = time_window, 
+                    reference = reference_name, analysis_time_frequencies = analysis_time_frequencies)
+                }
+                plot_signal
+            }), target_depends = c("repository", "load_electrodes", 
+            "subject", "condition", "time_window", "reference_name", 
+            "analysis_time_frequencies")), deps = c("repository", 
+        "load_electrodes", "subject", "condition", "time_window", 
+        "reference_name", "analysis_time_frequencies"), cue = targets::tar_cue("always"), 
+        pattern = NULL, iteration = "list"), generate_data_for_heatmap = targets::tar_target_raw(name = "plot_heatmap", 
         command = quote({
             .__target_expr__. <- quote({
                 plot_heatmap <- plot_power_over_time_data(heatmap_result, 
@@ -309,6 +366,30 @@ rm(._._env_._.)
             "resect_electrodes", "heatmap_name_type", "condition"
             )), deps = c("heatmap_result", "soz_electrodes", 
         "resect_electrodes", "heatmap_name_type", "condition"
+        ), cue = targets::tar_cue("always"), pattern = NULL, 
+        iteration = "list"), generate_data_for_time_frequency_plot = targets::tar_target_raw(name = "plot_time_frequency", 
+        command = quote({
+            .__target_expr__. <- quote({
+                plot_time_frequency <- plot_time_frequency(selected_electrode, 
+                  load_electrodes, repository_power)
+            })
+            tryCatch({
+                eval(.__target_expr__.)
+                return(plot_time_frequency)
+            }, error = function(e) {
+                asNamespace("raveio")$resolve_pipeline_error(name = "plot_time_frequency", 
+                  condition = e, expr = .__target_expr__.)
+            })
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+            target_export = "plot_time_frequency", target_expr = quote({
+                {
+                  plot_time_frequency <- plot_time_frequency(selected_electrode, 
+                    load_electrodes, repository_power)
+                }
+                plot_time_frequency
+            }), target_depends = c("plot_time_frequency", "selected_electrode", 
+            "load_electrodes", "repository_power")), deps = c("plot_time_frequency", 
+        "selected_electrode", "load_electrodes", "repository_power"
         ), cue = targets::tar_cue("always"), pattern = NULL, 
         iteration = "list"), generate_data_for_3d_viewer = targets::tar_target_raw(name = "viewer3d_data", 
         command = quote({

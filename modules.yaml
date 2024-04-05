@@ -64,6 +64,10 @@ modules:
     label: Phase Explorer
   multitaper_explorer:
     label: Multitaper Explorer
+  epileptogenic_index:
+    label: Epileptogenic Index
+  DC_HFO:
+    label: DC HFO
 divider:
   Preprocess:
     order: 0

@@ -1,3 +1,8 @@
+target_sample_rate: 100.0
+subject_code: K009
+project_name: Retrostudy
+precision: double
+pre_downsample: 1.0
 kernel_table:
   Frequency:
   - 2
@@ -201,8 +206,3 @@ kernel_table:
   - 20.0
   - 20.0
   - 20.0
-pre_downsample: 4.0
-precision: float
-project_name: Retrostudy
-subject_code: subHUP114
-target_sample_rate: 100.0

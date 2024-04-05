@@ -1,8 +1,8 @@
-subject_code: subpt3
-reference_name: car
-project_name: Retrostudy
+changes: []
 electrode_group:
   '1':
     name: NoLabel
-    electrodes: 1-165
-changes: []
+    electrodes: 11-16,24,33-35,43-46,53-54,61-64
+project_name: Retrostudy
+reference_name: _unsaved
+subject_code: subpt12

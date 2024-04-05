@@ -1,0 +1,3 @@
+epileptogenic_index:
+  script: make-main.R
+  store: shared

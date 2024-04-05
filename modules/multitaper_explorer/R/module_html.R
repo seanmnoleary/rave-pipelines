@@ -379,6 +379,17 @@ module_html <- function(){
             width = 12L,
 
             ravedash::output_card(
+              'Signal over time per electrode',
+              class_body = "no-padding fill-width height-550 min-height-450 resize-vertical",
+              shiny::div(
+                class = 'position-relative fill',
+                ravedash::output_gadget_container(
+                  shiny::plotOutput(ns("sz_signal_plot"), width = '100%', height = "100%")
+                )
+              )
+            ),
+
+            ravedash::output_card(
               'Power over time per electrode',
               class_body = "no-padding fill-width height-550 min-height-450 resize-vertical",
               shiny::div(
