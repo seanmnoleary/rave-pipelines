@@ -1304,44 +1304,6 @@ plot_power_over_time_data_line <- function(
 
 }
 
-plot_time_frequency <- function(selected_electrode, load_electrodes, repository_power, palette = plot_preferences$get('heatmap_palette')) {
-
-      electrodes <- dipsaus::parse_svec(load_electrodes)
-      index <- which(selected_electrode %in% electrodes)
-      subarray <- repository_power$power$data_list[[index]]
-
-      # keep margin 2 and 1 (order matters): time by frequency
-      time_freq_average <- subarray$collapse(keep = c(2, 1))
-
-      time_freq_matrix <- as.matrix(time_freq_average)
-
-      # Calculate the 95th percentile
-      q <- quantile(time_freq_matrix, .95)
-
-      # # Clip the values to the 95th percentile
-      time_freq_matrix_clipped <- pmax(time_freq_matrix, q)
-
-      # Define x and y axis labels
-      time <- as.numeric(rownames(time_freq_matrix))
-      frequency <- as.numeric(colnames(time_freq_matrix))
-
-      if(length(palette) < 101) {
-        palette <- colorRampPalette(palette)(101)
-      }
-
-      # Plot the heatmap using graphics::image()
-      graphics::image(x = time, y = frequency, z = time_freq_matrix,
-                      axes = FALSE, xlab = "", ylab = "", col = palette)
-
-      # Add x-axis ticks and label
-      graphics::axis(side = 1, at = pretty(time))
-      graphics::mtext(text = "Time (s)", side = 1, line = 2.2, cex = par("cex"))
-
-      # Add y-axis ticks and label
-      graphics::axis(side = 2, at = pretty(frequency))
-      graphics::mtext(text = "Frequency", side = 2, line = 2.2, cex = par("cex"))
-}
-
 generate_3dviewer_data <- function(power_over_time_data, trial = NULL) {
 
   # copy variables
