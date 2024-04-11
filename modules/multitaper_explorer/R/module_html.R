@@ -206,17 +206,11 @@ module_html <- function(){
                   shidashi::flex_item(
                     shiny::numericInput(
                       inputId = ns("baseline_start"),
-                      label = "Baseline from",
+                      label = "Baseline duration:",
                       value = 0, width = "100%"
                     )
-                  ),
-                  shidashi::flex_item(
-                    shiny::numericInput(
-                      inputId = ns("baseline_end"),
-                      label = "to (s)",
-                      value = 30, width = "100%"
-                    )
                   )
+
                 ),
               )
             ),
@@ -326,6 +320,11 @@ module_html <- function(){
                       label = "Color map",
                       choices = names(COLOR_PALETTES),
                       selected = plot_preferences$get("heatmap_palette_name", missing_default = "Default")
+                    ),
+                    shiny::checkboxInput(
+                      inputId = ns("hm_decibal"),
+                      label = "Units: Decibals (dB)",
+                      value = FALSE
                     )
                   ),
                   ravedash::flex_group_box(

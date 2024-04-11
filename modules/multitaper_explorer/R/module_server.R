@@ -164,14 +164,13 @@ module_server <- function(input, output, session, ...){
       run_multitaper()
     }
     baseline_end <- get_baseline_end()
-    baseline_start <- get_baseline_start()
     pipeline$set_settings(
       analysis_time_frequencies = input$analysis_settings,
       condition = input$condition,
       baseline = input$baseline_condition,
       baselined = input$hm_baselined,
       end_time_baseline = baseline_end,
-      start_time_baseline = baseline_start
+      decibal = input$hm_decibal
       # soz_electrodes = soz_electrodes,
       # heatmap_name_type = heatmap_name_type,
       # condition = condition
@@ -513,6 +512,14 @@ module_server <- function(input, output, session, ...){
     ignoreNULL = TRUE, ignoreInit = TRUE
   )
 
+  shiny::bindEvent(
+    ravedash::safe_observe({
+      run_analysis()
+    }),
+    input$hm_decibal,
+    ignoreNULL = TRUE, ignoreInit = TRUE
+  )
+
 
   shiny::bindEvent(
     ravedash::safe_observe({
@@ -573,12 +580,6 @@ module_server <- function(input, output, session, ...){
     1000
   )
 
-  get_baseline_start <- shiny::debounce(
-    shiny::reactive({
-      return(input$baseline_start)
-    }),
-    1000
-  )
 
   get_soz_electrodes <- shiny::debounce(
     shiny::reactive({

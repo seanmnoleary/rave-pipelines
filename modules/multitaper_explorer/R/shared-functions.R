@@ -207,9 +207,10 @@ generate_power_over_time_data <- function(
     analysis_time_frequencies,
     baselined,
     baseline,
-    start_time_baseline,
-    end_time_baseline
+    end_time_baseline,
+    decibal
 ) {
+  start_time_baseline = 0
 
   # get header information
   meta <- multitaper_result$get_header("extra")
@@ -261,6 +262,15 @@ generate_power_over_time_data <- function(
 
     # Time (keep) x Frequency (collapse) x Trial (keep) x Electrode (keep)
     data_over_time_trial_per_elec <- ravetools::collapse(sub_array, keep = c(1, 3, 4), average = TRUE)
+
+    if(decibal) {
+      dims <- dim(data_over_time_trial_per_elec)
+      for (j in 1:dims[2]) {
+        for (k in 1: dims[3]) {
+          data_over_time_trial_per_elec[,j,k] <- nanpow2db(data_over_time_trial_per_elec[,j,k])
+        }
+      }
+    }
 
     #Perform baselining here if needed
     if (baselined) {
@@ -352,8 +362,7 @@ plot_signal_data <- function(repository,
                              condition,
                              time_windows,
                              reference,
-                             analysis_time_frequencies
-                             ) {
+                             analysis_time_frequencies) {
   # Extract necessary variables
   condition <- condition
   plot_electrodes <- dipsaus::parse_svec(load_electrodes)
@@ -1744,13 +1753,18 @@ nanpow2db <- function(y){
   #         y: power --required
   #
   # returns:
-  #         ydB: dB (with 0s and negativs set to NaN)
+  #         ydB: dB (with 0s and negatives set to 0)
+
+  # Convert negative values to 0
+  y <- pmax(y, 0)
 
   if(length(y)==1){
     if(y==0){
       return(NaN)
-    } else(ydB <- 10*log10(y))
-  }else{
+    } else {
+      ydB <- 10*log10(y)
+    }
+  } else {
     y[y==0] <- NaN
     ydB <- 10*log10(y)
   }

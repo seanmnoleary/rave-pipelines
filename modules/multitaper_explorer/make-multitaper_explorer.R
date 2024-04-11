@@ -133,6 +133,9 @@ rm(._._env_._.)
         }), deps = "settings"), input_text_size = targets::tar_target_raw("text_size", 
         quote({
             settings[["text_size"]]
+        }), deps = "settings"), input_decibal = targets::tar_target_raw("decibal", 
+        quote({
+            settings[["decibal"]]
         }), deps = "settings"), input_baseline = targets::tar_target_raw("baseline", 
         quote({
             settings[["baseline"]]
@@ -232,8 +235,8 @@ rm(._._env_._.)
             .__target_expr__. <- quote({
                 heatmap_result <- generate_power_over_time_data(multitaper_result, 
                   analysis_time_frequencies, baselined = baselined, 
-                  baseline = baseline, start_time_baseline = start_time_baseline, 
-                  end_time_baseline = end_time_baseline)
+                  baseline = baseline, end_time_baseline = end_time_baseline, 
+                  decibal = decibal)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -247,14 +250,14 @@ rm(._._env_._.)
                 {
                   heatmap_result <- generate_power_over_time_data(multitaper_result, 
                     analysis_time_frequencies, baselined = baselined, 
-                    baseline = baseline, start_time_baseline = start_time_baseline, 
-                    end_time_baseline = end_time_baseline)
+                    baseline = baseline, end_time_baseline = end_time_baseline, 
+                    decibal = decibal)
                 }
                 heatmap_result
             }), target_depends = c("multitaper_result", "analysis_time_frequencies", 
-            "baselined", "baseline", "start_time_baseline", "end_time_baseline"
+            "baselined", "baseline", "end_time_baseline", "decibal"
             )), deps = c("multitaper_result", "analysis_time_frequencies", 
-        "baselined", "baseline", "start_time_baseline", "end_time_baseline"
+        "baselined", "baseline", "end_time_baseline", "decibal"
         ), cue = targets::tar_cue("thorough"), pattern = NULL, 
         iteration = "list"), generate_signal_plot = targets::tar_target_raw(name = "plot_signal", 
         command = quote({
@@ -335,6 +338,33 @@ rm(._._env_._.)
                     name_type = heatmap_name_type, trial = condition)
                 }
                 plot_lineplot
+            }), target_depends = c("heatmap_result", "soz_electrodes", 
+            "resect_electrodes", "heatmap_name_type", "condition"
+            )), deps = c("heatmap_result", "soz_electrodes", 
+        "resect_electrodes", "heatmap_name_type", "condition"
+        ), cue = targets::tar_cue("always"), pattern = NULL, 
+        iteration = "list"), generate_data_for_quantile = targets::tar_target_raw(name = "plot_quantile", 
+        command = quote({
+            .__target_expr__. <- quote({
+                plot_quantile <- plot_quantile_plot(heatmap_result, 
+                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                  name_type = heatmap_name_type, trial = condition)
+            })
+            tryCatch({
+                eval(.__target_expr__.)
+                return(plot_quantile)
+            }, error = function(e) {
+                asNamespace("raveio")$resolve_pipeline_error(name = "plot_quantile", 
+                  condition = e, expr = .__target_expr__.)
+            })
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+            target_export = "plot_quantile", target_expr = quote({
+                {
+                  plot_quantile <- plot_quantile_plot(heatmap_result, 
+                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                    name_type = heatmap_name_type, trial = condition)
+                }
+                plot_quantile
             }), target_depends = c("heatmap_result", "soz_electrodes", 
             "resect_electrodes", "heatmap_name_type", "condition"
             )), deps = c("heatmap_result", "soz_electrodes", 

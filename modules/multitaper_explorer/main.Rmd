@@ -67,7 +67,7 @@ multitaper_result <- generate_multitaper(
   
 ### Step 4: get heatmap data from multitaper result for each spectral range for a specific condition
 ```{rave find_heatmap, language = "R", export = "heatmap_result"}
-heatmap_result <- generate_power_over_time_data(multitaper_result, analysis_time_frequencies, baselined = baselined, baseline = baseline, start_time_baseline = start_time_baseline, end_time_baseline = end_time_baseline)
+heatmap_result <- generate_power_over_time_data(multitaper_result, analysis_time_frequencies, baselined = baselined, baseline = baseline, end_time_baseline = end_time_baseline, decibal = decibal)
 ```
 
 #### Step 5: Visualize Heatmaps for all the generated spectral ranges for a specific condition
@@ -91,7 +91,12 @@ plot_heatmap <- plot_power_over_time_data(heatmap_result, soz_electrodes = soz_e
 plot_lineplot <- plot_power_over_time_data_line(heatmap_result, soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, name_type = heatmap_name_type, trial = condition)
 ```
 
-#### Step 8: Save file for 3D brain display for each spectral result
+#### Step 8: Visualize Quantile Plot for all the generated spectral ranges for a specific condition
+```{rave generate_data_for_quantile, language = "R", export = "plot_quantile", cue="always"}
+plot_quantile <- plot_quantile_plot(heatmap_result, soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, name_type = heatmap_name_type, trial = condition)
+```
+
+#### Step 9: Save file for 3D brain display for each spectral result
 ```{rave generate_data_for_3d_viewer, language = "R", export = "viewer3d_data"}
 viewer3d_data <- generate_3dviewer_data(heatmap_result, trial = condition)
 ```
