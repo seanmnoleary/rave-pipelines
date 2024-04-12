@@ -825,6 +825,7 @@ plot_power_over_time_data <- function(
 
 }
 
+
 plot_power_over_time_data_line <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
@@ -1138,7 +1139,7 @@ plot_power_over_time_data_line <- function(
       if( baselined ) {
         value_range <- c(min(group_item$data_ranges_min[2]), max(group_item$data_ranges_max[2]))
       } else {
-        value_range <- c(0, data_max)
+        value_range <- c(min(group_item$data_ranges_min[2]), max(group_item$data_ranges_max[2]))
       }
     }
 
