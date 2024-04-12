@@ -82,6 +82,7 @@ plot_signal <- plot_signal_data(repository,
                                 soz_electrodes = soz_electrodes,
                                 resect_electrodes = resect_electrodes,
                                 ordered = ordered
+                                name_type = heatmap_name_type
                                 )
 ```
 

@@ -793,6 +793,7 @@ module_server <- function(input, output, session, ...){
       condition <- input$condition
       soz_electrodes <- get_soz_electrodes()
       resect_electrodes <- get_resect_electrodes()
+      heatmap_name_type <- ifelse(isTRUE(input$hm_label), "name", "number")
       ordered <- ordered_electrodes()
 
       plot_signal_data(
@@ -805,7 +806,8 @@ module_server <- function(input, output, session, ...){
         analysis_time_frequencies = pipeline$get_settings()$analysis_time_frequencies,
         soz_electrodes = soz_electrodes,
         resect_electrodes = resect_electrodes,
-        ordered = ordered)
+        ordered = ordered,
+        name_type = heatmap_name_type)
     })
   )
 

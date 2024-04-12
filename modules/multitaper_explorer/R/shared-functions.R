@@ -363,8 +363,10 @@ plot_signal_data <- function(repository,
                              time_windows,
                              reference,
                              analysis_time_frequencies,
-                             soz_electrodes = NULL, resect_electrodes = NULL, ordered = FALSE) {
+                             soz_electrodes = NULL, resect_electrodes = NULL, ordered = FALSE,
+                             name_type = c("name", "number")) {
   # Extract necessary variables
+  name_type <- match.arg(name_type)
   condition <- condition
   plot_electrodes <- dipsaus::parse_svec(load_electrodes)
   time_window <- as.numeric(time_windows)
@@ -423,6 +425,13 @@ plot_signal_data <- function(repository,
   is_soz <- electrode_table$Electrode %in% soz_electrodes
   is_resect <- electrode_table$Electrode %in% resect_electrodes
 
+  # determine the y-axis labels
+  if( name_type == "name" ) {
+    y_labels <- electrode_table$Label
+  } else {
+    y_labels <- electrode_table$Electrode
+  }
+
   if (ordered == TRUE & (length(soz_electrodes) > 0 | length(resect_electrodes) > 0) ) {
     all_electrodes <- unique(c(soz_electrodes, resect_electrodes))
     selected_columns <- match(rev(all_electrodes), rev(electrode_table$Electrode))
@@ -434,6 +443,8 @@ plot_signal_data <- function(repository,
     selected_columns <- na.omit(selected_columns)
     elec_order_temp_ordered <- elec_names_plot[selected_columns]
     elec_names_plot <- c(elec_order_temp_ordered, elec_names_plot[-selected_columns])
+    y_labels_ordered <- y_labels[selected_columns]
+    y_labels <- c(y_labels_ordered, y_labels[-selected_columns])
     is_soz <- elec_names_plot %in% soz_electrodes
     is_resect <- elec_names_plot %in% resect_electrodes
   }
@@ -465,6 +476,8 @@ plot_signal_data <- function(repository,
 
   # Reverse the order of electrode names
   elec_names_plot <- rev(elec_names_plot)
+  y_labels <- rev(y_labels)
+
 
   # Set up ticks and positions for the y-axis
   num_ticks <- 7
@@ -481,24 +494,31 @@ plot_signal_data <- function(repository,
   # Set up ticks for the x-axis
   axis(side = 1, at = tick_positions, labels = elect[tick_positions])
 
+  # Set up colors based on conditions
+  y_colors <- rep("black", length(y_labels))
+  y_colors[is_soz & !is_resect] <- "#00bfff"  # Blue for is_soz
+  y_colors[is_resect & !is_soz] <- "#bf00ff"  # Purple for is_resect
+  y_colors[is_soz & is_resect] <- "green"     # Green for both is_soz and is_resect
+
+
   is_soz <- rev(is_soz)
   is_resect <- rev(is_resect)
   # Set up labels for the y-axis in reverse order
-  y_labels_tmp <- elec_names_plot
+  y_labels_tmp <- y_labels
   y_labels_tmp[is_soz | is_resect] <- ""
-  graphics::axis(side = 2, at = rev(seq_along(elec_names_plot) - 1) * gaps, labels = y_labels_tmp, las = 1)
+  graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1)
 
-  y_labels_tmp <- elec_names_plot
-  y_labels_tmp[!is_soz] <- ""
-  graphics::axis(side = 2, at = rev(seq_along(elec_names_plot) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "#00bfff")
-
-  y_labels_tmp <- elec_names_plot
-  y_labels_tmp[!is_resect] <- ""
-  graphics::axis(side = 2, at = rev(seq_along(elec_names_plot) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "#bf00ff")
-
-  y_labels_tmp <- elec_names_plot
+  y_labels_tmp <- y_labels
   y_labels_tmp[!is_resect & !is_soz] <- ""
-  graphics::axis(side = 2, at = rev(seq_along(elec_names_plot) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "green")
+  graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "green")
+
+  y_labels_tmp <- y_labels
+  y_labels_tmp[!is_soz] <- ""
+  graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "#00bfff")
+
+  y_labels_tmp <- y_labels
+  y_labels_tmp[!is_resect] <- ""
+  graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "#bf00ff")
 
 
   # Set up ticks for the x-axis
