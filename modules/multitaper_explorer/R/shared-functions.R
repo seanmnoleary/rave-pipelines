@@ -210,7 +210,8 @@ generate_power_over_time_data <- function(
     end_time_baseline,
     decibal
 ) {
-  start_time_baseline = 0
+
+  start_time_baseline <- 0
 
   # get header information
   meta <- multitaper_result$get_header("extra")

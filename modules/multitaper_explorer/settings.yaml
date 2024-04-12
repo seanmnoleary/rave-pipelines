@@ -65,9 +65,9 @@ plot_SOZ_elec: no
 label: numeric
 organize_top: no
 text_size: 5.0
-decibal: no
+decibal: yes
 baseline: 30s before sz1 (1)
 scale: None
-baselined: no
-start_time_baseline: 0
-end_time_baseline: ~
+baselined: yes
+start_time_baseline: 0.0
+end_time_baseline: 10

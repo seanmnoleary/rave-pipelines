@@ -205,7 +205,7 @@ module_html <- function(){
                 shidashi::flex_container(
                   shidashi::flex_item(
                     shiny::numericInput(
-                      inputId = ns("baseline_start"),
+                      inputId = ns("baseline_end"),
                       label = "Baseline duration:",
                       value = 0, width = "100%"
                     )
