@@ -580,7 +580,6 @@ module_server <- function(input, output, session, ...){
     1000
   )
 
-
   get_soz_electrodes <- shiny::debounce(
     shiny::reactive({
       if(!isTRUE(input$hm_showSOZ)) { return(integer()) }
@@ -759,9 +758,7 @@ module_server <- function(input, output, session, ...){
   )
 
 
-
   # ---- Events : END ------------------------------------------
-
 
 
   # ---- Output renderers: BEGIN ------------------------------------------
@@ -790,7 +787,6 @@ module_server <- function(input, output, session, ...){
       # soz_electrodes <- get_soz_electrodes()
       # resect_electrodes <- get_resect_electrodes()
       # ordered <- ordered_electrodes()
-      condition <- input$condition
       soz_electrodes <- get_soz_electrodes()
       resect_electrodes <- get_resect_electrodes()
       heatmap_name_type <- ifelse(isTRUE(input$hm_label), "name", "number")
@@ -800,7 +796,7 @@ module_server <- function(input, output, session, ...){
         repository = component_container$data$repository,
         load_electrodes = pipeline$get_settings()$load_electrodes,
         subject = pipeline$get_settings()$subject,
-        condition = pipeline$get_settings()$condition,
+        condition = input$condition,
         time_windows = pipeline$get_settings()$time_window,
         reference = pipeline$get_settings()$reference_name,
         analysis_time_frequencies = pipeline$get_settings()$analysis_time_frequencies,
@@ -964,6 +960,14 @@ module_server <- function(input, output, session, ...){
         }
       }
 
+      plot_data <- generate_3dviewer_data(
+        heatmap_result,
+        trial = input$condition
+      )
+      if(length(plot_data)) {
+        has_plot_data <- TRUE
+      }
+
       use_template_brain <- FALSE
       soz_electrodes <- dipsaus::parse_svec(soz_electrodes)
       resect_electrodes <- dipsaus::parse_svec(resect_electrodes)
@@ -1048,7 +1052,7 @@ module_server <- function(input, output, session, ...){
 
             palettes[[nm]] <- cols
             if(length(v)) {
-              val_ranges[[nm]] <- c(0, max(v))
+              val_ranges[[nm]] <- c(min(v), max(v))
             }
           }
         }
