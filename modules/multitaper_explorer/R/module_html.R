@@ -323,7 +323,7 @@ module_html <- function(){
                     ),
                     shiny::checkboxInput(
                       inputId = ns("hm_decibal"),
-                      label = "Units: Decibals (dB)",
+                      label = "Units: Decibels (dB)",
                       value = FALSE
                     )
                   ),

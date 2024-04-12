@@ -78,7 +78,11 @@ plot_signal <- plot_signal_data(repository,
                                 condition = condition, 
                                 time_windows = time_window, 
                                 reference = reference_name,
-                                analysis_time_frequencies = analysis_time_frequencies)
+                                analysis_time_frequencies = analysis_time_frequencies,
+                                soz_electrodes = soz_electrodes,
+                                resect_electrodes = resect_electrodes,
+                                ordered = ordered
+                                )
 ```
 
 #### Step 6: Visualize Heatmaps for all the generated spectral ranges for a specific condition

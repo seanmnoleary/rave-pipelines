@@ -264,7 +264,9 @@ rm(._._env_._.)
             .__target_expr__. <- quote({
                 plot_signal <- plot_signal_data(repository, load_electrodes = load_electrodes, 
                   subject = subject, condition = condition, time_windows = time_window, 
-                  reference = reference_name, analysis_time_frequencies = analysis_time_frequencies)
+                  reference = reference_name, analysis_time_frequencies = analysis_time_frequencies, 
+                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                  ordered = ordered)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -279,15 +281,19 @@ rm(._._env_._.)
                   plot_signal <- plot_signal_data(repository, 
                     load_electrodes = load_electrodes, subject = subject, 
                     condition = condition, time_windows = time_window, 
-                    reference = reference_name, analysis_time_frequencies = analysis_time_frequencies)
+                    reference = reference_name, analysis_time_frequencies = analysis_time_frequencies, 
+                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                    ordered = ordered)
                 }
                 plot_signal
             }), target_depends = c("repository", "load_electrodes", 
             "subject", "condition", "time_window", "reference_name", 
-            "analysis_time_frequencies")), deps = c("repository", 
-        "load_electrodes", "subject", "condition", "time_window", 
-        "reference_name", "analysis_time_frequencies"), cue = targets::tar_cue("always"), 
-        pattern = NULL, iteration = "list"), generate_data_for_heatmap = targets::tar_target_raw(name = "plot_heatmap", 
+            "analysis_time_frequencies", "soz_electrodes", "resect_electrodes", 
+            "ordered")), deps = c("repository", "load_electrodes", 
+        "subject", "condition", "time_window", "reference_name", 
+        "analysis_time_frequencies", "soz_electrodes", "resect_electrodes", 
+        "ordered"), cue = targets::tar_cue("always"), pattern = NULL, 
+        iteration = "list"), generate_data_for_heatmap = targets::tar_target_raw(name = "plot_heatmap", 
         command = quote({
             .__target_expr__. <- quote({
                 plot_heatmap <- plot_power_over_time_data(heatmap_result, 

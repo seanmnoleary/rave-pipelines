@@ -791,6 +791,9 @@ module_server <- function(input, output, session, ...){
       # resect_electrodes <- get_resect_electrodes()
       # ordered <- ordered_electrodes()
       condition <- input$condition
+      soz_electrodes <- get_soz_electrodes()
+      resect_electrodes <- get_resect_electrodes()
+      ordered <- ordered_electrodes()
 
       plot_signal_data(
         repository = component_container$data$repository,
@@ -799,8 +802,10 @@ module_server <- function(input, output, session, ...){
         condition = pipeline$get_settings()$condition,
         time_windows = pipeline$get_settings()$time_window,
         reference = pipeline$get_settings()$reference_name,
-        analysis_time_frequencies = pipeline$get_settings()$analysis_time_frequencies
-      )
+        analysis_time_frequencies = pipeline$get_settings()$analysis_time_frequencies,
+        soz_electrodes = soz_electrodes,
+        resect_electrodes = resect_electrodes,
+        ordered = ordered)
     })
   )
 

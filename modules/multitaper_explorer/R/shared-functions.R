@@ -362,7 +362,8 @@ plot_signal_data <- function(repository,
                              condition,
                              time_windows,
                              reference,
-                             analysis_time_frequencies) {
+                             analysis_time_frequencies,
+                             soz_electrodes = NULL, resect_electrodes = NULL, ordered = FALSE) {
   # Extract necessary variables
   condition <- condition
   plot_electrodes <- dipsaus::parse_svec(load_electrodes)
@@ -410,14 +411,35 @@ plot_signal_data <- function(repository,
   collapsed_trials_matrix <- collapsed_trials_matrix[, subset_index]
   elect <- elect[subset_index]
 
-  # Define the data and gaps
-  plotData <- data.frame(t(collapsed_trials_matrix))
+
+  # Prepare data for ordering
   elec_names_plot <- as.character(plot_electrodes)
-  colnames(plotData) <- plot_electrodes
+  rownames(collapsed_trials_matrix) <- plot_electrodes
+
+  # Get SOZ electrodes for coloring/ordering
+  electrode_table <- repository$electrode_table
+  soz_electrodes <- dipsaus::parse_svec(soz_electrodes)
+  resect_electrodes <- dipsaus::parse_svec(resect_electrodes)
+  is_soz <- electrode_table$Electrode %in% soz_electrodes
+  is_resect <- electrode_table$Electrode %in% resect_electrodes
+
+  if (ordered == TRUE & (length(soz_electrodes) > 0 | length(resect_electrodes) > 0) ) {
+    all_electrodes <- unique(c(soz_electrodes, resect_electrodes))
+    selected_columns <- match(rev(all_electrodes), rev(electrode_table$Electrode))
+    selected_columns <- na.omit(selected_columns)
+    collapsed_trials_matrix_ordered <- collapsed_trials_matrix[selected_columns, ]
+    remaining_columns <- collapsed_trials_matrix[-selected_columns, ]
+    collapsed_trials_matrix <- rbind(remaining_columns, collapsed_trials_matrix_ordered)
+    selected_columns <- match(all_electrodes, electrode_table$Electrode)
+    selected_columns <- na.omit(selected_columns)
+    elec_order_temp_ordered <- elec_names_plot[selected_columns]
+    elec_names_plot <- c(elec_order_temp_ordered, elec_names_plot[-selected_columns])
+    is_soz <- elec_names_plot %in% soz_electrodes
+    is_resect <- elec_names_plot %in% resect_electrodes
+  }
 
   # Define the data and gaps
   plotData <- data.frame(t(collapsed_trials_matrix))
-  elec_names_plot <- as.character(plot_electrodes)
   colnames(plotData) <- plot_electrodes
 
   gaps <- 1
@@ -456,12 +478,31 @@ plot_signal_data <- function(repository,
     lines(plotData[, i])
   }
 
-  # Set up labels for the y-axis in reverse order
-  axis(2, at = rev(seq_along(elec_names_plot) - 1) * gaps,
-       labels = elec_names_plot, las = 1)
-
   # Set up ticks for the x-axis
   axis(side = 1, at = tick_positions, labels = elect[tick_positions])
+
+  is_soz <- rev(is_soz)
+  is_resect <- rev(is_resect)
+  # Set up labels for the y-axis in reverse order
+  y_labels_tmp <- elec_names_plot
+  y_labels_tmp[is_soz | is_resect] <- ""
+  graphics::axis(side = 2, at = rev(seq_along(elec_names_plot) - 1) * gaps, labels = y_labels_tmp, las = 1)
+
+  y_labels_tmp <- elec_names_plot
+  y_labels_tmp[!is_soz] <- ""
+  graphics::axis(side = 2, at = rev(seq_along(elec_names_plot) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "#00bfff")
+
+  y_labels_tmp <- elec_names_plot
+  y_labels_tmp[!is_resect] <- ""
+  graphics::axis(side = 2, at = rev(seq_along(elec_names_plot) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "#bf00ff")
+
+  y_labels_tmp <- elec_names_plot
+  y_labels_tmp[!is_resect & !is_soz] <- ""
+  graphics::axis(side = 2, at = rev(seq_along(elec_names_plot) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "green")
+
+
+  # Set up ticks for the x-axis
+  graphics::axis(side = 1, at = tick_positions, labels = elect[tick_positions])
 
 
 }
