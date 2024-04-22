@@ -7,248 +7,6 @@ get_default_cores <- function(round = TRUE) {
   re
 }
 
-# Generate multitaper for every condition
-generate_multitaper <- function (repository, load_electrodes, frequency_range,
-                                 time_bandwidth, num_tapers, window_params, min_nfft,
-                                 weighting, detrend_opt, parallel) {
-  fs <- repository$sample_rate
-  elecn <- dipsaus::parse_svec(load_electrodes)
-  nel <- length(elecn)
-
-  voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
-
-  # Generate data format for storing epochs and corresponding voltage data
-  conditions <- repository$epoch_table$Condition
-  df <- data.frame(Conditions = conditions)
-
-  pCNT <- 1
-
-  for(condition in conditions) {
-
-    spectrogram_list <- vector("list", length(elecn))
-    cnt <- 1
-
-
-    for(e in elecn) {
-      cat(paste0(repository$subject$subject_code, " Progress: ", floor(pCNT / (length(elecn) * length(conditions)) * 100), "%\n"))
-
-      pCNT <- pCNT + 1
-      #Get voltage data
-      voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", e)]]
-
-      #collapse voltage for selected condition
-      selector <- repository$epoch_table$Condition %in% c(condition)
-      if(!any(selector)) {
-        stop("Invalid condition selected.")
-      }
-      trial_list <- repository$epoch_table$Trial[selector]
-      selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
-      collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
-
-      # Compute the multitaper spectrogram
-      results = multitaper_spectrogram_R(collapsed_trial, fs, frequency_range, time_bandwidth, num_tapers, window_params,
-                                         min_nfft, weighting, detrend_opt, parallel, num_workers,
-                                         plot_on=FALSE, verbose=FALSE, xyflip=FALSE)
-
-      spect <- results
-      spectrogram_list[[cnt]] <- spect
-      cnt <- cnt + 1
-    }
-
-    #add condition to output
-    row_index <- which(df$Conditions == condition)
-    df$MultitaperData[row_index] <- list(spectrogram_list)
-  }
-
-  epoch_table <- repository$epoch_table
-  df$Conditions <- sprintf("%s (%s)", df$Conditions, epoch_table$Trial)
-  return(df)
-}
-## generate HFO multitaper
-## Code for computing beta power matrix
-generate_heatmap <- function(repository, multitaper_result, time_window,
-                             analysis_windows, load_electrodes,
-                             window_params, condition, label, normalize) {
-
-  fs <- repository$sample_rate
-  results <- parse_electrodes(load_electrodes)
-  nel <- results$nel
-  elecn <-results$elecn
-
-  row_index <- which(multitaper_result$Conditions == condition)
-  spectrogram_list <- multitaper_result$MultitaperData[row_index]
-
-  voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
-  fs <- repository$sample_rate
-  time_dimnames <- dimnames(voltage_for_analysis)$Time
-  nt <- length(time_dimnames)
-  nwt <- floor((nt/fs-as.numeric(window_params[1]))/as.numeric(window_params[2]))+1
-  t1 <- as.numeric(time_window[1])
-  t2 <- as.numeric(time_window[2])
-  elect <- seq(t1, t2, length.out = nwt)
-
-  freq_start <- 80
-  freq_end <- 250
-
-  heatmapbeta=zeros(nel,nwt)
-
-  cnt <- 1
-
-  for(e in elecn) {
-    spec <- spectrogram_list[[1]][[cnt]]
-    specR <- spec[[1]]
-    specF <- spec[[3]]
-    freq_start_index <- which.min(abs(specF - freq_start))
-    freq_end_index  <- which.min(abs(specF - freq_end))
-    spectb = specR[freq_start_index:freq_end_index,]
-    betaie=colMeans(spectb)
-    heatmapbeta[cnt,1:nwt]=betaie[1:nwt]
-    cnt <- cnt + 1
-  }
-
-  heatmapbetacol=zeros(nel,nwt)
-
-  # Normalization
-  if (normalize == TRUE) {
-    maxheatBeta <- max(heatmapbeta)
-    heatmapbetcorresponding_labelsan <- heatmapbeta / maxheatBeta
-
-    maxcolbetap <- apply(heatmapbeta, 2, max)
-
-    for (it in 1:nwt) {
-      for (ie in 1:nel) {
-        heatmapbetacol[ie, it] <- heatmapbeta[ie, it] / maxcolbetap[it]
-      }
-    }
-  } else {
-    heatmapbetacol <- heatmapbeta
-  }
-
-  #Prepare Data ----
-  heatmapbetacol <- cbind(elecn, heatmapbetacol)
-  heatmapbetacol <- t(heatmapbetacol)
-  # Extract the first row as column names
-  if (label == "numeric") {
-    colnames(heatmapbetacol) <- heatmapbetacol[1, ]
-  } else if (label == "names") {
-    colnames(heatmapbetacol) <- repository$electrode_table$Label[which(heatmapbetacol[1, ]==repository$electrode_table$Electrode)]
-  }
-
-  # Remove the first row
-  heatmapbetacol <- heatmapbetacol[-1, ]
-  # Add the times column
-  heatmapbetacol <- cbind(elect, heatmapbetacol)
-  colnames(heatmapbetacol)[1] <- "stimes"
-
-  return(heatmapbetacol)
-}
-
-# Code for generating heatmap plot for a specific freq heatmap
-plot_heatmap <- function(heatmapbetacol, SOZ_elec, plot_SOZ_elec, resect_elec, plot_resect_elec, name_type,
-                         organize_top, repository, subject_code, analysis_windows, index, text_size) {
-
-  time_list <- list()
-  for (i in seq_along(analysis_windows)) {
-    time_list_name <- paste0("t", i)
-    time_list[[time_list_name]] <- analysis_windows[[i]]$time_range
-  }
-
-  # extract time values
-  time_temp <- time_list[[index]]
-  time_start <-time_temp[[1]]
-  time_end <- time_temp[[2]]
-
-  #remove rows in stimes with values less than time_start and greater than time_end
-  heatmapbetacol <- heatmapbetacol[heatmapbetacol[, "stimes"] >= time_start & heatmapbetacol[, "stimes"] <= time_end, ]
-
-  # Generate list of SOZ electrodes
-  results_soz <- parse_electrodes(SOZ_elec)
-  soz_elec <- results_soz$elecn
-
-  # Generate list of Resect electrodes
-  results_resect <- parse_electrodes(resect_elec)
-  resect_elec <- results_resect$elecn
-
-  electrode_table<- repository$electrode_table
-
-  #Validate only correct SOZ_elec and resect_elec were input
-  soz_elec <- soz_elec[soz_elec %in% electrode_table$Electrode]
-  resect_elec <- resect_elec[resect_elec %in% electrode_table$Electrode]
-
-  if (name_type == "names") {
-    #change soz_elec
-    indices <- which(electrode_table$Electrode %in% soz_elec)
-    corresponding_labels <- electrode_table$Label[indices]
-    soz_elec <- corresponding_labels
-    #change resect_elec
-    indices <- which(electrode_table$Electrode %in% resect_elec)
-    corresponding_labels <- electrode_table$Label[indices]
-    resect_elec <- corresponding_labels
-  }
-
-  # Plot ----
-  data <- as.data.frame(heatmapbetacol)
-  stimes <- data$stimes
-  data <- data[ ,-1]
-  elecnum <- colnames(data)
-
-  # Reorder electrodes if organize_top is TRUE
-  if (organize_top) {
-    # Intersecting electrodes between soz_elec and resect_elec
-    intersect_electrodes <- intersect(soz_elec, resect_elec)
-
-    # Electrodes in soz_elec not in resect_elec
-    unique_soz_elec <- setdiff(soz_elec, resect_elec)
-
-    # Electrodes in resect_elec not in soz_elec
-    unique_resect_elec <- setdiff(resect_elec, soz_elec)
-
-    # Combine the lists while ensuring no duplicates
-    ordered_electrodes <- unique(c(unique_resect_elec, intersect_electrodes, unique_soz_elec))
-
-    # Add remaining electrodes that are not in soz_elec or resect_elec
-    all_electrodes <- setdiff(elecnum, ordered_electrodes)
-    ordered_electrodes <- unique(c(ordered_electrodes, all_electrodes))
-
-    # Reorder the rows of the data matrix based on the order of electrodes
-    reordered_indices <- match(ordered_electrodes, elecnum)
-    heatmapbetacol <- as.matrix(data[, reordered_indices, drop = FALSE])
-  } else {
-    ordered_electrodes <- elecnum
-    heatmapbetacol <- as.matrix(data)
-  }
-
-
-  heatmap_data <- expand.grid(Time = stimes, Electrode = factor(ordered_electrodes, levels = ordered_electrodes))
-  heatmap_data$Value <- c(heatmapbetacol)
-
-  # Define a custom function to change color of SOZ electrodes
-  color_electrodes <- function(electrode) {
-    if ((electrode %in% resect_elec) & (electrode %in% soz_elec) & plot_SOZ_elec == TRUE & plot_resect_elec == TRUE) {
-      return("purple")
-    } else if ((electrode %in% resect_elec) & plot_resect_elec == TRUE) {
-      return("blue")
-    } else if ((electrode %in% soz_elec) & plot_SOZ_elec == TRUE) {
-      return("red")
-    } else {
-      return("black")
-    }
-  }
-
-  plot <- ggplot(heatmap_data, aes(x = Time, y = Electrode, fill = Value)) +
-    geom_tile() +
-    labs(x = "Time (s)", y = "Electrode", title = subject_code) +
-    scale_fill_viridis(option = "turbo") +
-    theme_minimal() +
-    theme(
-      axis.text.x = element_text(size = text_size),
-      axis.text.y = element_text(size = text_size, color = sapply(levels(heatmap_data$Electrode), color_electrodes)),
-      plot.title = element_text(hjust = 0.5)
-    )
-
-  return(plot)
-}
-
 # Multitaper Spectrogram #
 multitaper_spectrogram_R <- function(data, fs, frequency_range=NULL, time_bandwidth=5, num_tapers=NULL, window_params=c(5,1),
                                      min_nfft=0, weighting='unity', detrend_opt='linear', parallel=FALSE, num_workers=FALSE,
@@ -720,5 +478,450 @@ calc_mts_segment <- function(data_segment, dpss_tapers, nfft, freq_inds, weighti
   }
 
   return(mt_spectrum[freq_inds])
+}
+
+plot_DC_shift <- function(repository,
+                             load_electrodes,
+                             subject,
+                             condition,
+                             time_windows,
+                             reference,
+                             soz_electrodes = NULL, resect_electrodes = NULL, ordered = FALSE,
+                             name_type = c("name", "number"),
+                             baseline_end = baseline_end,
+                             condition_baseline = baseline) {
+  # Extract necessary variables
+  name_type <- match.arg(name_type)
+  condition <- condition
+  plot_electrodes <- dipsaus::parse_svec(load_electrodes)
+  elecn <- dipsaus::parse_svec(load_electrodes)
+  fs <- repository$sample_rate
+  nel <- length(elecn)
+  baseline_start <- 0
+
+  # extract time values
+
+  #Later adjust index we only need one plot so we will not need to subset
+  index <- 1
+
+  time_start <- as.numeric(time_window[1])
+  time_end <- as.numeric(time_window[2])
+
+  voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", plot_electrodes[1])]]
+  condition <- gsub("\\s\\(\\d+\\)", "", condition)
+  selector <- repository$epoch_table$Condition %in% c(condition)
+  if(!any(selector)) {
+    stop("Invalid condition selected.")
+  }
+  trial_list <- repository$epoch_table$Trial[selector]
+  selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
+  collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
+
+  collapsed_trials_matrix <- matrix(nrow = 0, ncol = length(collapsed_trial))
+
+  # Loop through each 'e' in 'elecn'
+  for(e in elecn) {
+    voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", e)]]
+    #collapse voltage for selected condition
+    condition <- gsub("\\s\\(\\d+\\)", "", condition)
+    selector <- repository$epoch_table$Condition %in% c(condition)
+    if(!any(selector)) {
+      stop("Invalid condition selected.")
+    }
+    trial_list <- repository$epoch_table$Trial[selector]
+    selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
+    collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
+    collapsed_trial <- t(matrix(collapsed_trial))
+    collapsed_trials_matrix <- rbind(collapsed_trials_matrix, collapsed_trial)
+  }
+
+  electrode_names <- rev(repository$electrode_table$Electrode)
+  collapsed_trials_matrix <- collapsed_trials_matrix[rev(1:nrow(collapsed_trials_matrix)), ]
+
+  t1 <- as.numeric(time_window[1])
+  t2 <- as.numeric(time_window[2])
+  elect <- seq(t1, t2, length.out = ncol(collapsed_trials_matrix))
+
+  subset_index <- (elect >= time_start) & (elect <= time_end)
+  signal_matrix <- collapsed_trials_matrix[, subset_index]
+  elect <- elect[subset_index]
+
+  # Get signal data for baseline condition_baseline
+  voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
+  condition_baseline <- gsub("\\s\\(\\d+\\)", "", condition_baseline)
+  selector <- repository$epoch_table$Condition %in% c(condition_baseline)
+  if(!any(selector)) {
+    stop("Invalid condition_baseline selected.")
+  }
+
+  trial_list <- repository$epoch_table$Trial[selector]
+  selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
+  collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
+
+  collapsed_trials_matrix <- matrix(nrow = 0, ncol = length(collapsed_trial))
+
+  # Loop through each 'e' in 'elecn'
+  for(e in elecn) {
+    voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", e)]]
+    #collapse voltage for selected condition_baseline
+    condition_baseline <- gsub("\\s\\(\\d+\\)", "", condition_baseline)
+    selector <- repository$epoch_table$Condition %in% c(condition_baseline)
+    if(!any(selector)) {
+      stop("Invalid condition_baseline selected.")
+    }
+    trial_list <- repository$epoch_table$Trial[selector]
+    selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
+    collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
+    collapsed_trial <- t(matrix(collapsed_trial))
+    collapsed_trials_matrix <- rbind(collapsed_trials_matrix, collapsed_trial)
+  }
+
+  collapsed_trials_matrix <- collapsed_trials_matrix[rev(1:nrow(collapsed_trials_matrix)), ]
+
+  t1 <- as.numeric(time_window[1])
+  t2 <- as.numeric(time_window[2])
+  elect <- seq(t1, t2, length.out = ncol(collapsed_trials_matrix))
+  subset_index <- (elect >= baseline_start) & (elect <= baseline_end)
+  baseline_signal_matrix <- collapsed_trials_matrix[, subset_index]
+
+  # Butterworth low-pass filter to isolate DC component
+  fpass <- 1
+  wpass <- fpass / (fs / 2)
+  but <- butter(5, wpass, type = "low")
+  lt2 <- 2 * fs
+
+  # Threshold for DC detection
+  maxelec <- max(signal_matrix)
+  # thresholdn <- -maxelec / 10
+  # thresholdp <- maxelec / 10
+  thresholdn <- -maxelec * 0.5
+  thresholdp <- maxelec * 0.5
+
+  # Initialize vectors based on the number of signals (rows in signal_matrix)
+  ntep <- ncol(signal_matrix)
+  n_signals <- nrow(signal_matrix)
+  sige <- vector("numeric", length = ntep)
+  testdc <- vector("numeric", length = n_signals)
+  lengthdc <- vector("numeric", length = n_signals)
+  maxdc <- vector("numeric", length = n_signals)
+  startdc <- vector("numeric", length = n_signals)  # Add this line
+
+  resdc <- matrix(0,nel,4)
+
+  for (i in 1:n_signals) {
+    # Positive and Negative DC Shift Detection
+    sige <- signal_matrix[i, ]
+    sigedc <- filter(but, sige) - mean(baseline_signal_matrix)
+    pos_shift_idx <- which(sigedc > thresholdp)
+    neg_shift_idx <- which(sigedc < thresholdn)
+
+    # Process positive shifts
+    if (length(pos_shift_idx) > 0) {
+      resultdc_pos <- rle(diff(pos_shift_idx))
+      dclengthp <- max(resultdc_pos$lengths)
+      if (dclengthp > lt2) {
+        testdc[i] <- 1
+        lengthdc[i] <- dclengthp
+        maxdc[i] <- max(sigedc[pos_shift_idx])
+        startdc[i] <- pos_shift_idx[1]
+      }
+    }
+
+    # Process negative shifts
+    if (length(neg_shift_idx) > 0) {
+      resultdc_neg <- rle(diff(neg_shift_idx))
+      dclengthn <- max(resultdc_neg$lengths)
+      if (dclengthn > lt2) {
+        testdc[i] <- 1
+        if (dclengthn > lengthdc[i]) {
+          lengthdc[i] <- dclengthn
+          maxdc[i] <- max(abs(sigedc[neg_shift_idx]))
+          startdc[i] <- neg_shift_idx[1]
+        }
+      }
+    }
+    resdc[i, 1] <- testdc[i]
+    resdc[i, 2] <- lengthdc[i]
+    resdc[i, 3] <- maxdc[i]
+    resdc[i, 4] <- startdc[i]
+  }
+
+
+  colnames(resdc) <- c("DC", "Length", "Max", "Start")
+  resdc <- data.frame(resdc)
+  rownames(resdc) <- electrode_names
+
+  top<- resdc[resdc$DC>0,]
+
+  ## Edit plotting data ##
+
+  collapsed_trials_matrix <- signal_matrix
+
+  electrode_names <- repository$electrode_table$Electrode
+  rownames(collapsed_trials_matrix) <- rev(electrode_names)
+
+  t1 <- as.numeric(time_window[1])
+  t2 <- as.numeric(time_window[2])
+  elect <- seq(t1, t2, length.out = ncol(collapsed_trials_matrix))
+
+  # Use analysis windows for this
+  subset_index <- (elect >= t1) & (elect <= t2)
+  collapsed_trials_matrix <- collapsed_trials_matrix[, subset_index]
+  elect <- elect[subset_index]
+
+
+  # Prepare data for ordering
+  elec_names_plot <- as.character(plot_electrodes)
+  rownames(collapsed_trials_matrix) <- plot_electrodes
+
+  # Get SOZ electrodes for coloring/ordering
+  electrode_table <- repository$electrode_table
+  soz_electrodes <- dipsaus::parse_svec(soz_electrodes)
+  resect_electrodes <- dipsaus::parse_svec(resect_electrodes)
+  is_soz <- electrode_table$Electrode %in% soz_electrodes
+  is_resect <- electrode_table$Electrode %in% resect_electrodes
+
+  # determine the y-axis labels
+  if( name_type == "name" ) {
+    y_labels <- electrode_table$Label
+  } else {
+    y_labels <- electrode_table$Electrode
+  }
+
+  if (ordered == TRUE & (length(soz_electrodes) > 0 | length(resect_electrodes) > 0) ) {
+    all_electrodes <- unique(c(soz_electrodes, resect_electrodes))
+    selected_columns <- match(rev(all_electrodes), rev(electrode_table$Electrode))
+    selected_columns <- na.omit(selected_columns)
+    collapsed_trials_matrix_ordered <- collapsed_trials_matrix[selected_columns, ]
+    remaining_columns <- collapsed_trials_matrix[-selected_columns, ]
+    collapsed_trials_matrix <- rbind(remaining_columns, collapsed_trials_matrix_ordered)
+    selected_columns <- match(all_electrodes, electrode_table$Electrode)
+    selected_columns <- na.omit(selected_columns)
+    elec_order_temp_ordered <- elec_names_plot[selected_columns]
+    elec_names_plot <- c(elec_order_temp_ordered, elec_names_plot[-selected_columns])
+    y_labels_ordered <- y_labels[selected_columns]
+    y_labels <- c(y_labels_ordered, y_labels[-selected_columns])
+    is_soz <- elec_names_plot %in% soz_electrodes
+    is_resect <- elec_names_plot %in% resect_electrodes
+  }
+
+  # Define the data and gaps
+  plotData <- data.frame(t(collapsed_trials_matrix))
+  colnames(plotData) <- plot_electrodes
+
+  gaps <- 1
+
+  # Loop through each electrode
+  for (i in seq_along(plotData)) {
+    # Adjust the data for each electrode
+    plotData[, i] <- (plotData[, i] - mean(plotData[, i])) +
+      (ncol(plotData) - i) * gaps
+  }
+
+  ############## save group of electrodes
+  scalingdata <- (max(plotData) / 2)
+  plotData <- plotData / scalingdata
+
+  gaps <- 2
+
+  for(i in seq_along(plotData)){
+    plotData[, i] <- (plotData[, i]- mean(plotData[, i]))+
+      (ncol(plotData)-i)*gaps
+  }
+
+  # Reverse the order of electrode names
+  elec_names_plot <- rev(elec_names_plot)
+  y_labels <- rev(y_labels)
+
+
+  # Set up ticks and positions for the y-axis
+  num_ticks <- 7
+  tick_positions <- seq(1, nrow(plotData), length.out = num_ticks)
+
+  # Plot the data
+  plot(plotData[, 1], type = "l", cex = 0.1,
+       ylim = range(plotData), yaxt = "n", xaxt = "n", xlab = paste("Time"),
+       ylab = paste("Electrode"))
+  for(i in 2:ncol(plotData)){
+    lines(plotData[, i])
+  }
+
+  # Set up ticks for the x-axis
+  axis(side = 1, at = tick_positions, labels = elect[tick_positions])
+
+  # Set up colors based on conditions
+  y_colors <- rep("black", length(y_labels))
+  y_colors[is_soz & !is_resect] <- "#00bfff"  # Blue for is_soz
+  y_colors[is_resect & !is_soz] <- "#bf00ff"  # Purple for is_resect
+  y_colors[is_soz & is_resect] <- "green"     # Green for both is_soz and is_resect
+
+  is_soz <- rev(is_soz)
+  is_resect <- rev(is_resect)
+  # Set up labels for the y-axis in reverse order
+  y_labels_tmp <- y_labels
+  y_labels_tmp[is_soz | is_resect] <- ""
+  graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1)
+
+  y_labels_tmp <- y_labels
+  y_labels_tmp[!is_resect & !is_soz] <- ""
+  graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "green")
+
+  y_labels_tmp <- y_labels
+  y_labels_tmp[!is_soz] <- ""
+  graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "#00bfff")
+
+  y_labels_tmp <- y_labels
+  y_labels_tmp[!is_resect] <- ""
+  graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "#bf00ff")
+
+  top_indices <- as.numeric(rownames(top))
+  matching_indices <- which(as.numeric(y_labels) %in% top_indices)
+
+  # Highlight top 3 rows in red
+  for (i in matching_indices) {
+    lines(plotData[, i], col = "red")
+  }
+
+  return(resdc)
+}
+
+# Code for generating heatmap plot for a specific freq heatmap
+HFO_matrix <- function(load_electrodes, SOZ_elec, resect_elec, repository, condition, time_window, label = "numeric", threshold) {
+
+  # Set spectrogram params
+  frequency_range <- c(80, 250)
+  time_bandwidth <- 3
+  num_tapers <- 5
+  window_params <- c(2.5, 0.5)
+  weighting <- 'unity'
+  detrend_opt <- 'linear'
+  parallel <- TRUE
+  min_nfft <- 0
+  num_workers <- 3
+
+  # Sample freq
+  sample_rate <- repository$sample_rate
+
+  elecn <- dipsaus::parse_svec(load_electrodes)
+  nel <- length(elecn)
+
+  voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
+  fs <- repository$sample_rate
+  time_dimnames <- dimnames(voltage_for_analysis)$Time
+  nt <- length(time_dimnames)
+  nwt <- floor((nt/fs-as.numeric(window_params[1]))/as.numeric(window_params[2]))+1
+  t1 <- as.numeric(time_window[1])
+  t2 <- as.numeric(time_window[2])
+  elect <- seq(t1, t2, length.out = nwt)
+
+  conditions <- repository$epoch_table$Condition
+  epoch_table <- repository$epoch_table
+  condition <- gsub("\\s*\\([^\\)]+\\)", "", sprintf("%s (%s)", condition, epoch_table$Trial))
+
+  # Calculate freq_start and freq_end
+  freq_temp <- frequency_range
+  freq_start <- as.numeric(freq_temp[1])
+  freq_end <- as.numeric(freq_temp[2])
+
+  time_dimnames <- dimnames(voltage_for_analysis)$Time
+  nt <- length(time_dimnames)
+  nwt <- floor((nt/fs-as.numeric(window_params[1]))/as.numeric(window_params[2]))+1
+
+  # Generate multitaper spectrogram and compute beta power matrix
+  spectrogram_list <- vector("list", length(elecn))
+  heatmapbeta <- matrix(0, nrow = length(elecn), ncol = nwt)
+
+  for (i in 1:length(elecn)) {
+    e <- elecn[i]
+    voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", e)]]
+    condition <- gsub("\\s\\(\\d+\\)", "", condition)
+    selector <- repository$epoch_table$Condition %in% c(condition)
+    if(!any(selector)) {
+      stop("Invalid condition selected.")
+    }
+    trial_list <- repository$epoch_table$Trial[selector]
+    selected_trial_data <- subset(voltage_for_analysis, Trial ~ Trial %in% trial_list)
+    collapsed_trial <- raveio::collapse2(selected_trial_data, keep = 1)
+    spectrogram_result <- multitaper_spectrogram_R(collapsed_trial, sample_rate, frequency_range, time_bandwidth, num_tapers, window_params,
+                                                   min_nfft, weighting, detrend_opt, parallel, num_workers,
+                                                   plot_on = FALSE, verbose = FALSE, xyflip = FALSE)
+    specR <- spectrogram_result[[1]]
+    specF <- spectrogram_result[[3]]
+    freq_start_index <- which.min(abs(specF - freq_start))
+    freq_end_index <- which.min(abs(specF - freq_end))
+    spectb <- specR[freq_start_index:freq_end_index,]
+    betaie <- colMeans(spectb)
+    heatmapbeta[i, 1:nwt] <- betaie[1:nwt]
+  }
+
+
+  # Normalize heatmapbeta
+  maxheatBeta=max(heatmapbeta)
+  heatmapbetcorresponding_labelsan=heatmapbeta/maxheatBeta
+
+  maxcolbetap=apply(heatmapbeta,2,max)
+
+  heatmapbetacol=zeros(nel,nwt)
+
+  for(it in 1:nwt){
+    for(ie in 1:nel){
+      heatmapbetacol[ie,it]=heatmapbeta[ie,it]/maxcolbetap[it]
+    }
+  }
+
+  heatmapbetacol <- t(heatmapbetacol)
+  heatmapbetacol <- cbind(elect, heatmapbetacol)
+  colnames(heatmapbetacol)[1] <- "stimes"
+
+  #remove rows in stimes with values less than time_start and greater than time_end
+  HMap <- heatmapbetacol[heatmapbetacol[, "stimes"] >=  time_window[1] & heatmapbetacol[, "stimes"] <= time_window[2], ]
+  HMap <- HMap[,-1]
+
+
+  electrode_table <- repository$electrode_table
+  soz_elec <- dipsaus::parse_svec(SOZ_elec)
+  resect_elec <- dipsaus::parse_svec(resect_elec)
+  soz_elec <- soz_elec[soz_elec %in% electrode_table$Electrode]
+  resect_elec <- resect_elec[resect_elec %in% electrode_table$Electrode]
+
+  # Identify HFO electrodes
+  maxlineelec <- apply(HMap, 2, max)
+  hfoelecp <- which(maxlineelec > threshold)
+  reshfo <- matrix(0, ncol(HMap), 1)
+  reshfo[hfoelecp, 1] <- 1
+  rownames(reshfo) <- elecn
+
+  #Plot heatmap
+  HMap_plot <- as.matrix(HMap)
+
+  heatmap_data <- expand.grid(Time = elect, Electrode = elecn)
+  heatmap_data$Value <- c(HMap_plot)
+
+  heatmap_data$High_HFO <- rep(reshfo[,1], each = length(elect))
+  heatmap_data$Electrode <- factor(heatmap_data$Electrode, levels = unique(heatmap_data$Electrode))
+
+  plot <- ggplot(heatmap_data, aes(x = Time, y = Electrode, fill = Value)) +
+    geom_tile() +
+    labs(x = "Time (s)", y = "") +  # Removing y-axis label since we'll add custom text labels
+    scale_fill_viridis(option = "turbo") +
+    theme_minimal() +
+    theme(
+      axis.text.y = element_blank(),  # Hide default y-axis text labels
+      axis.ticks.y = element_blank(), # Hide y-axis ticks to clean up the plot
+      plot.margin = margin(5, 5, 5, 5, "mm")  # Adjust plot margins if needed
+    ) +
+    scale_y_discrete(limits = heatmap_data$Electrode)
+
+  # Add custom y-axis labels with conditional coloring
+  plot <- plot + geom_text(data = heatmap_data, aes(y = Electrode, label = Electrode),
+                           x = min(heatmap_data$Time) - abs(diff(range(heatmap_data$Time))) * 0.05,
+                           hjust = 1,
+                           color = ifelse(heatmap_data$High_HFO == 1, "red", "black"),
+                           size = 1.5, inherit.aes = FALSE)
+
+  # Print the plot
+  print(plot)
+
+  return(reshfo)
 }
 

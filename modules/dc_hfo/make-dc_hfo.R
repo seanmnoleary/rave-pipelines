@@ -17,24 +17,23 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_time_stat_start = targets::tar_target_raw("time_stat_start", 
+    input_SOZ_elec = targets::tar_target_raw("SOZ_elec", quote({
+        settings[["SOZ_elec"]]
+    }), deps = "settings"), input_resect_elec = targets::tar_target_raw("resect_elec", 
         quote({
-            settings[["time_stat_start"]]
+            settings[["resect_elec"]]
+        }), deps = "settings"), input_plot_resect_elec = targets::tar_target_raw("plot_resect_elec", 
+        quote({
+            settings[["plot_resect_elec"]]
+        }), deps = "settings"), input_analysis_time_frequencies = targets::tar_target_raw("analysis_time_frequencies", 
+        quote({
+            settings[["analysis_time_frequencies"]]
         }), deps = "settings"), input_condition = targets::tar_target_raw("condition", 
         quote({
             settings[["condition"]]
-        }), deps = "settings"), input_save_pipeline = targets::tar_target_raw("save_pipeline", 
-        quote({
-            settings[["save_pipeline"]]
         }), deps = "settings"), input_reference = targets::tar_target_raw("reference", 
         quote({
             settings[["reference"]]
-        }), deps = "settings"), input_intervals = targets::tar_target_raw("intervals", 
-        quote({
-            settings[["intervals"]]
-        }), deps = "settings"), input_type = targets::tar_target_raw("type", 
-        quote({
-            settings[["type"]]
         }), deps = "settings"), input_window_params = targets::tar_target_raw("window_params", 
         quote({
             settings[["window_params"]]
@@ -80,51 +79,81 @@ rm(._._env_._.)
         }), deps = "settings"), input_load_electrodes = targets::tar_target_raw("load_electrodes", 
         quote({
             settings[["load_electrodes"]]
-        }), deps = "settings"), input_SOZ_elec = targets::tar_target_raw("SOZ_elec", 
+        }), deps = "settings"), input_selected_electrode = targets::tar_target_raw("selected_electrode", 
         quote({
-            settings[["SOZ_elec"]]
-        }), deps = "settings"), input_plot_SOZ_elec = targets::tar_target_raw("plot_SOZ_elec", 
-        quote({
-            settings[["plot_SOZ_elec"]]
+            settings[["selected_electrode"]]
         }), deps = "settings"), input_epoch_file_name = targets::tar_target_raw("epoch_file_name", 
         quote({
             settings[["epoch_file_name"]]
         }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
         quote({
             settings[["project_name"]]
+        }), deps = "settings"), input_soz_electrodes = targets::tar_target_raw("soz_electrodes", 
+        quote({
+            settings[["soz_electrodes"]]
+        }), deps = "settings"), input_resect_electrodes = targets::tar_target_raw("resect_electrodes", 
+        quote({
+            settings[["resect_electrodes"]]
+        }), deps = "settings"), input_heatmap_name_type = targets::tar_target_raw("heatmap_name_type", 
+        quote({
+            settings[["heatmap_name_type"]]
+        }), deps = "settings"), input_ordered = targets::tar_target_raw("ordered", 
+        quote({
+            settings[["ordered"]]
         }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
         quote({
             settings[["subject_code"]]
+        }), deps = "settings"), input_epoch_name = targets::tar_target_raw("epoch_name", 
+        quote({
+            settings[["epoch_name"]]
+        }), deps = "settings"), input_electrodes = targets::tar_target_raw("electrodes", 
+        quote({
+            settings[["electrodes"]]
+        }), deps = "settings"), input_time_windows = targets::tar_target_raw("time_windows", 
+        quote({
+            settings[["time_windows"]]
+        }), deps = "settings"), input_time_stat_end = targets::tar_target_raw("time_stat_end", 
+        quote({
+            settings[["time_stat_end"]]
+        }), deps = "settings"), input_time_stat_start = targets::tar_target_raw("time_stat_start", 
+        quote({
+            settings[["time_stat_start"]]
+        }), deps = "settings"), input_analysis_windows = targets::tar_target_raw("analysis_windows", 
+        quote({
+            settings[["analysis_windows"]]
+        }), deps = "settings"), input_plot_SOZ_elec = targets::tar_target_raw("plot_SOZ_elec", 
+        quote({
+            settings[["plot_SOZ_elec"]]
         }), deps = "settings"), input_label = targets::tar_target_raw("label", 
         quote({
             settings[["label"]]
         }), deps = "settings"), input_organize_top = targets::tar_target_raw("organize_top", 
         quote({
             settings[["organize_top"]]
-        }), deps = "settings"), input_analysis_windows = targets::tar_target_raw("analysis_windows", 
-        quote({
-            settings[["analysis_windows"]]
         }), deps = "settings"), input_text_size = targets::tar_target_raw("text_size", 
         quote({
             settings[["text_size"]]
-        }), deps = "settings"), input_resect_elec = targets::tar_target_raw("resect_elec", 
+        }), deps = "settings"), input_decibal = targets::tar_target_raw("decibal", 
         quote({
-            settings[["resect_elec"]]
-        }), deps = "settings"), input_plot_resect_elec = targets::tar_target_raw("plot_resect_elec", 
+            settings[["decibal"]]
+        }), deps = "settings"), input_baseline = targets::tar_target_raw("baseline", 
         quote({
-            settings[["plot_resect_elec"]]
-        }), deps = "settings"), input_normalize = targets::tar_target_raw("normalize", 
+            settings[["baseline"]]
+        }), deps = "settings"), input_scale = targets::tar_target_raw("scale", 
         quote({
-            settings[["normalize"]]
-        }), deps = "settings"), input_threshold_level = targets::tar_target_raw("threshold_level", 
+            settings[["scale"]]
+        }), deps = "settings"), input_baselined = targets::tar_target_raw("baselined", 
         quote({
-            settings[["threshold_level"]]
-        }), deps = "settings"), input_threshold_type = targets::tar_target_raw("threshold_type", 
+            settings[["baselined"]]
+        }), deps = "settings"), input_start_time_baseline = targets::tar_target_raw("start_time_baseline", 
         quote({
-            settings[["threshold_type"]]
-        }), deps = "settings"), input_time_stat_end = targets::tar_target_raw("time_stat_end", 
+            settings[["start_time_baseline"]]
+        }), deps = "settings"), input_end_time_baseline = targets::tar_target_raw("end_time_baseline", 
         quote({
-            settings[["time_stat_end"]]
+            settings[["end_time_baseline"]]
+        }), deps = "settings"), input_threshold = targets::tar_target_raw("threshold", 
+        quote({
+            settings[["threshold"]]
         }), deps = "settings"), load_subject = targets::tar_target_raw(name = "subject", 
         command = quote({
             .__target_expr__. <- quote({
@@ -173,65 +202,69 @@ rm(._._env_._.)
             "load_electrodes", "time_window", "reference_name"
             )), deps = c("subject", "epoch_file_name", "load_electrodes", 
         "time_window", "reference_name"), cue = targets::tar_cue("always"), 
-        pattern = NULL, iteration = "list"), find_multitaper = targets::tar_target_raw(name = "multitaper_result", 
+        pattern = NULL, iteration = "list"), generate_signal_plot = targets::tar_target_raw(name = "DC_matrix", 
         command = quote({
             .__target_expr__. <- quote({
-                multitaper_result <- generate_multitaper(repository, 
-                  load_electrodes, frequency_range, time_bandwidth, 
-                  num_tapers, window_params, min_nfft, weighting, 
-                  detrend_opt, parallel)
+                DC_matrix <- plot_DC_shift(repository, load_electrodes = load_electrodes, 
+                  subject = subject, condition = condition, time_windows = time_window, 
+                  reference = reference_name, soz_electrodes = soz_electrodes, 
+                  resect_electrodes = resect_electrodes, ordered = ordered, 
+                  name_type = heatmap_name_type, baseline_end = end_time_baseline, 
+                  condition_baseline = baseline)
             })
             tryCatch({
                 eval(.__target_expr__.)
-                return(multitaper_result)
+                return(DC_matrix)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "multitaper_result", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "DC_matrix", 
                   condition = e, expr = .__target_expr__.)
             })
         }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
-            target_export = "multitaper_result", target_expr = quote({
+            target_export = "DC_matrix", target_expr = quote({
                 {
-                  multitaper_result <- generate_multitaper(repository, 
-                    load_electrodes, frequency_range, time_bandwidth, 
-                    num_tapers, window_params, min_nfft, weighting, 
-                    detrend_opt, parallel)
+                  DC_matrix <- plot_DC_shift(repository, load_electrodes = load_electrodes, 
+                    subject = subject, condition = condition, 
+                    time_windows = time_window, reference = reference_name, 
+                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                    ordered = ordered, name_type = heatmap_name_type, 
+                    baseline_end = end_time_baseline, condition_baseline = baseline)
                 }
-                multitaper_result
+                DC_matrix
             }), target_depends = c("repository", "load_electrodes", 
-            "frequency_range", "time_bandwidth", "num_tapers", 
-            "window_params", "min_nfft", "weighting", "detrend_opt", 
-            "parallel")), deps = c("repository", "load_electrodes", 
-        "frequency_range", "time_bandwidth", "num_tapers", "window_params", 
-        "min_nfft", "weighting", "detrend_opt", "parallel"), 
-        cue = targets::tar_cue("thorough"), pattern = NULL, iteration = "list"), 
-    find_heatmap = targets::tar_target_raw(name = "heatmap_result", 
+            "subject", "condition", "time_window", "reference_name", 
+            "soz_electrodes", "resect_electrodes", "ordered", 
+            "heatmap_name_type", "end_time_baseline", "baseline"
+            )), deps = c("repository", "load_electrodes", "subject", 
+        "condition", "time_window", "reference_name", "soz_electrodes", 
+        "resect_electrodes", "ordered", "heatmap_name_type", 
+        "end_time_baseline", "baseline"), cue = targets::tar_cue("thorough"), 
+        pattern = NULL, iteration = "list"), get_HFO = targets::tar_target_raw(name = "HFO_matrix", 
         command = quote({
             .__target_expr__. <- quote({
-                heatmap_result <- generate_heatmap(repository, 
-                  multitaper_result, time_window, analysis_windows, 
-                  load_electrodes, window_params, condition, 
-                  label, normalize)
+                HFO_matrix <- HFO_matrix(load_electrodes, SOZ_elec, 
+                  resect_elec, repository, condition, time_window, 
+                  label, threshold)
+                print(HFO_matrix)
             })
             tryCatch({
                 eval(.__target_expr__.)
-                return(heatmap_result)
+                return(HFO_matrix)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "heatmap_result", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "HFO_matrix", 
                   condition = e, expr = .__target_expr__.)
             })
         }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
-            target_export = "heatmap_result", target_expr = quote({
+            target_export = "HFO_matrix", target_expr = quote({
                 {
-                  heatmap_result <- generate_heatmap(repository, 
-                    multitaper_result, time_window, analysis_windows, 
-                    load_electrodes, window_params, condition, 
-                    label, normalize)
+                  HFO_matrix <- HFO_matrix(load_electrodes, SOZ_elec, 
+                    resect_elec, repository, condition, time_window, 
+                    label, threshold)
+                  print(HFO_matrix)
                 }
-                heatmap_result
-            }), target_depends = c("repository", "multitaper_result", 
-            "time_window", "analysis_windows", "load_electrodes", 
-            "window_params", "condition", "label", "normalize"
-            )), deps = c("repository", "multitaper_result", "time_window", 
-        "analysis_windows", "load_electrodes", "window_params", 
-        "condition", "label", "normalize"), cue = targets::tar_cue("thorough"), 
+                HFO_matrix
+            }), target_depends = c("HFO_matrix", "load_electrodes", 
+            "SOZ_elec", "resect_elec", "repository", "condition", 
+            "time_window", "label", "threshold")), deps = c("HFO_matrix", 
+        "load_electrodes", "SOZ_elec", "resect_elec", "repository", 
+        "condition", "time_window", "label", "threshold"), cue = targets::tar_cue("thorough"), 
         pattern = NULL, iteration = "list"))

@@ -1,48 +1,68 @@
-plot_resect_elec: no
-resect_elec: '0'
-text_size: 5.0
-analysis_windows:
-  '1':
-    time_range:
-    - -30.0
-    - 30.0
-organize_top: no
-label: numeric
-subject_code: subHUP064
-project_name: Retrostudy
-epoch_file_name: subHUP064_seizure
-plot_SOZ_elec: no
 SOZ_elec: '0'
-load_electrodes: 3-88
-reference_name: common_average
-time_window:
-- -30
-- 30
-time_bandwidth: 3.0
-xyflip: no
-verbose: no
-plot_on: no
-num_workers: 31.0
-parallel: yes
-detrend_opt: linear
-weighting: unity
-min_nfft: 0.0
-num_tapers: 5.0
-frequency_range:
-- 0.5
-- 256.0
+resect_elec: '0'
+plot_resect_elec: no
+analysis_time_frequencies:
+  '1':
+    frequency_range:
+    - 90.0
+    - 256.0
+    time_range:
+    - 0.0
+    - 30.0
+condition: sz1 (2)
+reference: common_average
 window_params:
 - 2.5
 - 0.5
-type: power
-intervals:
-- - -1.0
-  - 2.0
-reference: default
-save_pipeline: yes
-condition: sz1 (4)
+frequency_range:
+- 0.0
+- 250.0
+num_tapers: ~
+min_nfft: 0
+weighting: unity
+detrend_opt: linear
+parallel: yes
+num_workers: 31.0
+plot_on: no
+verbose: no
+xyflip: no
+time_bandwidth: 3.0
+time_window:
+- 0.0
+- 30.0
+reference_name: car
+load_electrodes: 1-4,7-36,42-43,46-69,72-95
+selected_electrode: 1
+epoch_file_name: subpt01_seizure
+project_name: Retrostudy
+soz_electrodes: 33-34,62-69
+resect_electrodes: 33-34,62-69
+heatmap_name_type: number
+ordered: no
+subject_code: subpt01
+epoch_name: sz1 (2)
+electrodes: 1-4,7-36,42-43,46-69,72-95
+time_windows:
+- 0
+- 30.0
+time_stat_end: 30.0
 time_stat_start: 0.0
-time_stat_end: 10.0
-threshold_type: zscore
-threshold_level: 2.0
-normalize: yes
+analysis_windows:
+  '1':
+    frequency_range:
+    - 13.0
+    - 31.0
+    time_range:
+    - 0.0
+    - 30.0
+plot_SOZ_elec: no
+label: numeric
+organize_top: no
+text_size: 5.0
+decibal: no
+baseline: 30s before sz1 (1)
+scale: None
+baselined: yes
+start_time_baseline: 0.0
+end_time_baseline: 10
+threshold: 0.9
