@@ -11,7 +11,10 @@ library(ggplot2)
 library(viridis)
 library(reshape2)
 library(reshape2)
-
+library(dplyr)
+library(tidyr)
+library(randomForest)
+library(caret)
 
 
 turbo <- viridis::turbo

@@ -17,140 +17,144 @@ rm(._._env_._.)
     quote({
         yaml::read_yaml(settings_path)
     }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_SOZ_elec = targets::tar_target_raw("SOZ_elec", quote({
-        settings[["SOZ_elec"]]
-    }), deps = "settings"), input_resect_elec = targets::tar_target_raw("resect_elec", 
+    input_time_windows = targets::tar_target_raw("time_windows", 
         quote({
-            settings[["resect_elec"]]
-        }), deps = "settings"), input_plot_resect_elec = targets::tar_target_raw("plot_resect_elec", 
-        quote({
-            settings[["plot_resect_elec"]]
-        }), deps = "settings"), input_analysis_time_frequencies = targets::tar_target_raw("analysis_time_frequencies", 
-        quote({
-            settings[["analysis_time_frequencies"]]
-        }), deps = "settings"), input_condition = targets::tar_target_raw("condition", 
-        quote({
-            settings[["condition"]]
-        }), deps = "settings"), input_reference = targets::tar_target_raw("reference", 
-        quote({
-            settings[["reference"]]
-        }), deps = "settings"), input_window_params = targets::tar_target_raw("window_params", 
-        quote({
-            settings[["window_params"]]
-        }), deps = "settings"), input_frequency_range = targets::tar_target_raw("frequency_range", 
-        quote({
-            settings[["frequency_range"]]
-        }), deps = "settings"), input_num_tapers = targets::tar_target_raw("num_tapers", 
-        quote({
-            settings[["num_tapers"]]
-        }), deps = "settings"), input_min_nfft = targets::tar_target_raw("min_nfft", 
-        quote({
-            settings[["min_nfft"]]
-        }), deps = "settings"), input_weighting = targets::tar_target_raw("weighting", 
-        quote({
-            settings[["weighting"]]
-        }), deps = "settings"), input_detrend_opt = targets::tar_target_raw("detrend_opt", 
-        quote({
-            settings[["detrend_opt"]]
-        }), deps = "settings"), input_parallel = targets::tar_target_raw("parallel", 
-        quote({
-            settings[["parallel"]]
-        }), deps = "settings"), input_num_workers = targets::tar_target_raw("num_workers", 
-        quote({
-            settings[["num_workers"]]
-        }), deps = "settings"), input_plot_on = targets::tar_target_raw("plot_on", 
-        quote({
-            settings[["plot_on"]]
-        }), deps = "settings"), input_verbose = targets::tar_target_raw("verbose", 
-        quote({
-            settings[["verbose"]]
-        }), deps = "settings"), input_xyflip = targets::tar_target_raw("xyflip", 
-        quote({
-            settings[["xyflip"]]
-        }), deps = "settings"), input_time_bandwidth = targets::tar_target_raw("time_bandwidth", 
-        quote({
-            settings[["time_bandwidth"]]
-        }), deps = "settings"), input_time_window = targets::tar_target_raw("time_window", 
-        quote({
-            settings[["time_window"]]
-        }), deps = "settings"), input_reference_name = targets::tar_target_raw("reference_name", 
-        quote({
-            settings[["reference_name"]]
-        }), deps = "settings"), input_load_electrodes = targets::tar_target_raw("load_electrodes", 
-        quote({
-            settings[["load_electrodes"]]
-        }), deps = "settings"), input_selected_electrode = targets::tar_target_raw("selected_electrode", 
-        quote({
-            settings[["selected_electrode"]]
-        }), deps = "settings"), input_epoch_file_name = targets::tar_target_raw("epoch_file_name", 
-        quote({
-            settings[["epoch_file_name"]]
-        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
-        quote({
-            settings[["project_name"]]
-        }), deps = "settings"), input_soz_electrodes = targets::tar_target_raw("soz_electrodes", 
-        quote({
-            settings[["soz_electrodes"]]
-        }), deps = "settings"), input_resect_electrodes = targets::tar_target_raw("resect_electrodes", 
-        quote({
-            settings[["resect_electrodes"]]
-        }), deps = "settings"), input_heatmap_name_type = targets::tar_target_raw("heatmap_name_type", 
-        quote({
-            settings[["heatmap_name_type"]]
-        }), deps = "settings"), input_ordered = targets::tar_target_raw("ordered", 
-        quote({
-            settings[["ordered"]]
-        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
-        quote({
-            settings[["subject_code"]]
-        }), deps = "settings"), input_epoch_name = targets::tar_target_raw("epoch_name", 
-        quote({
-            settings[["epoch_name"]]
+            settings[["time_windows"]]
         }), deps = "settings"), input_electrodes = targets::tar_target_raw("electrodes", 
         quote({
             settings[["electrodes"]]
-        }), deps = "settings"), input_time_windows = targets::tar_target_raw("time_windows", 
+        }), deps = "settings"), input_epoch_name = targets::tar_target_raw("epoch_name", 
         quote({
-            settings[["time_windows"]]
-        }), deps = "settings"), input_time_stat_end = targets::tar_target_raw("time_stat_end", 
+            settings[["epoch_name"]]
+        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
         quote({
-            settings[["time_stat_end"]]
-        }), deps = "settings"), input_time_stat_start = targets::tar_target_raw("time_stat_start", 
+            settings[["subject_code"]]
+        }), deps = "settings"), input_ordered = targets::tar_target_raw("ordered", 
         quote({
-            settings[["time_stat_start"]]
-        }), deps = "settings"), input_analysis_windows = targets::tar_target_raw("analysis_windows", 
+            settings[["ordered"]]
+        }), deps = "settings"), input_heatmap_name_type = targets::tar_target_raw("heatmap_name_type", 
         quote({
-            settings[["analysis_windows"]]
-        }), deps = "settings"), input_plot_SOZ_elec = targets::tar_target_raw("plot_SOZ_elec", 
+            settings[["heatmap_name_type"]]
+        }), deps = "settings"), input_resect_electrodes = targets::tar_target_raw("resect_electrodes", 
         quote({
-            settings[["plot_SOZ_elec"]]
-        }), deps = "settings"), input_label = targets::tar_target_raw("label", 
+            settings[["resect_electrodes"]]
+        }), deps = "settings"), input_soz_electrodes = targets::tar_target_raw("soz_electrodes", 
         quote({
-            settings[["label"]]
-        }), deps = "settings"), input_organize_top = targets::tar_target_raw("organize_top", 
+            settings[["soz_electrodes"]]
+        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
         quote({
-            settings[["organize_top"]]
+            settings[["project_name"]]
+        }), deps = "settings"), input_epoch_file_name = targets::tar_target_raw("epoch_file_name", 
+        quote({
+            settings[["epoch_file_name"]]
+        }), deps = "settings"), input_selected_electrode = targets::tar_target_raw("selected_electrode", 
+        quote({
+            settings[["selected_electrode"]]
+        }), deps = "settings"), input_load_electrodes = targets::tar_target_raw("load_electrodes", 
+        quote({
+            settings[["load_electrodes"]]
+        }), deps = "settings"), input_reference_name = targets::tar_target_raw("reference_name", 
+        quote({
+            settings[["reference_name"]]
+        }), deps = "settings"), input_time_window = targets::tar_target_raw("time_window", 
+        quote({
+            settings[["time_window"]]
+        }), deps = "settings"), input_time_bandwidth = targets::tar_target_raw("time_bandwidth", 
+        quote({
+            settings[["time_bandwidth"]]
+        }), deps = "settings"), input_xyflip = targets::tar_target_raw("xyflip", 
+        quote({
+            settings[["xyflip"]]
+        }), deps = "settings"), input_verbose = targets::tar_target_raw("verbose", 
+        quote({
+            settings[["verbose"]]
+        }), deps = "settings"), input_plot_on = targets::tar_target_raw("plot_on", 
+        quote({
+            settings[["plot_on"]]
+        }), deps = "settings"), input_num_workers = targets::tar_target_raw("num_workers", 
+        quote({
+            settings[["num_workers"]]
+        }), deps = "settings"), input_parallel = targets::tar_target_raw("parallel", 
+        quote({
+            settings[["parallel"]]
+        }), deps = "settings"), input_detrend_opt = targets::tar_target_raw("detrend_opt", 
+        quote({
+            settings[["detrend_opt"]]
+        }), deps = "settings"), input_weighting = targets::tar_target_raw("weighting", 
+        quote({
+            settings[["weighting"]]
+        }), deps = "settings"), input_min_nfft = targets::tar_target_raw("min_nfft", 
+        quote({
+            settings[["min_nfft"]]
+        }), deps = "settings"), input_num_tapers = targets::tar_target_raw("num_tapers", 
+        quote({
+            settings[["num_tapers"]]
+        }), deps = "settings"), input_frequency_range = targets::tar_target_raw("frequency_range", 
+        quote({
+            settings[["frequency_range"]]
+        }), deps = "settings"), input_window_params = targets::tar_target_raw("window_params", 
+        quote({
+            settings[["window_params"]]
+        }), deps = "settings"), input_reference = targets::tar_target_raw("reference", 
+        quote({
+            settings[["reference"]]
+        }), deps = "settings"), input_condition = targets::tar_target_raw("condition", 
+        quote({
+            settings[["condition"]]
+        }), deps = "settings"), input_analysis_time_frequencies = targets::tar_target_raw("analysis_time_frequencies", 
+        quote({
+            settings[["analysis_time_frequencies"]]
+        }), deps = "settings"), input_plot_resect_elec = targets::tar_target_raw("plot_resect_elec", 
+        quote({
+            settings[["plot_resect_elec"]]
+        }), deps = "settings"), input_resect_elec = targets::tar_target_raw("resect_elec", 
+        quote({
+            settings[["resect_elec"]]
+        }), deps = "settings"), input_SOZ_elec = targets::tar_target_raw("SOZ_elec", 
+        quote({
+            settings[["SOZ_elec"]]
         }), deps = "settings"), input_text_size = targets::tar_target_raw("text_size", 
         quote({
             settings[["text_size"]]
-        }), deps = "settings"), input_decibal = targets::tar_target_raw("decibal", 
+        }), deps = "settings"), input_organize_top = targets::tar_target_raw("organize_top", 
         quote({
-            settings[["decibal"]]
-        }), deps = "settings"), input_baseline = targets::tar_target_raw("baseline", 
+            settings[["organize_top"]]
+        }), deps = "settings"), input_label = targets::tar_target_raw("label", 
         quote({
-            settings[["baseline"]]
-        }), deps = "settings"), input_scale = targets::tar_target_raw("scale", 
+            settings[["label"]]
+        }), deps = "settings"), input_plot_SOZ_elec = targets::tar_target_raw("plot_SOZ_elec", 
         quote({
-            settings[["scale"]]
-        }), deps = "settings"), input_baselined = targets::tar_target_raw("baselined", 
+            settings[["plot_SOZ_elec"]]
+        }), deps = "settings"), input_analysis_windows = targets::tar_target_raw("analysis_windows", 
         quote({
-            settings[["baselined"]]
-        }), deps = "settings"), input_start_time_baseline = targets::tar_target_raw("start_time_baseline", 
+            settings[["analysis_windows"]]
+        }), deps = "settings"), input_time_stat_start = targets::tar_target_raw("time_stat_start", 
         quote({
-            settings[["start_time_baseline"]]
+            settings[["time_stat_start"]]
+        }), deps = "settings"), input_time_stat_end = targets::tar_target_raw("time_stat_end", 
+        quote({
+            settings[["time_stat_end"]]
         }), deps = "settings"), input_end_time_baseline = targets::tar_target_raw("end_time_baseline", 
         quote({
             settings[["end_time_baseline"]]
+        }), deps = "settings"), input_start_time_baseline = targets::tar_target_raw("start_time_baseline", 
+        quote({
+            settings[["start_time_baseline"]]
+        }), deps = "settings"), input_baselined = targets::tar_target_raw("baselined", 
+        quote({
+            settings[["baselined"]]
+        }), deps = "settings"), input_scale = targets::tar_target_raw("scale", 
+        quote({
+            settings[["scale"]]
+        }), deps = "settings"), input_baseline = targets::tar_target_raw("baseline", 
+        quote({
+            settings[["baseline"]]
+        }), deps = "settings"), input_decibal = targets::tar_target_raw("decibal", 
+        quote({
+            settings[["decibal"]]
+        }), deps = "settings"), input_ML_time_range = targets::tar_target_raw("ML_time_range", 
+        quote({
+            settings[["ML_time_range"]]
         }), deps = "settings"), load_subject = targets::tar_target_raw(name = "subject", 
         command = quote({
             .__target_expr__. <- quote({
@@ -266,7 +270,7 @@ rm(._._env_._.)
                   subject = subject, condition = condition, time_windows = time_window, 
                   reference = reference_name, analysis_time_frequencies = analysis_time_frequencies, 
                   soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
-                  ordered = ordered)
+                  ordered = ordered, name_type = heatmap_name_type)
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -283,17 +287,18 @@ rm(._._env_._.)
                     condition = condition, time_windows = time_window, 
                     reference = reference_name, analysis_time_frequencies = analysis_time_frequencies, 
                     soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
-                    ordered = ordered)
+                    ordered = ordered, name_type = heatmap_name_type)
                 }
                 plot_signal
             }), target_depends = c("repository", "load_electrodes", 
             "subject", "condition", "time_window", "reference_name", 
             "analysis_time_frequencies", "soz_electrodes", "resect_electrodes", 
-            "ordered")), deps = c("repository", "load_electrodes", 
-        "subject", "condition", "time_window", "reference_name", 
-        "analysis_time_frequencies", "soz_electrodes", "resect_electrodes", 
-        "ordered"), cue = targets::tar_cue("always"), pattern = NULL, 
-        iteration = "list"), generate_data_for_heatmap = targets::tar_target_raw(name = "plot_heatmap", 
+            "ordered", "heatmap_name_type")), deps = c("repository", 
+        "load_electrodes", "subject", "condition", "time_window", 
+        "reference_name", "analysis_time_frequencies", "soz_electrodes", 
+        "resect_electrodes", "ordered", "heatmap_name_type"), 
+        cue = targets::tar_cue("always"), pattern = NULL, iteration = "list"), 
+    generate_data_for_heatmap = targets::tar_target_raw(name = "plot_heatmap", 
         command = quote({
             .__target_expr__. <- quote({
                 plot_heatmap <- plot_power_over_time_data(heatmap_result, 
@@ -398,4 +403,23 @@ rm(._._env_._.)
                 viewer3d_data
             }), target_depends = c("heatmap_result", "condition"
             )), deps = c("heatmap_result", "condition"), cue = targets::tar_cue("thorough"), 
-        pattern = NULL, iteration = "list"))
+        pattern = NULL, iteration = "list"), generate_ML_predictions = targets::tar_target_raw(name = "ML_predictions", 
+        command = quote({
+            .__target_expr__. <- quote({
+                ML_predictions <- print(load_model("model_gamma.RDS"))
+            })
+            tryCatch({
+                eval(.__target_expr__.)
+                return(ML_predictions)
+            }, error = function(e) {
+                asNamespace("raveio")$resolve_pipeline_error(name = "ML_predictions", 
+                  condition = e, expr = .__target_expr__.)
+            })
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+            target_export = "ML_predictions", target_expr = quote({
+                {
+                  ML_predictions <- print(load_model("model_gamma.RDS"))
+                }
+                ML_predictions
+            }), target_depends = character(0)), deps = character(0), 
+        cue = targets::tar_cue("thorough"), pattern = NULL, iteration = "list"))

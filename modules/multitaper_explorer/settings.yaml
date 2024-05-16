@@ -4,19 +4,6 @@ plot_resect_elec: no
 analysis_time_frequencies:
   '1':
     frequency_range:
-    - 13
-    - 30
-    frequency_preset_delta: 0
-    frequency_preset_theta: 0
-    frequency_preset_alpha: 0
-    frequency_preset_beta: 0
-    frequency_preset_gamma: 0
-    frequency_preset_high_gamma: 0
-    time_range:
-    - -10
-    - 10
-  '2':
-    frequency_range:
     - 90
     - 250
     frequency_preset_delta: 0
@@ -26,9 +13,9 @@ analysis_time_frequencies:
     frequency_preset_gamma: 0
     frequency_preset_high_gamma: 0
     time_range:
-    - -10
+    - 0
     - 10
-condition: sz1 (2)
+condition: 30s before sz1 (1)
 reference: common_average
 window_params:
 - 2.5
@@ -50,15 +37,15 @@ time_window:
 - -10
 - 10
 reference_name: car
-load_electrodes: 1-4,7-36,42-43,46-69,72-95
+load_electrodes: 2-77
 selected_electrode: 1
-epoch_file_name: subpt01_seizure
+epoch_file_name: subumf001_seizure
 project_name: Retrostudy
 soz_electrodes: ''
 resect_electrodes: ''
 heatmap_name_type: number
 ordered: yes
-subject_code: subpt01
+subject_code: subumf001
 epoch_name: sz1 (2)
 electrodes: 1-4,7-36,42-43,46-69,72-95
 time_windows:
@@ -78,6 +65,9 @@ plot_SOZ_elec: no
 label: numeric
 organize_top: no
 text_size: 5.0
+ML_time_range:
+- 0
+- 10
 decibal: no
 baseline: 30s before sz1 (1)
 scale: None

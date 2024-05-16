@@ -874,27 +874,25 @@ plot_quantile_plot <- function(
                       xlab = "Time (s)",
                       ylab = "",
                       axes = FALSE)
-      mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3, col = "#00bfff", cex = 1.2)
-      mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "black", cex = 1.2)
+      # mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3, col = "#00bfff", cex = 1.2)
+      # mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "black", cex = 1.2)
 
-      if(!is.null(save_path)) {
-        save_data <- matrix(quantileplot$Value,
-                            ncol = length(unique(quantileplot$Time)),
-                            byrow = TRUE)
-        colnames(save_data) <- unique(quantileplot$Time)
-        rownames(save_data) <- all_stats_labels
-        filename <- paste0(subject_code, "_epoch_statistical_plot_", trial, ".csv")
-        filename <- paste0(save_path, filename)
-        write.csv(save_data, filename, row.names = TRUE)
-      }
 
       graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
 
       min_time <- min(unique(quantileplot$Time))
       max_time <- max(unique(quantileplot$Time))
 
-      graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
-                     labels = unique(quantileplot$Time), cex.axis = 1)
+      # graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
+      #                labels = unique(quantileplot$Time), cex.axis = 1)
+
+      unique_times <- sort(unique(quantileplot$Time))
+      quantile_values <- quantile(unique_times, probs = seq(0, 1, length.out = 5))
+      tick_positions <- sapply(quantile_values, function(x) {
+        which.min(abs(unique_times - x))
+      })
+      tick_labels <- unique_times[tick_positions]
+      graphics::axis(1, at = tick_positions, labels = tick_labels, cex.axis = 1)
 
       graphics::axis(2, at = 1:length(all_stats_labels),
                      labels = all_stats_labels,
@@ -991,8 +989,8 @@ plot_quantile_plot <- function(
                       axes = FALSE)
 
 
-      mtext("RESECT", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3.5, col = "#bf00ff", cex = 1.2)
-      mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "black", cex = 1.2)
+      # mtext("RESECT", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3.5, col = "#bf00ff", cex = 1.2)
+      # mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "black", cex = 1.2)
 
       graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
 
@@ -1001,8 +999,16 @@ plot_quantile_plot <- function(
       min_time <- min(unique(quantileplot$Time))
       max_time <- max(unique(quantileplot$Time))
 
-      graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
-                     labels = unique(quantileplot$Time), cex.axis = 1)
+      # graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
+      #                labels = unique(quantileplot$Time), cex.axis = 1)
+
+      unique_times <- sort(unique(quantileplot$Time))
+      quantile_values <- quantile(unique_times, probs = seq(0, 1, length.out = 5))
+      tick_positions <- sapply(quantile_values, function(x) {
+        which.min(abs(unique_times - x))
+      })
+      tick_labels <- unique_times[tick_positions]
+      graphics::axis(1, at = tick_positions, labels = tick_labels, cex.axis = 1)
 
       graphics::axis(2, at = 1:length(all_stats_labels),
                      labels = all_stats_labels,
@@ -1128,9 +1134,9 @@ plot_quantile_plot <- function(
                       axes = FALSE)
 
       # Add axis labels
-      mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3.5, col = "#00bfff", cex = 1.2)
-      mtext("RESECT", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "#bf00ff", cex = 1.2)
-      mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 22.5, col = "black", cex = 1.2)
+      # mtext("SOZ", side = 4, at = max(1:length(unique(quantileplot$Time))) + 3.5, col = "#00bfff", cex = 1.2)
+      # mtext("RESECT", side = 4, at = max(1:length(unique(quantileplot$Time))) + 13, col = "#bf00ff", cex = 1.2)
+      # mtext("OTHER", side = 4, at = max(1:length(unique(quantileplot$Time))) + 22.5, col = "black", cex = 1.2)
 
       graphics::abline(h = 10 + 0.5, col = "red", lwd = 10, lty = "dashed")
       graphics::abline(h = 20 + 0.5, col = "red", lwd = 10, lty = "dashed")
@@ -1139,8 +1145,16 @@ plot_quantile_plot <- function(
       min_time <- min(unique(quantileplot$Time))
       max_time <- max(unique(quantileplot$Time))
 
-      graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
-                     labels = unique(quantileplot$Time), cex.axis = 1)
+      # graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
+      #                labels = unique(quantileplot$Time), cex.axis = 1)
+
+      unique_times <- sort(unique(quantileplot$Time))
+      quantile_values <- quantile(unique_times, probs = seq(0, 1, length.out = 5))
+      tick_positions <- sapply(quantile_values, function(x) {
+        which.min(abs(unique_times - x))
+      })
+      tick_labels <- unique_times[tick_positions]
+      graphics::axis(1, at = tick_positions, labels = tick_labels, cex.axis = 1)
 
       graphics::axis(2, at = 1:length(all_stats_labels),
                      labels = all_stats_labels,
@@ -1211,18 +1225,38 @@ plot_quantile_plot <- function(
                       axes = FALSE)
 
       # Add axis labels
-      mtext("ALL ELECTRODES", side = 4, col = "black", cex = 1.2)
+      # mtext("ALL ELECTRODES", side = 4, col = "black", cex = 1.2)
 
       min_time <- min(unique(quantileplot$Time))
       max_time <- max(unique(quantileplot$Time))
 
-      graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
-                     labels = unique(quantileplot$Time), cex.axis = 1)
+      # graphics::axis(1, at = 1:length(unique(quantileplot$Time)),
+      #                labels = unique(quantileplot$Time), cex.axis = 1)
+
+      unique_times <- sort(unique(quantileplot$Time))
+      quantile_values <- quantile(unique_times, probs = seq(0, 1, length.out = 5))
+      tick_positions <- sapply(quantile_values, function(x) {
+        which.min(abs(unique_times - x))
+      })
+      tick_labels <- unique_times[tick_positions]
+      graphics::axis(1, at = tick_positions, labels = tick_labels, cex.axis = 1)
+
 
       graphics::axis(2, at = 1:length(all_stats_labels),
                      labels = all_stats_labels,
                      las = 2, cex.axis = 0.6)
 
+    }
+
+    if(!is.null(save_path)) {
+      save_data <- matrix(quantileplot$Value,
+                          ncol = length(unique(quantileplot$Time)),
+                          byrow = TRUE)
+      colnames(save_data) <- unique(quantileplot$Time)
+      rownames(save_data) <- all_stats_labels
+      filename <- paste0(subject_code, "_epoch_statistical_plot_", trial, ".csv")
+      filename <- paste0(save_path, filename)
+      write.csv(save_data, filename, row.names = TRUE)
     }
 
     graphics::title(sprintf("# Channel=%s, # Epoch=%s, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, trial, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5)
@@ -1247,24 +1281,32 @@ plot_quantile_plot <- function(
     # }
     legend_range <- c(data_min, data_max)
   }
-  par("mar" = c(3.1, 1, 3, 3.1))
+  par("mar" = c(3.1, 0.5, 3, 4.5))
   pal_val <- seq(legend_range[[1]], legend_range[[2]], length.out = 101)
   graphics::image(matrix(pal_val, nrow = 1), x = 0, y = pal_val, axes = FALSE, xlab = "", ylab = "", col = palette)
+
+  # Formatting axis labels using the custom function
   legend_at <- unique(c(legend_range, 0))
-  graphics::axis(side = 4, at = legend_at, labels = sprintf("%.1f", legend_at), las = 1)
+  formatted_legend_at <- format_numbers(legend_at)
+  graphics::axis(side = 4, at = legend_at, labels = formatted_legend_at, las = 1, cex.axis=0.9)
 
+  # Adjusting titles based on scale type
   if(scale == "Min_Max_Normalized_Time_Window") {
-    graphics::title("Max Normalized", line = 0.6, adj = 0, cex.main = 0.8)
+    graphics::title("Max Normalized", line = 0.6, adj = 0, cex.main = 0.9)
   } else {
-    data_max_text <- sprintf("%.1f", data_max)
-    data_min_text <- sprintf("%.1f", data_min)
-    if( baselined ) {
-      actual_range_text <- paste0("-", data_min_text, " ~ ", data_max_text)
-    } else {
-      actual_range_text <- paste(c("0", data_max_text), collapse = " ~ ")
-    }
+    # Apply formatting to max and min data
+    data_max_text <- format_numbers(data_max)
+    data_min_text <- format_numbers(data_min)
 
-    graphics::title(sprintf("[%s]", actual_range_text), line = 0.6, adj = 0, cex.main = 0.8)
+    # Constructing actual range text based on baseline status
+    # if(baselined) {
+    #   actual_range_text <- paste0("-", data_min_text, " ~ ", data_max_text)
+    # } else {
+    #   actual_range_text <- paste0("0 ~ ", data_max_text)
+    # }
+    #
+    # # Set title with formatted range
+    # graphics::title(sprintf("[%s]", actual_range_text), line = 0.6, adj = 0, cex.main = 0.5)
   }
 
 }

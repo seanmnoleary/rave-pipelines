@@ -81,7 +81,7 @@ plot_signal <- plot_signal_data(repository,
                                 analysis_time_frequencies = analysis_time_frequencies,
                                 soz_electrodes = soz_electrodes,
                                 resect_electrodes = resect_electrodes,
-                                ordered = ordered
+                                ordered = ordered,
                                 name_type = heatmap_name_type
                                 )
 ```
@@ -104,6 +104,10 @@ plot_quantile <- plot_quantile_plot(heatmap_result, soz_electrodes = soz_electro
 #### Step 9: Save file for 3D brain display for each spectral result
 ```{rave generate_data_for_3d_viewer, language = "R", export = "viewer3d_data"}
 viewer3d_data <- generate_3dviewer_data(heatmap_result, trial = condition)
+```
+#### Step 10: make machine learning predictions
+```{rave generate_ML_predictions, language = "R", export = "ML_predictions"}
+ML_predictions <- print(load_model("model_gamma.RDS"))
 ```
 
 ## Build, Visualize, & Run

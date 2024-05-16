@@ -72,7 +72,6 @@ DC_matrix <- plot_DC_shift(repository,
 ### Step 5: Get HFO data
 ```{rave get_HFO, language = "R", export = "HFO_matrix"}
 HFO_matrix <- HFO_matrix(load_electrodes, SOZ_elec, resect_elec, repository, condition, time_window, label, threshold)
-print(HFO_matrix)
 ```
 
 ## Build, Visualize, & Run

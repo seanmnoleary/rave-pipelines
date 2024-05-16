@@ -365,7 +365,36 @@ module_html <- function(){
                   )
                 )
               )
+            ),
+
+            ravedash::input_card(
+              title = "Machine Learning",
+              shiny::fluidRow(
+                shiny::column(
+                  width = 12,
+
+                  ravedash::flex_group_box(
+                    title = "Random Forest Stacked Meta-Learner",
+                    shiny::column(
+                      width = 12,
+                      dipsaus::actionButtonStyled(
+                        inputId = ns("ML_analysis"),
+                        label = "Make Predictions", width = "100%"
+                      ),
+                      shiny::checkboxInput(
+                        inputId = ns("ml_checkbox"),
+                        label = "Show EZ Predictions",
+                        value = FALSE
+                      )
+                    )
+                  )
+                )
+              )
             )
+
+
+
+
           )
         )
       ),

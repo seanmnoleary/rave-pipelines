@@ -573,6 +573,15 @@ module_server <- function(input, output, session, ...){
     ignoreInit = TRUE
   )
 
+  shiny::bindEvent(
+    ravedash::safe_observe({
+      ML_result <- pipeline$run("ML_predictions")
+    }),
+    input$ML_analysis,
+    ignoreNULL = TRUE,
+    ignoreInit = TRUE
+  )
+
   get_baseline_end <- shiny::debounce(
     shiny::reactive({
       return(input$baseline_end)

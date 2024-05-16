@@ -43,7 +43,6 @@ get_default_cores <- function(round = TRUE) {
   re
 }
 
-
 # For debug use; see `dipsaus::rs_show_shortcut(1)`
 # DIPSAUS DEBUG START
 # raveio::pipeline_setup_rmd("multitaper_explorer")
@@ -274,7 +273,7 @@ generate_power_over_time_data <- function(
     }
 
     #Perform baselining here if needed
-    if (baselined) {
+    if (baselined & end_time_baseline > 0) {
 
       if(length(baseline)) {
         if(is.numeric(baseline)) {
@@ -357,6 +356,20 @@ generate_power_over_time_data <- function(
 
 }
 
+# Function to apply conditional formatting
+format_numbers <- function(numbers) {
+  sapply(numbers, function(x) {
+    if (abs(x) > 100) {
+      # Use scientific notation for large magnitudes
+      sprintf("%.2e", x)
+    } else {
+      # Two decimal places for smaller magnitudes
+      sprintf("%.2f", x)
+    }
+  })
+}
+
+
 plot_signal_data <- function(repository,
                              load_electrodes,
                              subject,
@@ -402,8 +415,13 @@ plot_signal_data <- function(repository,
     collapsed_trials_matrix <- rbind(collapsed_trial, collapsed_trials_matrix)
   }
 
-  electrode_names <- repository$electrode_table$Electrode
-  rownames(collapsed_trials_matrix) <- rev(electrode_names)
+  # electrode_names <- repository$electrode_table$Electrode
+  # electrode_names <- as.numeric(electrode_names)
+  # plot_electrodes <- as.numeric(plot_electrodes)
+  # electrode_names <- electrode_names[electrode_names %in% plot_electrodes]
+
+
+  rownames(collapsed_trials_matrix) <- rev(plot_electrodes)
 
   t1 <- as.numeric(time_window[1])
   t2 <- as.numeric(time_window[2])
@@ -414,7 +432,6 @@ plot_signal_data <- function(repository,
   collapsed_trials_matrix <- collapsed_trials_matrix[, subset_index]
   elect <- elect[subset_index]
 
-
   # Prepare data for ordering
   elec_names_plot <- as.character(plot_electrodes)
   rownames(collapsed_trials_matrix) <- plot_electrodes
@@ -423,8 +440,10 @@ plot_signal_data <- function(repository,
   electrode_table <- repository$electrode_table
   soz_electrodes <- dipsaus::parse_svec(soz_electrodes)
   resect_electrodes <- dipsaus::parse_svec(resect_electrodes)
-  is_soz <- electrode_table$Electrode %in% soz_electrodes
-  is_resect <- electrode_table$Electrode %in% resect_electrodes
+  is_soz <- plot_electrodes %in% soz_electrodes
+  is_resect <- plot_electrodes %in% resect_electrodes
+
+  electrode_table <- electrode_table[electrode_table$Electrode %in% plot_electrodes, ]
 
   # determine the y-axis labels
   if( name_type == "name" ) {
@@ -435,12 +454,12 @@ plot_signal_data <- function(repository,
 
   if (ordered == TRUE & (length(soz_electrodes) > 0 | length(resect_electrodes) > 0) ) {
     all_electrodes <- unique(c(soz_electrodes, resect_electrodes))
-    selected_columns <- match(rev(all_electrodes), rev(electrode_table$Electrode))
+    selected_columns <- match(rev(all_electrodes), rev(plot_electrodes))
     selected_columns <- na.omit(selected_columns)
     collapsed_trials_matrix_ordered <- collapsed_trials_matrix[selected_columns, ]
     remaining_columns <- collapsed_trials_matrix[-selected_columns, ]
     collapsed_trials_matrix <- rbind(remaining_columns, collapsed_trials_matrix_ordered)
-    selected_columns <- match(all_electrodes, electrode_table$Electrode)
+    selected_columns <- match(all_electrodes, plot_electrodes)
     selected_columns <- na.omit(selected_columns)
     elec_order_temp_ordered <- elec_names_plot[selected_columns]
     elec_names_plot <- c(elec_order_temp_ordered, elec_names_plot[-selected_columns])
@@ -479,11 +498,6 @@ plot_signal_data <- function(repository,
   elec_names_plot <- rev(elec_names_plot)
   y_labels <- rev(y_labels)
 
-
-  # Set up ticks and positions for the y-axis
-  num_ticks <- 7
-  tick_positions <- seq(1, nrow(plotData), length.out = num_ticks)
-
   # Plot the data
   plot(plotData[, 1], type = "l", cex = 0.1,
        ylim = range(plotData), yaxt = "n", xaxt = "n", xlab = paste("Time"),
@@ -493,7 +507,13 @@ plot_signal_data <- function(repository,
   }
 
   # Set up ticks for the x-axis
-  axis(side = 1, at = tick_positions, labels = elect[tick_positions])
+  # axis(side = 1, at = tick_positions, labels = elect[tick_positions])
+  num_ticks <- 5
+  tick_positions <- seq(1, nrow(plotData), length.out = num_ticks)
+  graphics::axis(side = 1, at = tick_positions, labels = elect[tick_positions])
+
+  # tick_positions <- pretty(elect)
+  # graphics::axis(side = 1, at = tick_positions, labels = format(tick_positions))
 
   # Set up colors based on conditions
   y_colors <- rep("black", length(y_labels))
@@ -520,11 +540,6 @@ plot_signal_data <- function(repository,
   y_labels_tmp <- y_labels
   y_labels_tmp[!is_resect] <- ""
   graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "#bf00ff")
-
-
-  # Set up ticks for the x-axis
-  graphics::axis(side = 1, at = tick_positions, labels = elect[tick_positions])
-
 
 }
 
@@ -803,25 +818,34 @@ plot_power_over_time_data <- function(
     # }
     legend_range <- c(data_min, data_max)
   }
-  par("mar" = c(3.1, 0.5, 3, 3.1))
+
+  par("mar" = c(3.1, 0.5, 3, 4.5))
   pal_val <- seq(legend_range[[1]], legend_range[[2]], length.out = 101)
   graphics::image(matrix(pal_val, nrow = 1), x = 0, y = pal_val, axes = FALSE, xlab = "", ylab = "", col = palette)
   legend_at <- unique(c(legend_range, 0))
-  graphics::axis(side = 4, at = legend_at, labels = sprintf("%.1f", legend_at), las = 1)
+
+  # Apply to axis labels on side 4
+  formatted_legend_at <- format_numbers(legend_at)
+  graphics::axis(side = 4, at = legend_at, labels = formatted_legend_at, las = 1, cex.axis=0.9)
 
   if(scale == "Min_Max_Normalized_Time_Window") {
-    graphics::title("Max Normalized", line = 0.6, adj = 0, cex.main = 0.8)
+    graphics::title("Max Normalized", line = 0.6, adj = 0, cex.main = 0.9)
   } else {
-    data_max_text <- sprintf("%.1f", data_max)
-    data_min_text <- sprintf("%.1f", data_min)
-    if( baselined ) {
-      actual_range_text <- paste0("-", data_min_text, " ~ ", data_max_text)
-    } else {
-      actual_range_text <- paste(c("0", data_max_text), collapse = " ~ ")
-    }
+    # Apply formatting to max and min data
+    data_max_text <- format_numbers(data_max)
+    data_min_text <- format_numbers(data_min)
 
-    graphics::title(sprintf("[%s]", actual_range_text), line = 0.6, adj = 0, cex.main = 0.8)
+    # Handle baseline adjustments in range text
+    # if(baselined) {
+    #   actual_range_text <- paste0("-", data_min_text, " ~\n", data_max_text)
+    # } else {
+    #   actual_range_text <- paste0("0 ~\n", data_max_text)
+    # }
+    #
+    # # Set title with formatted range
+    # graphics::title(sprintf("[%s]", actual_range_text), line = 0.6, adj = 0, cex.main = 0.8)
   }
+
 
 }
 
