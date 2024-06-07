@@ -6,11 +6,11 @@ Language: en-US
 Encoding: UTF-8
 License: MIT
 Authors@R: c(
-    person("your first name", "last/family name", email = your.email@edu", role = c("aut", "cre"))
+    person("Sean", "O'Leary", email = smoleary@utmh.edu, role = c("aut", "cre"))
     )
-Description: Add short sentences to describe what this pipeline does
-BugReports: https://github.com/your_github_name/pipeline_repository/issues
-URL: https://github.com/your_github_name/pipeline_repository
+Description: Frequency range visualization and analysis tool.
+BugReports: https://github.com/seanmnoleary/rave-pipelines/tree/main/modules/multitaper_explorer
+URL: https://github.com/seanmnoleary/rave-pipelines/tree/main/modules/multitaper_explorer
 Imports:
   multitaper,
   writexl,
@@ -22,4 +22,6 @@ Imports:
   readxl,
   ggplot2,
   viridis,
-  reshape2
+  reshape2,
+  randomForest,
+  caret

@@ -406,7 +406,7 @@ rm(._._env_._.)
         pattern = NULL, iteration = "list"), generate_ML_predictions = targets::tar_target_raw(name = "ML_predictions", 
         command = quote({
             .__target_expr__. <- quote({
-                ML_predictions <- print(load_model("model_gamma.RDS"))
+                ML_predictions <- print(load_model("ensemble"))
             })
             tryCatch({
                 eval(.__target_expr__.)
@@ -418,7 +418,7 @@ rm(._._env_._.)
         }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
             target_export = "ML_predictions", target_expr = quote({
                 {
-                  ML_predictions <- print(load_model("model_gamma.RDS"))
+                  ML_predictions <- print(load_model("ensemble"))
                 }
                 ML_predictions
             }), target_depends = character(0)), deps = character(0), 

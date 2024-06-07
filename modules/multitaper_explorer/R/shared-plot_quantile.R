@@ -892,6 +892,7 @@ plot_quantile_plot <- function(
         which.min(abs(unique_times - x))
       })
       tick_labels <- unique_times[tick_positions]
+      tick_labels <- round(unique_times[tick_positions], 2)
       graphics::axis(1, at = tick_positions, labels = tick_labels, cex.axis = 1)
 
       graphics::axis(2, at = 1:length(all_stats_labels),
@@ -1008,6 +1009,7 @@ plot_quantile_plot <- function(
         which.min(abs(unique_times - x))
       })
       tick_labels <- unique_times[tick_positions]
+      tick_labels <- round(unique_times[tick_positions], 2)
       graphics::axis(1, at = tick_positions, labels = tick_labels, cex.axis = 1)
 
       graphics::axis(2, at = 1:length(all_stats_labels),
@@ -1154,6 +1156,7 @@ plot_quantile_plot <- function(
         which.min(abs(unique_times - x))
       })
       tick_labels <- unique_times[tick_positions]
+      tick_labels <- round(unique_times[tick_positions], 2)
       graphics::axis(1, at = tick_positions, labels = tick_labels, cex.axis = 1)
 
       graphics::axis(2, at = 1:length(all_stats_labels),
@@ -1239,6 +1242,7 @@ plot_quantile_plot <- function(
         which.min(abs(unique_times - x))
       })
       tick_labels <- unique_times[tick_positions]
+      tick_labels <- round(unique_times[tick_positions], 2)
       graphics::axis(1, at = tick_positions, labels = tick_labels, cex.axis = 1)
 
 

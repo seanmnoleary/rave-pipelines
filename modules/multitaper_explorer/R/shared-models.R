@@ -6,5 +6,5 @@ load_model <- function(name) {
   if(!isTRUE(file.exists(model_path))) {
     stop("Cannot find model: ", model_path)
   }
-  readRDS(model_path)
+  return(model_path)
 }

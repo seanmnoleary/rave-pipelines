@@ -107,7 +107,7 @@ viewer3d_data <- generate_3dviewer_data(heatmap_result, trial = condition)
 ```
 #### Step 10: make machine learning predictions
 ```{rave generate_ML_predictions, language = "R", export = "ML_predictions"}
-ML_predictions <- print(load_model("model_gamma.RDS"))
+ML_predictions <- print(load_model("ensemble"))
 ```
 
 ## Build, Visualize, & Run

@@ -991,7 +991,7 @@ module_server <- function(input, output, session, ...){
         lapply(soz_electrodes, function(elec) {
           tryCatch({
 
-            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "#00bfff", inclusive = FALSE)
+            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "#00bfff", names = "fixing", inclusive = FALSE)
           }, error = function(e) {
 
           })
@@ -999,7 +999,7 @@ module_server <- function(input, output, session, ...){
         lapply(resect_electrodes, function(elec) {
           tryCatch({
 
-            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "#bf00ff", inclusive = FALSE)
+            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "#bf00ff", names = "fixing", inclusive = FALSE)
           }, error = function(e) {
 
           })
@@ -1007,7 +1007,7 @@ module_server <- function(input, output, session, ...){
         lapply(resect_or_soz_electrodes, function(elec) {
           tryCatch({
 
-            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "green", inclusive = FALSE)
+            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "green", names = "fixing", inclusive = FALSE)
           }, error = function(e) {
 
           })
@@ -1016,14 +1016,14 @@ module_server <- function(input, output, session, ...){
       } else {
         lapply(soz_electrodes, function(elec) {
           tryCatch({
-            brain$electrodes$fix_electrode_color(number = elec, color = "#00bfff", inclusive = FALSE)
+            brain$electrodes$fix_electrode_color(number = elec, color = "#00bfff", names = "fixing", inclusive = FALSE)
           }, error = function(e) {
-
+            print(str(brain$electrodes))
           })
         })
         lapply(resect_electrodes, function(elec) {
           tryCatch({
-            brain$electrodes$fix_electrode_color(number = elec, color = "#bf00ff", inclusive = FALSE)
+            brain$electrodes$fix_electrode_color(number = elec, color = "#bf00ff", names = "fixing", inclusive = FALSE)
           }, error = function(e) {
 
           })
@@ -1031,7 +1031,7 @@ module_server <- function(input, output, session, ...){
         lapply(resect_or_soz_electrodes, function(elec) {
           tryCatch({
 
-            brain$template_object$electrodes$fix_electrode_color(number = elec, color = "green", inclusive = FALSE)
+            brain$electrodes$fix_electrode_color(number = elec, color = "green", names = "fixing", inclusive = FALSE)
           }, error = function(e) {
 
           })
