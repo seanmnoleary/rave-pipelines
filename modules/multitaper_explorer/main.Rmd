@@ -106,8 +106,8 @@ plot_quantile <- plot_quantile_plot(heatmap_result, soz_electrodes = soz_electro
 viewer3d_data <- generate_3dviewer_data(heatmap_result, trial = condition)
 ```
 #### Step 10: make machine learning predictions
-```{rave generate_ML_predictions, language = "R", export = "ML_predictions"}
-ML_predictions <- print(load_model("ensemble"))
+```{rave generate_ML_predictions, language = "R", export = "ML_prediction_electrode"}
+ML_prediction_electrode <- electrode_outcome_prediction(multitaper_result = multitaper_result, trial = condition, name_type = heatmap_name_type, baseline = baseline, condition, start_time_baseline = 0, end_time_baseline = 20)
 ```
 
 ## Build, Visualize, & Run

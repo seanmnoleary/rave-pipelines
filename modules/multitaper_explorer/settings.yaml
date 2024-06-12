@@ -13,9 +13,9 @@ analysis_time_frequencies:
     frequency_preset_gamma: 0
     frequency_preset_high_gamma: 0
     time_range:
-    - -10
-    - 10
-condition: sz1 (2)
+    - 0
+    - 20
+condition: 30s before sz1 (1)
 reference: common_average
 window_params:
 - 2.5
@@ -34,13 +34,13 @@ verbose: no
 xyflip: no
 time_bandwidth: 3
 time_window:
-- -10
-- 10
-reference_name: car
-load_electrodes: 1-4,7-36,42-43,46-69,72-95
+- 0
+- 20
+reference_name: Common_Average_Reference
+load_electrodes: 1-4,7-24,26-36,42-43,46-54,56-69,72-95
 selected_electrode: 1
 epoch_file_name: subpt01_seizure
-project_name: Retrostudy
+project_name: Retrostudy2
 soz_electrodes: ''
 resect_electrodes: ''
 heatmap_name_type: number
@@ -49,8 +49,8 @@ subject_code: subpt01
 epoch_name: sz1 (2)
 electrodes: 1-4,7-36,42-43,46-69,72-95
 time_windows:
-- -10.0
-- 10.0
+- 0
+- 20
 time_stat_end: 10.0
 time_stat_start: 0.0
 analysis_windows:
@@ -60,17 +60,17 @@ analysis_windows:
     - 31.0
     time_range:
     - 0.0
-    - 10.0
+    - 20.0
 plot_SOZ_elec: no
 label: numeric
 organize_top: no
 text_size: 5.0
 ML_time_range:
 - 0
-- 10
+- 20
 decibal: no
 baseline: 30s before sz1 (1)
 scale: None
-baselined: yes
+baselined: no
 start_time_baseline: 0.0
-end_time_baseline: 10
+end_time_baseline: 0

@@ -575,7 +575,7 @@ module_server <- function(input, output, session, ...){
 
   shiny::bindEvent(
     ravedash::safe_observe({
-      ML_result <- pipeline$run("ML_predictions")
+      ML_result <- pipeline$run("ML_prediction_electrode")
     }),
     input$ML_analysis,
     ignoreNULL = TRUE,

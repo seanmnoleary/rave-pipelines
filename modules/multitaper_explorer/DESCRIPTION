@@ -24,4 +24,7 @@ Imports:
   viridis,
   reshape2,
   randomForest,
-  caret
+  caret,
+  dplyr,
+  tidyr,
+  h2o

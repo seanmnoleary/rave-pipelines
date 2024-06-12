@@ -2148,6 +2148,7 @@ electrode_outcome_prediction <- function(multitaper_result, trial, name_type, ba
   final_data <- final_data[, new_order]
 
   h2o.init()
+  set.seed(123)
   final_data <- as.h2o(final_data)
   ensemble_path <- load_model("ensemble")
   ensemble <- h2o.loadModel(ensemble_path)
@@ -2156,7 +2157,7 @@ electrode_outcome_prediction <- function(multitaper_result, trial, name_type, ba
   h2o.shutdown()
 
   rf_probabilities <- data.frame(rf_probabilities)
-  # print(rf_probabilities[rf_probabilities$p1>0.5, ])
+  # print(rf_probabilities)
   return(rf_probabilities$p1)
 }
 
