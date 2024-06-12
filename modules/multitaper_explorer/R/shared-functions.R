@@ -1998,3 +1998,166 @@ electrode_powertime <- function(heatmapbetacol, subject_code, freq_list) {
   return(powertime_freq_list)
 }
 
+#ML predictions for electrode
+electrode_outcome_prediction <- function(multitaper_result, trial, name_type, baseline,
+                                         condition, start_time_baseline = 0, end_time_baseline = 20) {
+  library(dplyr)
+  library(tidyr)
+  library(h2o)
+  meta <- multitaper_result$get_header("extra")
+  dnames <- meta$dnames
+  epoch_table <- meta$epoch_table
+  electrode_table <- meta$electrode_table
+  electrode_parse <- meta$electrodes
+  project_name <- meta$project_name
+  subject_code <- meta$subject_code
+
+  nel <- electrode_parse$nel
+  elecn <- electrode_parse$elecn
+
+  frequency_bands <- list(
+    delta = c(0.5, 4),
+    theta = c(4, 8),
+    alpha = c(8, 13),
+    beta = c(13, 30),
+    gamma = c(30, 90),
+    highgamma = c(90, 256)
+  )
+
+  # Create a list to store results for each frequency band
+  results <- list()
+
+  # Loop over frequency bands
+  for (band_name in names(frequency_bands)) {
+    frequency_range <- frequency_bands[[band_name]]
+    frequency_selection <- frequency_range
+
+    frequency_indices <- which(dnames$Frequency >= frequency_range[1] & dnames$Frequency <= frequency_range[2])
+    # Selecting the appropriate time range
+    actual_ranges <- range(dnames$Time)
+    time_range_for_analysis <- actual_ranges
+
+    # Subsetting the array by selected frequency, keeping dimensions
+    sub_array <- multitaper_result[, frequency_indices, , , drop = FALSE, dimnames = NULL]
+
+    # Collapse over frequency while keeping time, trial, and electrode dimensions
+    data_over_time_trial_per_elec <- ravetools::collapse(sub_array, keep = c(1, 3, 4), average = TRUE)
+
+
+    if(is.numeric(baseline)) {
+      baseline_sel <- which(epoch_table$Trial %in% baseline)
+    } else {
+      baseline_sel <- which(epoch_table$Condition2 %in% baseline)
+    }
+
+    start_time_baseline <- 0
+    end_time_baseline <- 20
+
+    time <- dnames$Time
+
+    start_index <- which(time >= start_time_baseline)[1]
+    end_index <- which(time <= end_time_baseline)[length(which(time <= end_time_baseline))]
+    baseline_matrix <- data_over_time_trial_per_elec[start_index:end_index,baseline_sel,]
+
+    # Apply baseline correction
+    dims <- dim(data_over_time_trial_per_elec)
+    for (j in 1:dims[2]) {
+      analysis_condition <- data_over_time_trial_per_elec[, j, ]
+      for (bi in 1:ncol(analysis_condition)) {
+        m <- mean(baseline_matrix[, bi])
+        # baseline_sd <- sd(baseline_matrix[, bi])
+        analysis_condition[, bi] <- (analysis_condition[, bi] - m)
+      }
+      data_over_time_trial_per_elec[, j, ] <- analysis_condition
+    }
+
+
+    if(length(trial)) {
+      if(is.numeric(trial)) {
+        trial_sel <- which(epoch_table$Trial %in% trial)
+      } else {
+        trial_sel <- which(epoch_table$Condition2 %in% trial)
+      }
+    } else {
+      trial_sel <- NULL
+    }
+
+    if(length(trial_sel)) {
+      data_over_time_trial_per_elec <- data_over_time_trial_per_elec[, trial_sel ,, drop = FALSE]
+    }
+    ntrials <- dim(data_over_time_trial_per_elec)[[2]]
+    nchanns <- dim(data_over_time_trial_per_elec)[[3]]
+
+    # Time x Trial (collapse) x Electrode
+    data_over_time_per_elec <- ravetools::collapse(data_over_time_trial_per_elec, keep = c(1, 3), average = TRUE)
+
+    # image(data_over_time_per_elec)
+
+    time <- dnames$Time
+
+    time <- names(setNames(as.list(time), paste("X", seq_along(time), sep = "")))
+
+    rownames(data_over_time_per_elec) <- time
+    colnames(data_over_time_per_elec) <- dnames$Electrode
+
+    times <- as.numeric(gsub("^X", "", colnames(data_over_time_per_elec)))
+
+    # Store results in the list
+    results[[band_name]] <- data_over_time_per_elec
+
+  }
+
+  combined_data <- data.frame()
+
+  for (label in names(results)) {
+    data <- results[[label]]
+
+    data_tibble <- tibble(
+      time = rep(row.names(data), each = ncol(data)),
+      electrode = rep(colnames(data), times = nrow(data)),
+      value = as.vector(data),
+      band = label
+    ) %>%
+      mutate(column_label = paste(band, time, sep = "_")) %>%
+      select(-band, -time)
+
+    combined_data <- bind_rows(combined_data, data_tibble)
+  }
+
+  final_data <- combined_data %>%
+    spread(key = column_label, value = value)
+
+  generate_ordered_colnames <- function(colnames) {
+    patterns <- c("alpha", "beta", "delta", "gamma", "highgamma", "theta")
+    ordered_colnames <- c("electrode")
+
+    for (i in 1:36) {
+      for (pattern in patterns) {
+        colname <- paste0(pattern, "_X", i)
+        if (colname %in% colnames) {
+          ordered_colnames <- c(ordered_colnames, colname)
+        }
+      }
+    }
+
+    return(ordered_colnames)
+  }
+
+  original_colnames <- colnames(final_data)
+  new_order <- generate_ordered_colnames(original_colnames)
+  final_data <- final_data[, new_order]
+
+  h2o.init()
+  final_data <- as.h2o(final_data)
+  ensemble_path <- load_model("ensemble")
+  ensemble <- h2o.loadModel(ensemble_path)
+  rf_probabilities <- predict(ensemble, newdata = final_data, type = "prob")
+  rf_probabilities <- as.matrix(rf_probabilities)
+  h2o.shutdown()
+
+  rf_probabilities <- data.frame(rf_probabilities)
+  # print(rf_probabilities[rf_probabilities$p1>0.5, ])
+  return(rf_probabilities$p1)
+}
+
+

@@ -403,23 +403,31 @@ rm(._._env_._.)
                 viewer3d_data
             }), target_depends = c("heatmap_result", "condition"
             )), deps = c("heatmap_result", "condition"), cue = targets::tar_cue("thorough"), 
-        pattern = NULL, iteration = "list"), generate_ML_predictions = targets::tar_target_raw(name = "ML_predictions", 
+        pattern = NULL, iteration = "list"), generate_ML_predictions = targets::tar_target_raw(name = "ML_prediction_electrode", 
         command = quote({
             .__target_expr__. <- quote({
-                ML_predictions <- print(load_model("ensemble"))
+                ML_prediction_electrode <- electrode_outcome_prediction(multitaper_result = multitaper_result, 
+                  trial = condition, name_type = heatmap_name_type, 
+                  baseline = baseline, condition, start_time_baseline = 0, 
+                  end_time_baseline = 20)
             })
             tryCatch({
                 eval(.__target_expr__.)
-                return(ML_predictions)
+                return(ML_prediction_electrode)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "ML_predictions", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "ML_prediction_electrode", 
                   condition = e, expr = .__target_expr__.)
             })
         }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
-            target_export = "ML_predictions", target_expr = quote({
+            target_export = "ML_prediction_electrode", target_expr = quote({
                 {
-                  ML_predictions <- print(load_model("ensemble"))
+                  ML_prediction_electrode <- electrode_outcome_prediction(multitaper_result = multitaper_result, 
+                    trial = condition, name_type = heatmap_name_type, 
+                    baseline = baseline, condition, start_time_baseline = 0, 
+                    end_time_baseline = 20)
                 }
-                ML_predictions
-            }), target_depends = character(0)), deps = character(0), 
-        cue = targets::tar_cue("thorough"), pattern = NULL, iteration = "list"))
+                ML_prediction_electrode
+            }), target_depends = c("multitaper_result", "condition", 
+            "heatmap_name_type", "baseline")), deps = c("multitaper_result", 
+        "condition", "heatmap_name_type", "baseline"), cue = targets::tar_cue("thorough"), 
+        pattern = NULL, iteration = "list"))
