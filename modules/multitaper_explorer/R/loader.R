@@ -138,6 +138,12 @@ loader_server <- function(input, output, session, ...){
             repo <- pipeline$read("repository")
             if(default_epoch){
               repo$subject$set_default("epoch_name", repo$epoch_name)
+
+              time_windows <- unlist(repo$time_windows)
+              if(length(time_windows) == 2) {
+                repo$subject$set_default("epoch_choice__trial_starts", time_windows[[1]])
+                repo$subject$set_default("epoch_choice__trial_ends", time_windows[[2]])
+              }
             }
             if(default_reference) {
               repo$subject$set_default("reference_name", repo$reference_name)

@@ -575,11 +575,36 @@ module_server <- function(input, output, session, ...){
 
   shiny::bindEvent(
     ravedash::safe_observe({
-      ML_result <- pipeline$run("ML_prediction_electrode")
+
+      dipsaus::shiny_alert2(
+        title = "Calculating in progress",
+        text = ravedash::be_patient_text(),
+        icon = "info",
+        danger_mode = FALSE,
+        auto_close = FALSE,
+        buttons = FALSE,
+        session = session
+      )
+
+      local_data$results$ML_result <- pipeline$run("ML_prediction_electrode")
+
+      run_analysis()
+
+      Sys.sleep(0.5)
+      dipsaus::close_alert2()
+
     }),
     input$ML_analysis,
     ignoreNULL = TRUE,
     ignoreInit = TRUE
+  )
+
+  shiny::bindEvent(
+    ravedash::safe_observe({
+      run_analysis()
+    }),
+    input$ml_checkbox,
+    ignoreNULL = TRUE, ignoreInit = TRUE
   )
 
   get_baseline_end <- shiny::debounce(
@@ -800,6 +825,12 @@ module_server <- function(input, output, session, ...){
       resect_electrodes <- get_resect_electrodes()
       heatmap_name_type <- ifelse(isTRUE(input$hm_label), "name", "number")
       ordered <- ordered_electrodes()
+      ML_prediction_electrode <- local_data$results$ML_result
+      if (length(ML_prediction_electrode)==0) {
+        ML_prediction_electrode <- rep(FALSE, length(pipeline$get_settings()$load_electrodes))
+      }
+
+      # print(ML_prediction_electrode)
 
       plot_signal_data(
         repository = component_container$data$repository,
@@ -812,7 +843,9 @@ module_server <- function(input, output, session, ...){
         soz_electrodes = soz_electrodes,
         resect_electrodes = resect_electrodes,
         ordered = ordered,
-        name_type = heatmap_name_type)
+        name_type = heatmap_name_type,
+        ML_prediction_electrode = ML_prediction_electrode,
+        show_ML = input$ml_checkbox)
     })
   )
 
@@ -844,6 +877,10 @@ module_server <- function(input, output, session, ...){
       ordered <- ordered_electrodes()
       condition <- input$condition
       scale <- input$hm_normalize
+      ML_prediction_electrode <- local_data$results$ML_result
+      if (length(ML_prediction_electrode)==0) {
+        ML_prediction_electrode <- rep(FALSE, length(pipeline$get_settings()$load_electrodes))
+      }
 
       plot_power_over_time_data(
         heatmap_result,
@@ -852,8 +889,10 @@ module_server <- function(input, output, session, ...){
         name_type = heatmap_name_type,
         trial = condition,
         scale = scale,
-        ordered = ordered
-      )
+        ordered = ordered,
+        ML_prediction_electrode = ML_prediction_electrode,
+        show_ML = input$ml_checkbox)
+
     })
   )
 
@@ -1051,6 +1090,7 @@ module_server <- function(input, output, session, ...){
             nms <- unique(c(nms[nms %in% c("Subject", "Electrode", "Time", "SubjectCode")], nms))
             value_table <- value_table[, nms]
           }
+
 
           brain$set_electrode_values(value_table)
           nms <- names(value_table)

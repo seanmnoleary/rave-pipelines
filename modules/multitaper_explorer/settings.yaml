@@ -14,15 +14,15 @@ analysis_time_frequencies:
     frequency_preset_high_gamma: 0
     time_range:
     - 0
-    - 20
-condition: 30s before sz1 (1)
+    - 10
+condition: sz1 (2)
 reference: common_average
 window_params:
 - 2.5
 - 0.5
 frequency_range:
 - 0
-- 250
+- 256
 num_tapers: ~
 min_nfft: 0
 weighting: unity
@@ -65,12 +65,13 @@ plot_SOZ_elec: no
 label: numeric
 organize_top: no
 text_size: 5.0
+show_ML: no
 ML_time_range:
 - 0
 - 20
 decibal: no
 baseline: 30s before sz1 (1)
 scale: None
-baselined: no
+baselined: yes
 start_time_baseline: 0.0
 end_time_baseline: 0

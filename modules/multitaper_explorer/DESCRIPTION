@@ -1,12 +1,22 @@
 Package: multitaper_explorer
 Type: rave-pipeline
-Title: Please Add Title About What Your Pipeline Does in Caption Style
+Title: Frequency Range Explorer of the Epileptogenic Zone (FREEZ)
 Version: 0.0.1
 Language: en-US
 Encoding: UTF-8
 License: MIT
 Authors@R: c(
-    person("Sean", "O'Leary", email = smoleary@utmh.edu, role = c("aut", "cre"))
+    person("Sean", "O'Leary", email = smoleary@utmh.edu, role = c("aut", "cre")),
+    person("Anne-Cecile", "Lesage", email = anlesage@utmb.edu, role = c("aut")),
+    person("Liliana", "Camarillo-Rodriguez", email = "", role = c("aut")),
+    person("Oliver", "Zhou", email = "", role = c("aut")),
+    person("Diosely", "Silveira", email = "", role = c("aut")),
+    person("Jiefei", "Wang", email = "", role = c("aut")),
+    person("Sameer A.", "Sheth", email = "", role = c("aut")),
+    person("Michael S.", "Beauchamp", email = "", role = c("aut")),
+    person("Zhengjia", "Wang", email = "", role = c("aut")),
+    person("John F.", "Magnotti", email = "", role = c("aut")),
+    person("Patrick J.", "Karas", email = "", role = c("aut"))
     )
 Description: Frequency range visualization and analysis tool.
 BugReports: https://github.com/seanmnoleary/rave-pipelines/tree/main/modules/multitaper_explorer

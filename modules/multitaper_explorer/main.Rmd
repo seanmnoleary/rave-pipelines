@@ -70,7 +70,13 @@ multitaper_result <- generate_multitaper(
 heatmap_result <- generate_power_over_time_data(multitaper_result, analysis_time_frequencies, baselined = baselined, baseline = baseline, end_time_baseline = end_time_baseline, decibal = decibal)
 ```
 
-#### Step 5: Visualize Heatmaps for all the generated spectral ranges for a specific condition
+#### Step 5: make machine learning predictions
+```{rave generate_ML_predictions, language = "R", export = "ML_prediction_electrode"}
+ML_prediction_electrode <- electrode_outcome_prediction(load_electrodes = load_electrodes, epoch_file_name = epoch_file_name, reference_name = reference_name, subject = subject, baseline = baseline, name_type = heatmap_name_type, condition = condition, start_time_baseline = 0, end_time_baseline = 20)
+
+```
+
+#### Step 6: Visualize Heatmaps for all the generated spectral ranges for a specific condition
 ```{rave generate_signal_plot, language = "R", export = "plot_signal", cue="always"}
 plot_signal <- plot_signal_data(repository, 
                                 load_electrodes = load_electrodes, 
@@ -82,33 +88,32 @@ plot_signal <- plot_signal_data(repository,
                                 soz_electrodes = soz_electrodes,
                                 resect_electrodes = resect_electrodes,
                                 ordered = ordered,
-                                name_type = heatmap_name_type
+                                name_type = heatmap_name_type,
+                                ML_prediction_electrode = ML_prediction_electrode,
+                                show_ML = show_ML
                                 )
 ```
 
-#### Step 6: Visualize Heatmaps for all the generated spectral ranges for a specific condition
+#### Step 7: Visualize Heatmaps for all the generated spectral ranges for a specific condition
 ```{rave generate_data_for_heatmap, language = "R", export = "plot_heatmap", cue="always"}
-plot_heatmap <- plot_power_over_time_data(heatmap_result, soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, name_type = heatmap_name_type, trial = condition, ordered = ordered)
+plot_heatmap <- plot_power_over_time_data(heatmap_result, soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, name_type = heatmap_name_type, trial = condition, ordered = ordered, ML_prediction_electrode = ML_prediction_electrode, show_ML = show_ML)
 ```
 
-#### Step 7: Visualize Line Plot for all the generated spectral ranges for a specific condition
+#### Step 8: Visualize Line Plot for all the generated spectral ranges for a specific condition
 ```{rave generate_data_for_lineplot, language = "R", export = "plot_lineplot", cue="always"}
 plot_lineplot <- plot_power_over_time_data_line(heatmap_result, soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, name_type = heatmap_name_type, trial = condition)
 ```
 
-#### Step 8: Visualize Quantile Plot for all the generated spectral ranges for a specific condition
+#### Step 9: Visualize Quantile Plot for all the generated spectral ranges for a specific condition
 ```{rave generate_data_for_quantile, language = "R", export = "plot_quantile", cue="always"}
 plot_quantile <- plot_quantile_plot(heatmap_result, soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, name_type = heatmap_name_type, trial = condition)
 ```
 
-#### Step 9: Save file for 3D brain display for each spectral result
+#### Step 10: Save file for 3D brain display for each spectral result
 ```{rave generate_data_for_3d_viewer, language = "R", export = "viewer3d_data"}
 viewer3d_data <- generate_3dviewer_data(heatmap_result, trial = condition)
 ```
-#### Step 10: make machine learning predictions
-```{rave generate_ML_predictions, language = "R", export = "ML_prediction_electrode"}
-ML_prediction_electrode <- electrode_outcome_prediction(multitaper_result = multitaper_result, trial = condition, name_type = heatmap_name_type, baseline = baseline, condition, start_time_baseline = 0, end_time_baseline = 20)
-```
+
 
 ## Build, Visualize, & Run
 

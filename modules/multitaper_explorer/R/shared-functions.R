@@ -378,7 +378,9 @@ plot_signal_data <- function(repository,
                              reference,
                              analysis_time_frequencies,
                              soz_electrodes = NULL, resect_electrodes = NULL, ordered = FALSE,
-                             name_type = c("name", "number")) {
+                             name_type = c("name", "number"),
+                             ML_prediction_electrode,
+                             show_ML) {
   # Extract necessary variables
   name_type <- match.arg(name_type)
   condition <- condition
@@ -386,6 +388,10 @@ plot_signal_data <- function(repository,
   time_window <- as.numeric(time_windows)
   time_range_analysis <- analysis_time_frequencies[[1]][["time_range"]]
 
+  predicted_electrodes <- ifelse(ML_prediction_electrode > 0.9, 1, 0)
+  if (show_ML == FALSE) {
+    predicted_electrodes <- rep(0, length(predicted_electrodes))
+  }
 
   voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", plot_electrodes[1])]]
   condition <- gsub("\\s\\(\\d+\\)", "", condition)
@@ -442,6 +448,7 @@ plot_signal_data <- function(repository,
   resect_electrodes <- dipsaus::parse_svec(resect_electrodes)
   is_soz <- plot_electrodes %in% soz_electrodes
   is_resect <- plot_electrodes %in% resect_electrodes
+  is_predicted <- predicted_electrodes == 1
 
   electrode_table <- electrode_table[electrode_table$Electrode %in% plot_electrodes, ]
 
@@ -463,6 +470,8 @@ plot_signal_data <- function(repository,
     selected_columns <- na.omit(selected_columns)
     elec_order_temp_ordered <- elec_names_plot[selected_columns]
     elec_names_plot <- c(elec_order_temp_ordered, elec_names_plot[-selected_columns])
+    is_predicted_ordered <- is_predicted[selected_columns]
+    is_predicted <- c(is_predicted_ordered, is_predicted[-selected_columns])
     y_labels_ordered <- y_labels[selected_columns]
     y_labels <- c(y_labels_ordered, y_labels[-selected_columns])
     is_soz <- elec_names_plot %in% soz_electrodes
@@ -497,6 +506,7 @@ plot_signal_data <- function(repository,
   # Reverse the order of electrode names
   elec_names_plot <- rev(elec_names_plot)
   y_labels <- rev(y_labels)
+  is_predicted <- rev(is_predicted)
 
   # Plot the data
   plot(plotData[, 1], type = "l", cex = 0.1,
@@ -541,6 +551,26 @@ plot_signal_data <- function(repository,
   y_labels_tmp[!is_resect] <- ""
   graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "#bf00ff")
 
+  # y_labels_tmp <- y_labels
+  # y_labels_tmp[!is_predicted] <- ""
+  # graphics::axis(side = 2, at = rev(seq_along(y_labels) - 1) * gaps, labels = y_labels_tmp, las = 1, col.axis = "red")
+
+  # Add purple stars for predicted electrodes
+  predicted_indices <- which(is_predicted)
+  y_coords <- rev(seq_along(y_labels) - 1)[predicted_indices] * gaps
+
+  usr <- par("usr")
+  plot_width <- usr[2] - usr[1]
+  x_offset <- plot_width / 10
+
+  points(x = rep(usr[1] + x_offset, length(y_coords)),
+         y = y_coords,
+         pch = 8, col = "black", cex = 1.5)
+
+  points(x = rep(usr[1] + x_offset, length(y_coords)),
+         y = y_coords,
+         pch = 8, col = "purple", cex = 1)
+
 }
 
 
@@ -548,13 +578,20 @@ plot_power_over_time_data <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
     scale = c("None", "Min_Max_Normalized_Time_Window"),
-    palette = plot_preferences$get('heatmap_palette'), ordered = FALSE, save_path = NULL) {
+    palette = plot_preferences$get('heatmap_palette'), ordered = FALSE, save_path = NULL,
+    ML_prediction_electrode,
+    show_ML) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
   scale <- match.arg(scale)
 
   if(length(palette) < 101) {
     palette <- colorRampPalette(palette)(101)
+  }
+
+  predicted_electrodes <- ifelse(ML_prediction_electrode > 0.9, 1, 0)
+  if (show_ML == FALSE) {
+    predicted_electrodes <- rep(0, length(predicted_electrodes))
   }
 
   # copy variables
@@ -594,6 +631,7 @@ plot_power_over_time_data <- function(
   resect_electrodes <- dipsaus::parse_svec(resect_electrodes)
   is_soz <- electrode_table$Electrode %in% soz_electrodes
   is_resect <- electrode_table$Electrode %in% resect_electrodes
+  is_predicted <- predicted_electrodes == 1
 
   # plot <- ggplot(heatmap_data, aes(x = Time, y = Electrode, fill = Value)) +
   #   geom_tile() +
@@ -646,6 +684,8 @@ plot_power_over_time_data <- function(
       remaining_columns <- data_over_time_per_elec[, -selected_columns]
       data_over_time_per_elec <- cbind(data_over_time_per_elec_ordered, remaining_columns)
       data_over_time_per_elec <- as.matrix(data_over_time_per_elec)
+      is_predicted_ordered <- is_predicted[selected_columns]
+      is_predicted <- c(is_predicted_ordered, is_predicted[-selected_columns])
       y_labels_ordered <- y_labels[selected_columns]
       y_labels <- c(y_labels_ordered, y_labels[-selected_columns])
       elec_order_temp_ordered <- elec_order_temp[selected_columns]
@@ -684,6 +724,7 @@ plot_power_over_time_data <- function(
 
       # label-related
       labels = y_labels,
+      is_predicted = is_predicted,
       is_soz = is_soz,
       is_resect = is_resect,
 
@@ -709,6 +750,7 @@ plot_power_over_time_data <- function(
     data_over_time_per_elec <- group_item$data_over_time_per_elec
     time <- group_item$time
     y_labels <- group_item$labels
+    is_predicted <- group_item$is_predicted
     is_soz <- group_item$is_soz
     is_resect <- group_item$is_resect
     freq_range <- group_item$freq_range
@@ -782,6 +824,21 @@ plot_power_over_time_data <- function(
     y_labels_tmp <- y_labels
     y_labels_tmp[!is_resect | !is_soz] <- ""
     graphics::axis(side = 2, at = seq_along(y_labels), labels = y_labels_tmp, las = 1, col.axis = "green")
+
+    predicted_indices <- which(is_predicted)
+    y_coords <- seq_along(y_labels)[predicted_indices]
+
+    usr <- par("usr")
+    plot_width <- usr[2] - usr[1]
+    x_offset <- plot_width / 10
+
+    points(x = rep(usr[1] + x_offset, length(y_coords)),
+           y = y_coords,
+           pch = 8, col = "black", cex = 1.5)
+
+    points(x = rep(usr[1] + x_offset, length(y_coords)),
+           y = y_coords,
+           pch = 8, col = "purple", cex = 1)
 
     if( name_type == "number" ) {
       graphics::mtext(text = "Electrode Channel", side = 2, line = 2.7, cex = par("cex"))
@@ -1999,8 +2056,167 @@ electrode_powertime <- function(heatmapbetacol, subject_code, freq_list) {
 }
 
 #ML predictions for electrode
-electrode_outcome_prediction <- function(multitaper_result, trial, name_type, baseline,
-                                         condition, start_time_baseline = 0, end_time_baseline = 20) {
+electrode_outcome_prediction <- function(load_electrodes, subject_code,
+                                         epoch_file_name,
+                                         reference_name, subject, baseline, name_type,
+                                         condition, start_time_baseline = 0, end_time_baseline = 10) {
+  # generate multitaper
+  start_time_baseline = 0
+  end_time_baseline = 10
+  trial <- condition
+
+
+  repository <- raveio::prepare_subject_voltage_with_epoch(
+    subject = subject,
+    epoch_name = epoch_file_name,
+    electrodes = load_electrodes,
+    time_windows = c(0,20),
+    reference = reference_name
+  )
+
+  patient <- repository$subject$subject_code
+
+  frequency_range <- c(0,256)
+  time_bandwidth <- 3
+  num_tapers <- NULL
+  window_params <- c(2.5,0.5)
+  min_nfft <- 0
+  weighting <- "unity"
+  detrend_opt <- "linear"
+  parallel <- TRUE
+  num_workers <- raveio::raveio_getopt("max_worker")
+  verbose <- TRUE
+
+  fs <- repository$sample_rate
+  results <- parse_electrodes(load_electrodes)
+  nel <- results$nel
+  elecn <-results$elecn
+  nfft <- min_nfft
+  if(!isTRUE(nfft >= 1)) { nfft <- NA }
+  data_length <- length(repository$voltage$dimnames$Time)
+
+
+  repository_signature <- repository$signature
+  electrode_parse <- results
+
+  filebase <- file.path(pipeline$extdata_path, "karaslab_multitaper_explorer")
+  dnames <- NULL
+  epoch_table <- repository$epoch_table
+  epoch_table$Condition2 <- sprintf("%s (%s)", epoch_table$Condition, epoch_table$Trial)
+
+  # save meta to the array headers
+  meta <- list()
+  meta$epoch_table <- epoch_table
+  meta$electrode_table <- repository$electrode_table
+  meta$electrodes <- electrode_parse
+  meta$project_name <- repository$subject$project_name
+  meta$subject_code <- repository$subject$subject_code
+
+  time_freq_data <- raveio::cache_to_filearray(
+    filebase = filebase,
+    globals = c("repository_signature", "data_length", "nfft", "electrode_parse", "frequency_range",
+                "time_bandwidth", "num_tapers", "window_params", "weighting", "detrend_opt"),
+    fun = function(){
+      # voltage_for_analysis <- repository$voltage$data_list[[sprintf("e_%s", elecn[1])]]
+      #
+      # # Generate data format for storing epochs and corresponding voltage data
+      # conditions <- epoch_table$Condition
+      #
+      # multitaper_config <- ravetools::multitaper_config(
+      #   data_length = data_length,
+      #   fs = fs,
+      #   frequency_range = frequency_range,
+      #   time_bandwidth = time_bandwidth,
+      #   num_tapers = num_tapers,
+      #   window_params = window_params,
+      #   nfft = nfft,
+      #   detrend_opt = detrend_opt
+      # )
+      # res <- ravetools:::multitaper_process_input(
+      #   data_length,
+      #   fs,
+      #   frequency_range,
+      #   time_bandwidth,
+      #   num_tapers,
+      #   window_params,
+      #   nfft,
+      #   detrend_opt
+      # )
+      #
+      # time <- (res$window_start - 1 + res$winsize_samples / 2) / res$fs
+
+      # We want to run multitaper on all of the trials (sz case)
+      if(parallel && num_workers > 1) {
+        lapply2 <- function(X, FUN, callback) {
+          raveio::lapply_async(X, FUN, ncores = num_workers, callback = callback)
+        }
+      } else {
+        lapply2 <- function(X, FUN, callback) {
+          progress <- shidashi::shiny_progress(title = "Applying multitaper", max = length(X),
+                                               shiny_auto_close = TRUE)
+          lapply(X, function(x) {
+            s <- c(rev(strsplit(callback(x), split = "\\|")[[1]]), "Applying multitaper")[c(1,2)]
+            progress$inc(detail = s[[1]], message = s[[2]])
+            FUN(x)
+          })
+        }
+      }
+
+      time_freq_data <- lapply2(repository$voltage$data_list, function(voltage_for_analysis) {
+
+        time_start <- min(as.numeric(dimnames(voltage_for_analysis)$Time))
+
+        # load data
+        time_freq_per_chann_data <- filearray::apply(voltage_for_analysis, 2L, function(voltage) {
+          res <- multitaper_spectrogram_R(
+            voltage, fs, frequency_range, time_bandwidth, num_tapers,
+            window_params, min_nfft, weighting, detrend_opt, parallel = FALSE,
+            num_workers = FALSE, plot_on = FALSE, verbose = FALSE, xyflip = FALSE)
+          re <- t(res[[1]])
+          # time <- (res$window_start - 1 + res$winsize_samples / 2) / res$fs
+          dimnames(re) <- list(
+            Time = res[[2]] + time_start,
+            Frequency = res[[3]]
+          )
+          re
+        }, simplify = FALSE)
+        dnames <- dimnames(time_freq_per_chann_data[[1]])
+
+        # Time x Frequency x Trial
+        time_freq_per_chann_data <- simplify2array(time_freq_per_chann_data)
+        dimnames(time_freq_per_chann_data) <- c(
+          dnames,
+          list(Trial = epoch_table$Trial)
+        )
+
+        time_freq_per_chann_data
+      }, callback = function(el) {
+        sprintf("Applying multitaper|Channel %s",
+                paste(el$dimnames()$Electrode, collapse = ""))
+      })
+
+      dnames <- dimnames(time_freq_data[[1]])
+      dnames <- list(
+        Time = as.numeric(dnames$Time),
+        Frequency = as.numeric(dnames$Frequency),
+        Trial = as.numeric(dnames$Trial),
+        Electrode = repository$electrode_list
+      )
+      time_freq_data <- simplify2array(time_freq_data)
+      dimnames(time_freq_data) <- dnames
+      meta$dnames <- dnames
+
+      # set "extra" headers, this information will be saved
+      attr(time_freq_data, "extra") <- meta
+      time_freq_data
+    },
+    verbose = verbose
+  )
+
+
+  multitaper_result <- time_freq_data
+
+  #### Start of function
   library(dplyr)
   library(tidyr)
   library(h2o)
@@ -2051,7 +2267,7 @@ electrode_outcome_prediction <- function(multitaper_result, trial, name_type, ba
     }
 
     start_time_baseline <- 0
-    end_time_baseline <- 20
+    end_time_baseline <- 10
 
     time <- dnames$Time
 
@@ -2085,6 +2301,7 @@ electrode_outcome_prediction <- function(multitaper_result, trial, name_type, ba
     if(length(trial_sel)) {
       data_over_time_trial_per_elec <- data_over_time_trial_per_elec[, trial_sel ,, drop = FALSE]
     }
+
     ntrials <- dim(data_over_time_trial_per_elec)[[2]]
     nchanns <- dim(data_over_time_trial_per_elec)[[3]]
 
@@ -2103,61 +2320,75 @@ electrode_outcome_prediction <- function(multitaper_result, trial, name_type, ba
     times <- as.numeric(gsub("^X", "", colnames(data_over_time_per_elec)))
 
     # Store results in the list
-    results[[band_name]] <- data_over_time_per_elec
+    results[[band_name]] <- t(data_over_time_per_elec)
 
   }
 
-  combined_data <- data.frame()
+  times <- lapply(results, function(x) as.numeric(gsub("^X", "", colnames(x))))
+  minNumReadings <-35
 
-  for (label in names(results)) {
-    data <- results[[label]]
+  # Initialize patient_data dataframe with frequency column
+  patient_data <- list()
+  for(i in 1:length(results)) {
+    patient <- patient
+    condition <- condition
+    frequency <- names(results[i])
 
-    data_tibble <- tibble(
-      time = rep(row.names(data), each = ncol(data)),
-      electrode = rep(colnames(data), times = nrow(data)),
-      value = as.vector(data),
-      band = label
-    ) %>%
-      mutate(column_label = paste(band, time, sep = "_")) %>%
-      select(-band, -time)
+    ## readings are limited to the last minNumReadings readings
+    idx <- rev(rev(seq_len(ncol(results[[i]])))[1:minNumReadings])
+    data_over_time_per_elec <- results[[i]][, idx]
+    colnames(data_over_time_per_elec) <- paste0("X", seq_len(ncol(data_over_time_per_elec)))
 
-    combined_data <- bind_rows(combined_data, data_tibble)
-  }
+    # Extract range data for electrodes, SOZ and Resect
+    electrodes <- elecn
 
-  final_data <- combined_data %>%
-    spread(key = column_label, value = value)
-
-  generate_ordered_colnames <- function(colnames) {
-    patterns <- c("alpha", "beta", "delta", "gamma", "highgamma", "theta")
-    ordered_colnames <- c("electrode")
-
-    for (i in 1:36) {
-      for (pattern in patterns) {
-        colname <- paste0(pattern, "_X", i)
-        if (colname %in% colnames) {
-          ordered_colnames <- c(ordered_colnames, colname)
-        }
-      }
+    if(length(electrodes)==0){
+      next
     }
 
-    return(ordered_colnames)
+
+    dim(data_over_time_per_elec)
+
+    dt <- tibble(
+      patient_code = patient,
+      condition = condition,
+      frequency = frequency,
+      electrode = electrodes
+    )|>
+      bind_cols(data_over_time_per_elec)
+
+    patient_data <- c(patient_data, list(dt))
   }
 
-  original_colnames <- colnames(final_data)
-  new_order <- generate_ordered_colnames(original_colnames)
-  final_data <- final_data[, new_order]
+  patient_data <- do.call(rbind, patient_data)
+
+  patient_data <- patient_data|>
+    mutate(frequency = gsub("_frag", "", frequency))
+
+  value_columns <- paste0("X", seq_len(minNumReadings))
+  time_frequency_data <- patient_data|>
+    arrange(patient, condition, electrode, frequency)|>
+    pivot_wider(names_from = frequency, values_from = value_columns, names_glue = "{frequency}_{.value}")
+
+
+  ####
+  final_data <- time_frequency_data
+
+
 
   h2o.init()
   set.seed(123)
   final_data <- as.h2o(final_data)
-  ensemble_path <- load_model("ensemble")
-  ensemble <- h2o.loadModel(ensemble_path)
+  ensemble <- h2o.loadModel("/Volumes/bigbrain/scripts/sean/rave-pipeline-sean/modules/multitaper_explorer/R/models/ensemble")
   rf_probabilities <- predict(ensemble, newdata = final_data, type = "prob")
   rf_probabilities <- as.matrix(rf_probabilities)
-  h2o.shutdown()
+  h2o.shutdown(prompt = FALSE)
 
   rf_probabilities <- data.frame(rf_probabilities)
-  # print(rf_probabilities)
+  rf_probabilities <- cbind(rf_probabilities, elecn)
+  print(rf_probabilities)
+
+
   return(rf_probabilities$p1)
 }
 
