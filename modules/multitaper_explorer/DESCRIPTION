@@ -16,7 +16,7 @@ Authors@R: c(
     person("Michael S.", "Beauchamp", email = "", role = c("aut")),
     person("Zhengjia", "Wang", email = "", role = c("aut")),
     person("John F.", "Magnotti", email = "", role = c("aut")),
-    person("Patrick J.", "Karas", email = "", role = c("aut"))
+    person("Patrick J.", "Karas", email = "pjkaras@utmb.edu", role = c("aut"))
     )
 Description: Frequency range visualization and analysis tool.
 BugReports: https://github.com/seanmnoleary/rave-pipelines/tree/main/modules/multitaper_explorer
