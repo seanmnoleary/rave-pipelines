@@ -56,7 +56,6 @@ repository <- raveio::prepare_subject_voltage_with_epoch(
 )
 ```
 
-
 ### Step 3: Run multitaper and get result for all conditions
 ```{rave find_multitaper, language = "R", export = "multitaper_result"}
 multitaper_result <- generate_multitaper(

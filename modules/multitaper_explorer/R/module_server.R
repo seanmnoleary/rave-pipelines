@@ -260,6 +260,14 @@ module_server <- function(input, output, session, ...){
       # Reset preset UI & data
       component_container$reset_data()
       component_container$data$repository <- new_repository
+      preferences <- new_repository$subject$get_default("preferences", namespace = pipeline$pipeline_name)
+
+      if( is.list(preferences) && isTRUE(preferences$version >= 1) ) {
+        component_container$data$preferences <- preferences
+      } else {
+        # No subject-level prefs, use default
+        component_container$data$preferences <- list()
+      }
 
       epoch_table <- new_repository$epoch_table
       epoch_table$Condition2 <- sprintf("%s (%s)", epoch_table$Condition, epoch_table$Trial)
@@ -295,11 +303,12 @@ module_server <- function(input, output, session, ...){
         value = min(nyquist_floor, input$mt_frequency_upper_bound)
       )
 
+      default_condition <- c(preferences$default_condition, input$condition) %OF% epoch_table$Condition2
       shiny::updateSelectInput(
         session = session,
         inputId = "condition",
         choices = epoch_table$Condition2,
-        selected = input$condition %OF% epoch_table$Condition2
+        selected = default_condition
       )
 
       shiny::updateSelectInput(
@@ -334,6 +343,14 @@ module_server <- function(input, output, session, ...){
         title = "Multitaper Parameters",
         method = "expand"
       )
+
+      # Update SOZ
+      soz_electrodes <- preferences$SOZ_electrode
+      if(!isTRUE(is.character(soz_electrodes))) {
+        soz_electrodes <- dipsaus::deparse_svec(soz_electrodes)
+      }
+      shiny::updateTextInput(session = session, inputId = "input_SOZ_electrodes", value = soz_electrodes)
+
 
       # Reset outputs
       local_reactives$update_outputs <- FALSE
@@ -1077,10 +1094,26 @@ module_server <- function(input, output, session, ...){
         })
       }
 
+      cols <- plot_preferences$get('heatmap_palette')
+      palettes <- list()
+      val_ranges <- list()
+
+      plot_data <- as.list(plot_data)
+
+      # set up soz, resect
+      if(length(c(soz_electrodes, resect_electrodes))) {
+        soz_resect_table <- data.frame(
+          Electrode = c(soz_electrodes, resect_electrodes),
+          Type = factor("SOZ", levels = c("SOZ", "Resect", "SOZ/Resect"))
+        )
+        soz_resect_table$Type[soz_resect_table$Electrode %in% resect_electrodes] <- "Resect"
+        soz_resect_table$Type[soz_resect_table$Electrode %in% resect_or_soz_electrodes] <- "SOZ/Resect"
+        plot_data[[length(plot_data) + 1]] <- soz_resect_table
+        palettes[["Type"]] <- c("#00bfff", "#bf00ff", "green")
+        has_plot_data <- TRUE
+      }
+
       if( has_plot_data ) {
-        cols <- plot_preferences$get('heatmap_palette')
-        palettes <- list()
-        val_ranges <- list()
         for(value_table in plot_data) {
           if( use_template_brain ) {
             # plot onto template brain
@@ -1099,34 +1132,33 @@ module_server <- function(input, output, session, ...){
             v <- value_table[[nm]]
             v <- v[!is.na(v)]
 
-            palettes[[nm]] <- cols
-            if(length(v)) {
-              val_ranges[[nm]] <- c(min(v), max(v))
+            if( is.numeric(v) ) {
+              palettes[[nm]] <- cols
+              if(length(v)) {
+                val_ranges[[nm]] <- c(min(v), max(v))
+              }
             }
           }
         }
 
+      }
 
-        if( use_template_brain ) {
-          brain$template_object$render(
-            side_display = FALSE,
-            val_ranges = val_ranges,
-            palettes = palettes,
-            outputId = "sz_power_on_brain", session = session
-          )
-        } else {
 
-          brain$render(
-            side_display = FALSE,
-            val_ranges = val_ranges,
-            palettes = palettes,
-            outputId = "sz_power_on_brain", session = session
-          )
-        }
 
+      if( use_template_brain ) {
+        brain$template_object$render(
+          side_display = FALSE,
+          val_ranges = val_ranges,
+          palettes = palettes,
+          outputId = "sz_power_on_brain", session = session
+        )
       } else {
-        brain$plot(
-          side_display = FALSE
+
+        brain$render(
+          side_display = FALSE,
+          val_ranges = val_ranges,
+          palettes = palettes,
+          outputId = "sz_power_on_brain", session = session
         )
       }
     })

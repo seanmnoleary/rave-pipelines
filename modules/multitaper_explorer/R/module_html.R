@@ -328,7 +328,17 @@ module_html <- function(){
                     )
                   ),
                   ravedash::flex_group_box(
-                    title = "SOZ: Blue – Resect: Purple – Overlap: Green",
+                    title = "Channel Labels",
+                    shidashi::flex_item(
+                      shiny::p(
+                        shiny::tags$small(
+                          "SOZ: ", shiny::span("Blue", style="color: #00bfff;"),
+                          " – Resect: ", shiny::span("Purple", style="color: #bf00ff;"),
+                          "– Overlap: ",  shiny::span("Green", style="color: #00FF00;")
+                        )
+                      )
+                    ),
+                    shidashi::flex_break(),
                     shiny::checkboxInput(
                       inputId = ns("hm_showSOZ"),
                       label = "Show SOZ",
@@ -336,8 +346,9 @@ module_html <- function(){
                     ),
                     shiny::textInput(
                       inputId = ns("input_SOZ_electrodes"),
-                      label = "SOZ electrodes (numeric input)",
-                      value = ""
+                      label = "SOZ electrodes",
+                      value = "",
+                      placeholder = "e.g. 1-10,56,58-60"
                     ),
                     shiny::checkboxInput(
                       inputId = ns("hm_showResect"),
@@ -346,8 +357,9 @@ module_html <- function(){
                     ),
                     shiny::textInput(
                       inputId = ns("input_resect_electrodes"),
-                      label = "Resect electrodes (numeric input)",
-                      value = ""
+                      label = "Resect electrodes",
+                      value = "",
+                      placeholder = "e.g. 1-10,56,58-60"
                     )
                   ),
                   ravedash::flex_group_box(

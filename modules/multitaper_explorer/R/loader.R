@@ -92,7 +92,11 @@ loader_server <- function(input, output, session, ...){
           settings$epoch_choice__trial_ends
         ),
         reference_name = settings$reference_name,
-        load_electrodes = settings$loaded_electrodes
+        load_electrodes = settings$loaded_electrodes,
+
+        # For loaders to pick up the preferences
+        epoch_choice__trial_starts = settings$epoch_choice__trial_starts,
+        epoch_choice__trial_ends = settings$epoch_choice__trial_ends
       )
 
       # Check if user has asked to set the epoch & reference to be the default

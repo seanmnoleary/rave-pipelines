@@ -1,44 +1,11 @@
-time_windows:
-- 0
-- 20
-electrodes: 1-4,7-36,42-43,46-69,72-95
-epoch_name: sz1 (2)
-subject_code: subpt01
-ordered: yes
-heatmap_name_type: number
-resect_electrodes: ''
-soz_electrodes: ''
-project_name: Retrostudy2
-epoch_file_name: subpt01_seizure
-selected_electrode: 1
-load_electrodes: 1-4,7-24,26-36,42-43,46-54,56-69,72-95
-reference_name: Common_Average_Reference
-time_window:
-- 0
-- 20
-time_bandwidth: 3
-xyflip: no
-verbose: no
-plot_on: no
-num_workers: 31.0
-parallel: yes
-detrend_opt: linear
-weighting: unity
-min_nfft: 0
-num_tapers: ~
-frequency_range:
-- 0
-- 256
-window_params:
-- 2.5
-- 0.5
-reference: common_average
-condition: sz1 (2)
+SOZ_elec: '0'
+resect_elec: '0'
+plot_resect_elec: no
 analysis_time_frequencies:
   '1':
     frequency_range:
-    - 13
-    - 30
+    - 90
+    - 256
     frequency_preset_delta: 0
     frequency_preset_theta: 0
     frequency_preset_alpha: 0
@@ -48,13 +15,44 @@ analysis_time_frequencies:
     time_range:
     - 0
     - 10
-plot_resect_elec: no
-resect_elec: '0'
-SOZ_elec: '0'
-text_size: 5.0
-organize_top: no
-label: numeric
-plot_SOZ_elec: no
+condition: sz1 (2)
+reference: common_average
+window_params:
+- 2.5
+- 0.5
+frequency_range:
+- 0
+- 256
+num_tapers: ~
+min_nfft: 0
+weighting: unity
+detrend_opt: linear
+parallel: yes
+num_workers: 31.0
+plot_on: no
+verbose: no
+xyflip: no
+time_bandwidth: 3
+time_window:
+- 0
+- 10
+reference_name: Common_Average_Reference
+load_electrodes: 1-4,7-24,26-36,42-43,46-54,56-69,72-95
+selected_electrode: 1
+epoch_file_name: subpt01_seizure
+project_name: Retrostudy2
+soz_electrodes: ''
+resect_electrodes: ''
+heatmap_name_type: number
+ordered: yes
+subject_code: subpt01
+epoch_name: sz1 (2)
+electrodes: 1-4,7-36,42-43,46-69,72-95
+time_windows:
+- 0
+- 20
+time_stat_end: 10.0
+time_stat_start: 0.0
 analysis_windows:
   '1':
     frequency_range:
@@ -63,15 +61,19 @@ analysis_windows:
     time_range:
     - 0.0
     - 20.0
-time_stat_start: 0.0
-time_stat_end: 10.0
-end_time_baseline: 10
-start_time_baseline: 0.0
-baselined: yes
-scale: None
-baseline: 30s before sz1 (1)
-decibal: no
+plot_SOZ_elec: no
+label: numeric
+organize_top: no
+text_size: 5.0
+show_ML: no
 ML_time_range:
 - 0
 - 20
-show_ML: no
+decibal: no
+baseline: sz1 (2)
+scale: None
+baselined: no
+start_time_baseline: 0.0
+end_time_baseline: 0
+epoch_choice__trial_starts: 0
+epoch_choice__trial_ends: 10
