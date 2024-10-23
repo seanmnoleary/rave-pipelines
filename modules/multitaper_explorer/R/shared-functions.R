@@ -199,6 +199,123 @@ generate_multitaper <- function (
   time_freq_data
 }
 
+## generate power over frequency
+## Code for computing beta power matrix
+generate_power_over_frequency_data <- function(
+    multitaper_result,
+    analysis_time_frequencies,
+    baselined,
+    baseline,
+    end_time_baseline,
+    decibal
+  ) {
+
+  start_time_baseline <- 0
+
+  # get header information
+  meta <- multitaper_result$get_header("extra")
+  dnames <- meta$dnames
+  epoch_table <- meta$epoch_table
+  electrode_table <- meta$electrode_table
+  electrode_parse <- meta$electrodes
+  project_name <- meta$project_name
+  subject_code <- meta$subject_code
+
+  nel <- electrode_parse$nel
+  elecn <- electrode_parse$elecn
+
+  value_range <- c(0, 0)
+
+  # collapse over frequency for each time point and condition
+  group_data <- lapply(seq_along(analysis_time_frequencies), function(ii) {
+    analysis_item <- analysis_time_frequencies[[ii]]
+    analysis_item$frequency_range <- range(unlist(analysis_item$frequency_range))
+    analysis_item$time_range <- range(unlist(analysis_item$time_range))
+
+    frequency_selection <- dnames$Frequency >= min(analysis_item$frequency_range) & dnames$Frequency <= max(analysis_item$frequency_range)
+    frequency_indexes <- which(frequency_selection & dnames$Frequency > 0)
+    frequency_reference <- dnames$Frequency[frequency_indexes]
+
+    if(!any(frequency_selection)) {
+      return(NULL)  # Skip invalid frequency ranges
+    }
+
+    time_range_for_analysis <- range(unlist(analysis_item$time_range))
+    time <- dnames$Time
+    actual_ranges <- range(time)
+
+    if(anyNA(time_range_for_analysis)) {
+      time_range_for_analysis <- actual_ranges
+    } else {
+      if(time_range_for_analysis[[1]] < actual_ranges[[1]]) {
+        time_range_for_analysis[[1]] = actual_ranges[[1]]
+      }
+      if(time_range_for_analysis[[2]] > actual_ranges[[2]]) {
+        time_range_for_analysis[[2]] = actual_ranges[[2]]
+      }
+    }
+
+    start_index_analysis <- which(time >= analysis_item$time_range[[1]])[1]
+    end_index_analysis <- which(time <= analysis_item$time_range[[2]])[length(which(time <= analysis_item$time_range[[2]]))]
+    sub_array_all <- multitaper_result[start_index_analysis:end_index_analysis, frequency_indexes, , , drop = FALSE, dimnames = NULL]
+
+    # Time (collapse) x Frequency (keep) x Trial (keep) x Electrode (keep)
+    data_over_frequency_trial_per_elec <- ravetools::collapse(sub_array_all, keep = c(2, 3, 4), average = TRUE)
+
+    # Perform baselining if needed
+    if (baselined & end_time_baseline > 0) {
+      if(length(baseline)) {
+        if(is.numeric(baseline)) {
+          baseline_sel <- which(epoch_table$Trial %in% baseline)
+        } else {
+          baseline_sel <- which(epoch_table$Condition2 %in% baseline)
+        }
+      } else {
+        baseline_sel <- NULL
+        print("Please set baseline condition")
+      }
+
+      start_index_baseline <- which(time >= start_time_baseline)[1]
+      end_index_baseline <- which(time <= end_time_baseline)[length(which(time <= end_time_baseline))]
+      baseline_matrix <- multitaper_result[start_index_baseline:end_index_baseline, frequency_indexes, , , drop = FALSE, dimnames = NULL]
+      baseline_matrix <- ravetools::collapse(baseline_matrix, keep = c(2, 3, 4), average = TRUE)
+      baseline_matrix <- baseline_matrix[,baseline_sel, ]
+
+      dims <- dim(data_over_frequency_trial_per_elec)
+      for (j in 1:dims[2]) {
+        analysis_condition <- data_over_frequency_trial_per_elec[, j, ]
+        for (bi in 1:ncol(analysis_condition)) {
+          m <- mean(baseline_matrix[, bi])
+          analysis_condition[, bi] <- (analysis_condition[, bi] - m)
+        }
+        data_over_frequency_trial_per_elec[, j, ] <- analysis_condition
+      }
+    }
+
+    value_range <<- range(c(range(data_over_frequency_trial_per_elec, na.rm = TRUE), value_range))
+
+    list(
+      group_id = ii,
+      data_over_frequency_trial_per_elec = data_over_frequency_trial_per_elec,
+      time_range_for_analysis = time_range_for_analysis,
+      frequency = unlist(frequency_reference)
+    )
+  })
+
+  list(
+    project_name = project_name,
+    subject_code = subject_code,
+    group_data = group_data,
+    value_range = value_range,
+    time = dnames$Time,
+    frequency = dnames$Frequency,
+    baselined = baselined,
+    epoch_table = epoch_table,
+    electrode_table = electrode_table[electrode_table$Electrode %in% dnames$Electrode, ]
+  )
+
+}
+
 ## generate all frequency plots for a specific condition
 ## Code for computing beta power matrix
 generate_power_over_time_data <- function(
@@ -368,7 +485,6 @@ format_numbers <- function(numbers) {
     }
   })
 }
-
 
 plot_signal_data <- function(repository,
                              load_electrodes,
@@ -573,7 +689,6 @@ plot_signal_data <- function(repository,
 
 }
 
-
 plot_power_over_time_data <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
@@ -589,7 +704,7 @@ plot_power_over_time_data <- function(
     palette <- colorRampPalette(palette)(101)
   }
 
-  predicted_electrodes <- ifelse(ML_prediction_electrode > 0.9, 1, 0)
+  predicted_electrodes <- ifelse(ML_prediction_electrode > 0.8956, 1, 0)
   if (show_ML == FALSE) {
     predicted_electrodes <- rep(0, length(predicted_electrodes))
   }
@@ -906,6 +1021,483 @@ plot_power_over_time_data <- function(
 
 }
 
+plot_power_over_frequency_data_line <- function(
+    power_over_frequency_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
+    name_type = c("name", "number"), value_range = NULL,
+    scale = c("None", "Min_Max_Normalized_Time_Window"),
+    palette = plot_preferences$get('heatmap_palette'), save_path = NULL) {
+
+  name_type <- match.arg(name_type)
+  scale <- match.arg(scale)
+
+  if(length(palette) < 101) {
+    palette <- colorRampPalette(palette)(101)
+  }
+
+  # copy variables
+  frequency <- power_over_frequency_data$frequency
+  epoch_table <- power_over_frequency_data$epoch_table
+  electrode_table <- power_over_frequency_data$electrode_table
+  actual_range <- power_over_frequency_data$value_range
+  project_name <- power_over_frequency_data$project_name
+  subject_code <- power_over_frequency_data$subject_code
+
+  if(length(value_range) > 0 && !anyNA(value_range)) {
+    value_range <- range(value_range, na.rm = TRUE)
+    if(value_range[[2]] == value_range[[1]]) {
+      if(scale == "Min_Max_Normalized_Time_Window") {
+        value_range <- c(0, 1)
+      } else {
+        value_range <- actual_range
+      }
+    }
+  } else {
+    if(scale == "Min_Max_Normalized_Time_Window") {
+      value_range <- c(0, 1)
+    } else {
+      value_range <- actual_range
+    }
+  }
+
+  # determine the y-axis labels
+  if(name_type == "name") {
+    y_labels <- electrode_table$Label
+  } else {
+    y_labels <- electrode_table$Electrode
+  }
+
+  # dipsaus::parse_svec is the builtin function to parse text to integer channels
+  soz_electrodes <- dipsaus::parse_svec(soz_electrodes)
+  resect_electrodes <- dipsaus::parse_svec(resect_electrodes)
+  is_soz <- electrode_table$Electrode %in% soz_electrodes
+  is_resect <- electrode_table$Electrode %in% resect_electrodes
+
+  if(length(trial)) {
+    if(is.numeric(trial)) {
+      trial_sel <- which(epoch_table$Trial %in% trial)
+    } else {
+      trial_sel <- which(epoch_table$Condition2 %in% trial)
+    }
+  } else {
+    trial_sel <- NULL
+  }
+
+  group_data_is_valid <- !sapply(power_over_frequency_data$group_data, is.null)
+
+  if(!any(group_data_is_valid)) {
+    stop("No valid data; please check analysis frequency and time range.")
+  }
+
+  layout_heat_maps(sum(group_data_is_valid), max_col = 2, layout_color_bar = TRUE)
+  par("mar" = c(5, 4.3, 3, 0.1), cex = 1.2)
+
+  # loop 1: calculate value ranges & data for figures
+  plot_data <- lapply(power_over_frequency_data$group_data[group_data_is_valid], function(group_item) {
+    if(is.null(group_item)) { return(NULL) }
+
+    data <- group_item$data_over_frequency_trial_per_elec
+    if(length(trial_sel)) {
+      data <- data[, trial_sel, , drop = FALSE]
+    }
+    ntrials <- dim(data)[[2]]
+    nchanns <- dim(data)[[3]]
+
+    # Frequency (keep) x Trial (collapse) x Electrode (keep)
+    data_over_frequency_per_elec <- ravetools::collapse(data, keep = c(1, 3), average = TRUE)
+
+    # overall data range
+    data_range_all <- range(data_over_frequency_per_elec, na.rm = TRUE)
+    data_range_analysis <- data_range_all
+
+    if (any(is_soz) & !any(is_resect)) {
+      soz_columns <- which(is_soz)
+      soz_data <- data_over_frequency_per_elec[, soz_columns]
+      average_power_soz <- apply(soz_data, 1, mean)
+      std_err_soz <- apply(soz_data, 1, function(x) sd(x) / sqrt(length(x)))
+
+      non_soz_columns <- which(!is_soz)
+      non_soz_data <- data_over_frequency_per_elec[, non_soz_columns]
+      average_power_not_soz <- apply(non_soz_data, 1, mean)
+      std_err_not_soz <- apply(non_soz_data, 1, function(x) sd(x) / sqrt(length(x)))
+
+      shade_upper_soz <- average_power_soz + std_err_soz
+      shade_lower_soz <- average_power_soz - std_err_soz
+      shade_upper_not_soz <- average_power_not_soz + std_err_not_soz
+      shade_lower_not_soz <- average_power_not_soz - std_err_not_soz
+
+      lowerrange <- min(shade_lower_soz, shade_lower_not_soz)
+      highrange <- max(shade_upper_soz, shade_upper_not_soz)
+
+      data_range_analysis <- c(lowerrange, highrange)
+
+    } else if (!any(is_soz) & any(is_resect)) {
+      resect_columns <- which(is_resect)
+      resect_data <- data_over_frequency_per_elec[, resect_columns]
+      average_power_resect <- apply(resect_data, 1, mean)
+      std_err_resect <- apply(resect_data, 1, function(x) sd(x) / sqrt(length(x)))
+
+      non_resect_columns <- which(!is_resect)
+      non_resect_data <- data_over_frequency_per_elec[, non_resect_columns]
+      average_power_not_resect <- apply(non_resect_data, 1, mean)
+      std_err_not_resect <- apply(non_resect_data, 1, function(x) sd(x) / sqrt(length(x)))
+
+      shade_upper_resect <- average_power_resect + std_err_resect
+      shade_lower_resect <- average_power_resect - std_err_resect
+      shade_upper_not_resect <- average_power_not_resect + std_err_not_resect
+      shade_lower_not_resect <- average_power_not_resect - std_err_not_resect
+
+      lowerrange <- min(shade_lower_resect, shade_lower_not_resect)
+      highrange <- max(shade_upper_resect, shade_upper_not_resect)
+
+      data_range_analysis <- c(lowerrange, highrange)
+
+    } else if (any(is_soz) & any(is_resect)) {
+      # SOZ data
+      soz_columns <- which(is_soz)
+      soz_data <- data_over_frequency_per_elec[, soz_columns]
+      average_power_soz <- apply(soz_data, 1, mean)
+      std_err_soz <- apply(soz_data, 1, function(x) sd(x) / sqrt(length(x)))
+
+      resect_columns <- which(is_resect)
+      resect_data <- data_over_frequency_per_elec[, resect_columns]
+      average_power_resect <- apply(resect_data, 1, mean)
+      std_err_resect <- apply(resect_data, 1, function(x) sd(x) / sqrt(length(x)))
+
+      non_soz_non_resect_columns <- which(!is_soz & !is_resect)
+      non_soz_non_resect_data <- data_over_frequency_per_elec[, non_soz_non_resect_columns]
+      average_power_non_soz_non_resect <- apply(non_soz_non_resect_data, 1, mean)
+      std_err_non_soz_non_resect <- apply(non_soz_non_resect_data, 1, function(x) sd(x) / sqrt(length(x)))
+
+      shade_upper_soz <- average_power_soz + std_err_soz
+      shade_lower_soz <- average_power_soz - std_err_soz
+
+      shade_upper_resect <- average_power_resect + std_err_resect
+      shade_lower_resect <- average_power_resect - std_err_resect
+
+      shade_upper_non_soz_non_resect <- average_power_non_soz_non_resect + std_err_non_soz_non_resect
+      shade_lower_non_soz_non_resect <- average_power_non_soz_non_resect - std_err_non_soz_non_resect
+
+
+      lowerrange <- min(shade_lower_resect, shade_lower_soz, shade_lower_non_soz_non_resect)
+      highrange <- max(shade_upper_resect, shade_upper_soz, shade_upper_non_soz_non_resect)
+
+      data_range_analysis <- c(lowerrange, highrange)
+
+    } else {
+      average_power <- apply(data_over_frequency_per_elec, 1, mean)
+      std_err <- apply(data_over_frequency_per_elec, 1, function(x) sd(x) / sqrt(length(x)))
+
+      shade_upper <- average_power + std_err
+      shade_lower <- average_power - std_err
+
+      lowerrange <- min(shade_lower)
+      highrange <- max(shade_upper)
+
+      data_range_analysis <- c(lowerrange, highrange);
+    }
+
+    list(
+      data_over_frequency_per_elec = data_over_frequency_per_elec,
+      data_ranges_max = c(max(abs(data_range_all)), max(abs(data_range_analysis))),
+      data_ranges_min = c(min(data_range_all), min(data_range_analysis)),
+      frequency = group_item$frequency,
+      time_range_for_analysis = group_item$time_range_for_analysis,
+      labels = y_labels,
+      is_soz = is_soz,
+      is_resect = is_resect,
+      freq_range = range(group_item$frequency),
+      nchanns = nchanns,
+      ntrials = ntrials,
+      group_id = group_item$group_id
+    )
+  })
+
+  # get ranges
+  plot_data <- dipsaus::drop_nulls(plot_data)
+  data_ranges_max <- sapply(plot_data, "[[", "data_ranges_max")
+  data_ranges_min <- sapply(plot_data, "[[", "data_ranges_min")
+  data_max <- max(data_ranges_max[2, ])
+  data_min <- min(data_ranges_min[2, ])
+  baselined <- power_over_frequency_data$baselined;
+
+  lapply(plot_data, function(group_item) {
+    data_over_frequency_per_elec <- group_item$data_over_frequency_per_elec
+    frequency <- group_item$frequency;
+    y_labels <- group_item$labels;
+    is_soz <- group_item$is_soz;
+    is_resect <- group_item$is_resect;
+    freq_range <- group_item$freq_range;
+    ntrials <- group_item$ntrials;
+    nchanns <- group_item$nchanns;
+    group_id <- group_item$group_id;
+
+    if(scale == "Min_Max_Normalized_Time_Window") {
+      max_value <- group_item$data_ranges_max[2];
+      data_over_frequency_per_elec <- t(data_over_frequency_per_elec);
+
+      mincol <- apply(data_over_frequency_per_elec, 2, min);
+      maxcol <- apply(data_over_frequency_per_elec, 2, max);
+
+      for (col in 1:ncol(data_over_frequency_per_elec)) {
+        for (row in 1:nrow(data_over_frequency_per_elec)) {
+          if(maxcol[col] != mincol[col]) {
+            data_over_frequency_per_elec[row, col] <- (data_over_frequency_per_elec[row, col] - mincol[col]) / (maxcol[col] - mincol[col]);
+          } else {
+            data_over_frequency_per_elec[row, col] <- 0;
+          }
+        }
+      }
+
+      if(baselined) {
+        value_range <- c(-1, 1);
+      } else {
+        value_range <- c(0, 1);
+      }
+
+    } else {
+      if(baselined) {
+        value_range <- c(min(group_item$data_ranges_min[2]), max(group_item$data_ranges_max[2]));
+      } else {
+        value_range <- c(min(group_item$data_ranges_min[2]), max(group_item$data_ranges_max[2]));
+      }
+    }
+
+    if(any(is_soz) & !any(is_resect)) {
+      soz_columns <- which(is_soz);
+      soz_data <- data_over_frequency_per_elec[, soz_columns];
+      rownames(soz_data) <- frequency
+      average_power_soz <- apply(soz_data, 1, mean);
+      std_err_soz <- apply(soz_data, 1, function(x) sd(x) / sqrt(length(x)));
+
+      non_soz_columns <- which(!is_soz);
+      non_soz_data <- data_over_frequency_per_elec[, non_soz_columns];
+      rownames(non_soz_data) <- frequency
+      average_power_not_soz <- apply(non_soz_data, 1, mean);
+      std_err_not_soz <- apply(non_soz_data, 1, function(x) sd(x) / sqrt(length(x)));
+
+      # Plot line plot of average power for SOZ
+      graphics::plot(frequency, average_power_soz, type = "l", ylim = value_range,
+                     col = "#00bfff", lwd = 5,
+                     xlab = "Frequency (Hz)", ylab = "Average Power");
+
+      # Add shaded area for standard error for SOZ
+      shade_upper_soz <- average_power_soz + std_err_soz;
+      shade_lower_soz <- average_power_soz - std_err_soz;
+      graphics::polygon(c(frequency, rev(frequency)), c(shade_upper_soz, rev(shade_lower_soz)), col = rgb(0, 0, 1, alpha = 0.3), border = NA);
+
+      # Plot line plot of average power for non-SOZ
+      graphics::lines(frequency, average_power_not_soz, col = "black", lwd = 5);
+
+      # Add shaded area for standard error for non-SOZ
+      shade_upper_not_soz <- average_power_not_soz + std_err_not_soz;
+      shade_lower_not_soz <- average_power_not_soz - std_err_not_soz;
+      graphics::polygon(c(frequency, rev(frequency)), c(shade_upper_not_soz, rev(shade_lower_not_soz)), col = rgb(0.7, 0.7, 0.7, alpha = 0.5), border = NA);
+
+      # Add legend
+      legend("topright", legend=c("SOZ", "Non-SOZ"), col=c("#00bfff", "black"), lwd=5);
+
+      if(!(is.null(save_path))) {
+        save_data <- data.frame(
+          soz_std_err = std_err_soz,
+          average_power_soz = average_power_soz,
+          average_power_other = average_power_not_soz,
+          other_std_err = std_err_not_soz,
+          frequency = frequency
+        )
+        filename <- paste0(subject_code, "_epoch_line_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(save_data, filename);
+
+        filename <- paste0(subject_code, "_soz_power_frequency_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(soz_data, filename);
+
+        filename <- paste0(subject_code, "_non_soz_power_frequency_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(non_soz_data, filename);
+
+      }
+
+    } else if (!any(is_soz) & any(is_resect)) {
+
+      resect_columns <- which(is_resect);
+      resect_data <- data_over_frequency_per_elec[, resect_columns];
+      rownames(resect_data) <- frequency
+      average_power_resect <- apply(resect_data, 1, mean);
+      std_err_resect <- apply(resect_data, 1, function(x) sd(x) / sqrt(length(x)));
+
+      non_resect_columns <- which(!is_resect);
+      non_resect_data <- data_over_frequency_per_elec[, non_resect_columns];
+      rownames(non_resect_data) <- frequency
+      average_power_not_resect <- apply(non_resect_data, 1, mean);
+      std_err_not_resect <- apply(non_resect_data, 1, function(x) sd(x) / sqrt(length(x)));
+
+      # Plot line plot of average power for resect
+      graphics::plot(frequency, average_power_resect, type = "l", ylim = value_range,
+                     col = "#bf00ff", lwd = 5,
+                     xlab = "Frequency (Hz)", ylab = "Average Power");
+
+      # Add shaded area for standard error for resect
+      shade_upper_resect <- average_power_resect + std_err_resect;
+      shade_lower_resect <- average_power_resect - std_err_resect;
+      graphics::polygon(c(frequency, rev(frequency)), c(shade_upper_resect, rev(shade_lower_resect)), col = rgb(0.75, 0, 1, alpha = 0.3), border = NA);
+
+      # Plot line plot of average power for non-resect
+      graphics::lines(frequency, average_power_not_resect, col = "black", lwd = 5);
+
+      # Add shaded area for standard error for non-resect
+      shade_upper_not_resect <- average_power_not_resect + std_err_not_resect;
+      shade_lower_not_resect <- average_power_not_resect - std_err_not_resect;
+      graphics::polygon(c(frequency, rev(frequency)), c(shade_upper_not_resect, rev(shade_lower_not_resect)), col = rgb(0.7, 0.7, 0.7, alpha = 0.5), border = NA);
+
+      # Add legend
+      legend("topright", legend=c("Resect", "Non-Resect"), col=c("#bf00ff", "black"), lwd=5);
+
+      if(!(is.null(save_path))) {
+        save_data <- data.frame(
+          std_err_resect = std_err_resect,
+          average_power_resect = average_power_resect,
+          average_power_other = average_power_not_resect,
+          other_std_err = std_err_not_resect,
+          frequency = frequency
+        )
+        filename <- paste0(subject_code, "_epoch_line_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(save_data, filename);
+
+        filename <- paste0(subject_code, "_resect_power_frequency_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(resect_data, filename);
+
+        filename <- paste0(subject_code, "_non_resect_power_frequency_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(non_resect_data, filename);
+
+      }
+
+    } else if (any(is_soz) & any(is_resect)) {
+      # Compute average power and standard error for SOZ
+      soz_columns <- which(is_soz);
+      soz_data <- data_over_frequency_per_elec[, soz_columns];
+      rownames(soz_data) <- frequency
+      average_power_soz <- apply(soz_data, 1, mean);
+      std_err_soz <- apply(soz_data, 1, function(x) sd(x) / sqrt(length(x)));
+
+      # Compute average power and standard error for resect
+      resect_columns <- which(is_resect);
+      resect_data <- data_over_frequency_per_elec[, resect_columns];
+      rownames(resect_data) <- frequency
+      average_power_resect <- apply(resect_data, 1, mean);
+      std_err_resect <- apply(resect_data, 1, function(x) sd(x) / sqrt(length(x)));
+
+      # Compute average power and standard error for non-SOZ and non-resect
+      non_soz_non_resect_columns <- which(!is_soz & !is_resect);
+      non_soz_non_resect_data <- data_over_frequency_per_elec[, non_soz_non_resect_columns];
+      rownames(non_soz_non_resect_data) <- frequency
+      average_power_not_soz_not_resect <- apply(non_soz_non_resect_data, 1, mean);
+      std_err_not_soz_not_resect <- apply(non_soz_non_resect_data, 1, function(x) sd(x) / sqrt(length(x)));
+
+      # Plot line plot of average power for SOZ
+      graphics::plot(frequency, average_power_soz, type = "l", ylim = value_range,
+                     col = "#00bfff", lwd = 5,
+                     xlab = "Frequency (Hz)", ylab = "Average Power");
+
+      # Add shaded area for standard error for SOZ
+      shade_upper_soz <- average_power_soz + std_err_soz;
+      shade_lower_soz <- average_power_soz - std_err_soz;
+      graphics::polygon(c(frequency, rev(frequency)), c(shade_upper_soz, rev(shade_lower_soz)), col = rgb(0, 0, 1, alpha = 0.3), border = NA);
+
+      # Plot line plot of average power for resect
+      graphics::lines(frequency, average_power_resect, col = "#bf00ff", lwd = 5);
+
+      # Add shaded area for standard error for resect
+      shade_upper_resect <- average_power_resect + std_err_resect;
+      shade_lower_resect <- average_power_resect - std_err_resect;
+      graphics::polygon(c(frequency, rev(frequency)), c(shade_upper_resect, rev(shade_lower_resect)), col = rgb(0.75, 0, 1, alpha = 0.3), border = NA);
+
+      # Plot line plot of average power for non-SOZ and non-resect
+      graphics::lines(frequency, average_power_not_soz_not_resect, col = "black", lwd = 5);
+
+      # Add shaded area for standard error for non-SOZ and non-resect
+      shade_upper_not_soz_not_resect <- average_power_not_soz_not_resect + std_err_not_soz_not_resect;
+      shade_lower_not_soz_not_resect <- average_power_not_soz_not_resect - std_err_not_soz_not_resect;
+      graphics::polygon(c(frequency, rev(frequency)), c(shade_upper_not_soz_not_resect, rev(shade_lower_not_soz_not_resect)), col = rgb(0.7, 0.7, 0.7, alpha = 0.5), border = NA);
+
+      # Add legend
+      legend("topright", legend=c("SOZ", "Resect", "Non-SOZ & Non-Resect"), col=c("#00bfff", "#bf00ff", "black"), lwd=5);
+
+      if(!(is.null(save_path))) {
+        save_data <- data.frame(
+          average_power_resect = average_power_resect,
+          std_err_resect = std_err_resect,
+          average_power_soz = average_power_soz,
+          std_err_soz = std_err_soz,
+          average_power_other = average_power_not_soz_not_resect,
+          other_std_err = std_err_not_soz_not_resect,
+          frequency = frequency
+        )
+        filename <- paste0(subject_code, "_epoch_line_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(save_data, filename);
+
+        filename <- paste0(subject_code, "_soz_power_frequency_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(soz_data, filename);
+
+        filename <- paste0(subject_code, "_resect_power_frequency_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(resect_data, filename);
+
+        filename <- paste0(subject_code, "_other_power_frequency_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(non_soz_non_resect_data, filename);
+
+      }
+
+    } else {
+      # Compute average power across frequency for each electrode
+      average_power <- apply(data_over_frequency_per_elec, 1, mean);
+      std_err <- apply(data_over_frequency_per_elec, 1, function(x) sd(x) / sqrt(length(x)));
+
+      # Plot line plot of average power
+      graphics::plot(frequency, average_power, type = "l", ylim = value_range,
+                     col = "black", lwd = 5,
+                     xlab = "Frequency (Hz)", ylab = "Average Power");
+
+      # Add shaded area for standard error
+      shade_upper <- average_power + std_err;
+      shade_lower <- average_power - std_err;
+      graphics::polygon(c(frequency, rev(frequency)), c(shade_upper, rev(shade_lower)), col = rgb(0.7, 0.7, 0.7, alpha = 0.5), border = NA);
+
+      # Add legend
+      legend("topright", legend="Overall", col="black", lwd=5);
+
+      if(!(is.null(save_path))) {
+        save_data <- data.frame(
+          average_power_all = average_power,
+          std_err_all = std_err,
+          frequency = frequency
+        )
+        filename <- paste0(subject_code, "_epoch_line_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(save_data, filename);
+
+        filename <- paste0(subject_code, "_power_frequency_plot_", trial, ".csv");
+        filename <- paste0(save_path, filename);
+        write.csv(data_over_frequency_per_elec, filename);
+      }
+    }
+
+    # Add axes
+    graphics::axis(side = 1, at = pretty(frequency));
+    graphics::axis(side = 2);
+
+    graphics::title(sprintf("# Channel=%s, # Epoch=%s, Freq=%.0f~%.0f Hz, Unit=%s", nchanns, trial, freq_range[[1]], freq_range[[2]], scale), adj = 0, line = 1.5);
+    graphics::title(sprintf("%s/%s - Analysis Group %d", project_name, subject_code, group_item$group_id), adj = 0, line = 0.5, cex.main = 0.8);
+
+    return(TRUE);
+  })
+}
 
 plot_power_over_time_data_line <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
@@ -2061,8 +2653,8 @@ electrode_outcome_prediction <- function(load_electrodes, subject_code,
                                          reference_name, subject, baseline, name_type,
                                          condition, start_time_baseline = 0, end_time_baseline = 10) {
   # generate multitaper
-  start_time_baseline = 0
-  end_time_baseline = 10
+  start_time_baseline <- 0
+  end_time_baseline <- 10
   trial <- condition
 
 
@@ -2076,7 +2668,7 @@ electrode_outcome_prediction <- function(load_electrodes, subject_code,
 
   patient <- repository$subject$subject_code
 
-  frequency_range <- c(0,256)
+  frequency_range <- c(0,150)
   time_bandwidth <- 3
   num_tapers <- NULL
   window_params <- c(2.5,0.5)
@@ -2237,7 +2829,7 @@ electrode_outcome_prediction <- function(load_electrodes, subject_code,
     alpha = c(8, 13),
     beta = c(13, 30),
     gamma = c(30, 90),
-    highgamma = c(90, 256)
+    highgamma = c(90, 150)
   )
 
   # Create a list to store results for each frequency band

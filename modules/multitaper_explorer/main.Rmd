@@ -69,6 +69,11 @@ multitaper_result <- generate_multitaper(
 heatmap_result <- generate_power_over_time_data(multitaper_result, analysis_time_frequencies, baselined = baselined, baseline = baseline, end_time_baseline = end_time_baseline, decibal = decibal)
 ```
 
+### Step 4.5: get heatmap data from multitaper result for frequency data collapsed over time
+```{rave find_heatmap_EF, language = "R", export = "heatmap_EF_result"}
+heatmap_EF_result <- generate_power_over_frequency_data(multitaper_result, analysis_time_frequencies, baselined = baselined, baseline = baseline, end_time_baseline = end_time_baseline, decibal = decibal)
+```
+
 #### Step 5: make machine learning predictions
 ```{rave generate_ML_predictions, language = "R", export = "ML_prediction_electrode"}
 ML_prediction_electrode <- electrode_outcome_prediction(load_electrodes = load_electrodes, epoch_file_name = epoch_file_name, reference_name = reference_name, subject = subject, baseline = baseline, name_type = heatmap_name_type, condition = condition, start_time_baseline = 0, end_time_baseline = 20)
@@ -101,6 +106,11 @@ plot_heatmap <- plot_power_over_time_data(heatmap_result, soz_electrodes = soz_e
 #### Step 8: Visualize Line Plot for all the generated spectral ranges for a specific condition
 ```{rave generate_data_for_lineplot, language = "R", export = "plot_lineplot", cue="always"}
 plot_lineplot <- plot_power_over_time_data_line(heatmap_result, soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, name_type = heatmap_name_type, trial = condition)
+```
+
+#### Step 8.5: Visualize Line Plot for power over frequency for a specific condition
+```{rave generate_data_for_lineplot_EF, language = "R", export = "plot_lineplot_EF", cue="always"}
+plot_lineplot_EF <- plot_power_over_frequency_data_line(heatmap_EF_result, soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, name_type = heatmap_name_type, trial = condition)
 ```
 
 #### Step 9: Visualize Quantile Plot for all the generated spectral ranges for a specific condition

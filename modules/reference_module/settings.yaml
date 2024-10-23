@@ -1,8 +1,12 @@
-changes: []
+changes:
+- group_name: NoLabel
+  electrodes: 1-3,5-19,21-35,48-69
+  reference_type: Common Average Reference
+  reference_signal: ref_1-3,5-19,21-35,48-69
 electrode_group:
   '1':
     name: NoLabel
-    electrodes: 11-16,24,33-35,43-46,53-54,61-64
+    electrodes: 1-3,5-19,21-35,48-69
 project_name: Retrostudy
 reference_name: _unsaved
-subject_code: subpt12
+subject_code: subpt10

@@ -37,7 +37,7 @@ FREQUENCY_BAND_PRESTS <- list(
     range = c(30, 90)
   ),
   high_gamma = list(
-    range = c(90, NA)
+    range = c(90, 150)
   )
 )
 
