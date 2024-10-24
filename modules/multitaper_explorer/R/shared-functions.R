@@ -635,8 +635,9 @@ plot_signal_data <- function(repository,
   # Set up ticks for the x-axis
   # axis(side = 1, at = tick_positions, labels = elect[tick_positions])
   num_ticks <- 5
+  elect_plot <- round(elect)
   tick_positions <- seq(1, nrow(plotData), length.out = num_ticks)
-  graphics::axis(side = 1, at = tick_positions, labels = elect[tick_positions])
+  graphics::axis(side = 1, at = tick_positions, labels = elect_plot[tick_positions])
 
   # tick_positions <- pretty(elect)
   # graphics::axis(side = 1, at = tick_positions, labels = format(tick_positions))
