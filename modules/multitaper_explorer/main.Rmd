@@ -11,6 +11,7 @@ editor_options:
 # This code block sets up the engine environment
 # Please do not remove me
 raveio::pipeline_setup_rmd("multitaper_explorer")
+options("rave.freez.fast_debug" = TRUE)
 ```
 
 ## Introduction
@@ -57,7 +58,7 @@ repository <- raveio::prepare_subject_voltage_with_epoch(
 ```
 
 ### Step 3: Run multitaper and get result for all conditions
-```{rave find_multitaper, language = "R", export = "multitaper_result"}
+```{rave find_multitaper, language = "R", export = "multitaper_result", format = "filearray"}
 multitaper_result <- generate_multitaper(
   repository, load_electrodes, frequency_range,
   time_bandwidth, num_tapers, window_params, min_nfft,
@@ -77,7 +78,6 @@ heatmap_EF_result <- generate_power_over_frequency_data(multitaper_result, analy
 #### Step 5: make machine learning predictions
 ```{rave generate_ML_predictions, language = "R", export = "ML_prediction_electrode"}
 ML_prediction_electrode <- electrode_outcome_prediction(load_electrodes = load_electrodes, epoch_file_name = epoch_file_name, reference_name = reference_name, subject = subject, baseline = baseline, name_type = heatmap_name_type, condition = condition, start_time_baseline = 0, end_time_baseline = 20)
-
 ```
 
 #### Step 6: Visualize Heatmaps for all the generated spectral ranges for a specific condition

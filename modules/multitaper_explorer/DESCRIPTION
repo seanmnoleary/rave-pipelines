@@ -6,16 +6,16 @@ Language: en-US
 Encoding: UTF-8
 License: MIT
 Authors@R: c(
-    person("Sean", "O'Leary", email = smoleary@utmh.edu, role = c("aut", "cre")),
-    person("Anne-Cecile", "Lesage", email = anlesage@utmb.edu, role = c("aut")),
+    person("Sean", "O'Leary", email = "smoleary@utmh.edu", role = c("aut", "cre")),
+    person("Anne-Cecile", "Lesage", email = "anlesage@utmb.edu", role = c("aut")),
     person("Liliana", "Camarillo-Rodriguez", email = "", role = c("aut")),
     person("Oliver", "Zhou", email = "", role = c("aut")),
     person("Diosely", "Silveira", email = "", role = c("aut")),
     person("Jiefei", "Wang", email = "", role = c("aut")),
     person("Sameer A.", "Sheth", email = "", role = c("aut")),
-    person("Michael S.", "Beauchamp", email = "", role = c("aut")),
-    person("Zhengjia", "Wang", email = "", role = c("aut")),
-    person("John F.", "Magnotti", email = "", role = c("aut")),
+    person("Michael S.", "Beauchamp", email = "michael.beauchamp@pennmedicine.upenn.edu", role = c("aut")),
+    person("Zhengjia", "Wang", email = "zhengjia.wang@pennmedicine.upenn.edu", role = c("aut")),
+    person("John F.", "Magnotti", email = "john.magnotti@pennmedicine.upenn.edu", role = c("aut")),
     person("Patrick J.", "Karas", email = "pjkaras@utmb.edu", role = c("aut"))
     )
 Description: Frequency range visualization and analysis tool.

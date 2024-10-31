@@ -1,13 +1,21 @@
 bibentry(bibtype = "Article",
-         title        = "{FREEZ}: Comprehensive open-source software for reproducible analysis and visualization of intracranial EEG data",
-         author       = c(as.person("John F. Magnotti"),
-                          as.person("Zhengjia Wang"),
-                          as.person("Michael S. Beauchamp")),
-         journal      = "NeuroImage",
-         year         = "2020",
-         volume       = "223",
-         pages        = "117341",
-         doi          = "10.1016/j.neuroimage.2020.117341",
+         title        = "Integrating Data Across Oscillatory Power Bands Predicts the Epileptogenic Zone: the Frequency Range Explorer Epileptogenic Zone (FREEZ) Identification Algorithm",
+         author       = c(
+                          person("Sean", "O'Leary", email = "smoleary@utmh.edu", role = c("aut", "cre")),
+                          person("Anne-Cecile", "Lesage", email = "anlesage@utmb.edu", role = c("aut")),
+                          person("Liliana", "Camarillo-Rodriguez", email = "", role = c("aut")),
+                          person("Oliver", "Zhou", email = "", role = c("aut")),
+                          person("Diosely", "Silveira", email = "", role = c("aut")),
+                          person("Jiefei", "Wang", email = "", role = c("aut")),
+                          person("Sameer A.", "Sheth", email = "", role = c("aut")),
+                          person("Michael S.", "Beauchamp", email = "michael.beauchamp@pennmedicine.upenn.edu", role = c("aut")),
+                          person("Zhengjia", "Wang", email = "zhengjia.wang@pennmedicine.upenn.edu", role = c("aut")),
+                          person("John F.", "Magnotti", email = "john.magnotti@pennmedicine.upenn.edu", role = c("aut")),
+                          person("Patrick J.", "Karas", email = "pjkaras@utmb.edu", role = c("aut"))
+                        ),
+         journal      = "bioRxiv",
+         year         = "2024",
+         doi          = "10.1101/2024.05.31.596825",
          header       = "To cite this module in publications use:",
-         textVersion  = "[1] Magnotti, J.F., Wang, Z. and Beauchamp, M.S., 2020. RAVE: Comprehensive open-source software for reproducible analysis and visualization of intracranial EEG data. NeuroImage, 223, p.117341."
+         textVersion  = "[1] O’Leary, S., Lesage, A. C., Camarillo-Rodriguez, L., Zhou, O., Silveira, D., Wang, J., ... & Karas, P. J. (2024). Integrating Data Across Oscillatory Power Bands Predicts the Epileptogenic Zone: the Frequency Range Explorer Epileptogenic Zone (FREEZ) Identification Algorithm. bioRxiv, 2024-05."
 )

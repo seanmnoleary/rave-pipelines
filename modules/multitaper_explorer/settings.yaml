@@ -4,8 +4,8 @@ plot_resect_elec: no
 analysis_time_frequencies:
   '1':
     frequency_range:
-    - 90
-    - 150
+    - 13
+    - 30
     frequency_preset_delta: 0
     frequency_preset_theta: 0
     frequency_preset_alpha: 0
@@ -13,7 +13,7 @@ analysis_time_frequencies:
     frequency_preset_gamma: 0
     frequency_preset_high_gamma: 0
     time_range:
-    - 0
+    - -5
     - 10
 condition: sz1 (2)
 reference: common_average
@@ -28,7 +28,7 @@ min_nfft: 0
 weighting: unity
 detrend_opt: linear
 parallel: yes
-num_workers: 31.0
+num_workers: 23.0
 plot_on: no
 verbose: no
 xyflip: no
@@ -36,11 +36,11 @@ time_bandwidth: 3
 time_window:
 - -5
 - 10
-reference_name: car
-load_electrodes: 1-4,7-36,42-43,46-69,72-95
+reference_name: Common_Average_Reference
+load_electrodes: 1-4,7-24,26-36,42-43,46-54,56-69,72-95
 selected_electrode: 1
 epoch_file_name: subpt01_seizure
-project_name: Retrostudy
+project_name: Retrostudy2
 soz_electrodes: ''
 resect_electrodes: ''
 heatmap_name_type: number
@@ -72,9 +72,9 @@ ML_time_range:
 decibal: no
 baseline: 30s before sz1 (1)
 scale: None
-baselined: no
+baselined: yes
 start_time_baseline: 0.0
-end_time_baseline: 0
+end_time_baseline: 10
 save_path: /Volumes/bigbrain/scripts/sean/stats/updated_plots/
 epoch_choice__trial_starts: -5
 epoch_choice__trial_ends: 10

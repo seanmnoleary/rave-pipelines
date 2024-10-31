@@ -5,509 +5,508 @@ source("common.R", local = TRUE, chdir = TRUE)
 ._._env_._.$pipeline <- pipeline_from_path(".")
 lapply(sort(list.files(
   "R/", ignore.case = TRUE,
-  pattern = "^shared-.*\\.R", 
+  pattern = "^shared-.*\\.R",
   full.names = TRUE
 )), function(f) {
   source(f, local = ._._env_._., chdir = TRUE)
 })
 targets::tar_option_set(envir = ._._env_._.)
 rm(._._env_._.)
-...targets <- list(`__Check_settings_file` = targets::tar_target_raw("settings_path", 
-    "settings.yaml", format = "file"), `__Load_settings` = targets::tar_target_raw("settings", 
+...targets <- list(`__Check_settings_file` = targets::tar_target_raw("settings_path",
+    "settings.yaml", format = "file"), `__Load_settings` = targets::tar_target_raw("settings",
     quote({
         yaml::read_yaml(settings_path)
-    }), deps = "settings_path", cue = targets::tar_cue("always")), 
-    input_time_windows = targets::tar_target_raw("time_windows", 
-        quote({
-            settings[["time_windows"]]
-        }), deps = "settings"), input_electrodes = targets::tar_target_raw("electrodes", 
-        quote({
-            settings[["electrodes"]]
-        }), deps = "settings"), input_epoch_name = targets::tar_target_raw("epoch_name", 
-        quote({
-            settings[["epoch_name"]]
-        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code", 
-        quote({
-            settings[["subject_code"]]
-        }), deps = "settings"), input_ordered = targets::tar_target_raw("ordered", 
-        quote({
-            settings[["ordered"]]
-        }), deps = "settings"), input_heatmap_name_type = targets::tar_target_raw("heatmap_name_type", 
-        quote({
-            settings[["heatmap_name_type"]]
-        }), deps = "settings"), input_resect_electrodes = targets::tar_target_raw("resect_electrodes", 
-        quote({
-            settings[["resect_electrodes"]]
-        }), deps = "settings"), input_soz_electrodes = targets::tar_target_raw("soz_electrodes", 
-        quote({
-            settings[["soz_electrodes"]]
-        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name", 
-        quote({
-            settings[["project_name"]]
-        }), deps = "settings"), input_epoch_file_name = targets::tar_target_raw("epoch_file_name", 
-        quote({
-            settings[["epoch_file_name"]]
-        }), deps = "settings"), input_selected_electrode = targets::tar_target_raw("selected_electrode", 
-        quote({
-            settings[["selected_electrode"]]
-        }), deps = "settings"), input_load_electrodes = targets::tar_target_raw("load_electrodes", 
-        quote({
-            settings[["load_electrodes"]]
-        }), deps = "settings"), input_reference_name = targets::tar_target_raw("reference_name", 
-        quote({
-            settings[["reference_name"]]
-        }), deps = "settings"), input_time_window = targets::tar_target_raw("time_window", 
-        quote({
-            settings[["time_window"]]
-        }), deps = "settings"), input_time_bandwidth = targets::tar_target_raw("time_bandwidth", 
-        quote({
-            settings[["time_bandwidth"]]
-        }), deps = "settings"), input_xyflip = targets::tar_target_raw("xyflip", 
-        quote({
-            settings[["xyflip"]]
-        }), deps = "settings"), input_verbose = targets::tar_target_raw("verbose", 
-        quote({
-            settings[["verbose"]]
-        }), deps = "settings"), input_plot_on = targets::tar_target_raw("plot_on", 
-        quote({
-            settings[["plot_on"]]
-        }), deps = "settings"), input_num_workers = targets::tar_target_raw("num_workers", 
-        quote({
-            settings[["num_workers"]]
-        }), deps = "settings"), input_parallel = targets::tar_target_raw("parallel", 
-        quote({
-            settings[["parallel"]]
-        }), deps = "settings"), input_detrend_opt = targets::tar_target_raw("detrend_opt", 
-        quote({
-            settings[["detrend_opt"]]
-        }), deps = "settings"), input_weighting = targets::tar_target_raw("weighting", 
-        quote({
-            settings[["weighting"]]
-        }), deps = "settings"), input_min_nfft = targets::tar_target_raw("min_nfft", 
-        quote({
-            settings[["min_nfft"]]
-        }), deps = "settings"), input_num_tapers = targets::tar_target_raw("num_tapers", 
-        quote({
-            settings[["num_tapers"]]
-        }), deps = "settings"), input_frequency_range = targets::tar_target_raw("frequency_range", 
-        quote({
-            settings[["frequency_range"]]
-        }), deps = "settings"), input_window_params = targets::tar_target_raw("window_params", 
-        quote({
-            settings[["window_params"]]
-        }), deps = "settings"), input_reference = targets::tar_target_raw("reference", 
-        quote({
-            settings[["reference"]]
-        }), deps = "settings"), input_condition = targets::tar_target_raw("condition", 
-        quote({
-            settings[["condition"]]
-        }), deps = "settings"), input_analysis_time_frequencies = targets::tar_target_raw("analysis_time_frequencies", 
-        quote({
-            settings[["analysis_time_frequencies"]]
-        }), deps = "settings"), input_plot_resect_elec = targets::tar_target_raw("plot_resect_elec", 
-        quote({
-            settings[["plot_resect_elec"]]
-        }), deps = "settings"), input_resect_elec = targets::tar_target_raw("resect_elec", 
+    }), deps = "settings_path", cue = targets::tar_cue("always")),
+    input_SOZ_elec = targets::tar_target_raw("SOZ_elec", quote({
+        settings[["SOZ_elec"]]
+    }), deps = "settings"), input_resect_elec = targets::tar_target_raw("resect_elec",
         quote({
             settings[["resect_elec"]]
-        }), deps = "settings"), input_SOZ_elec = targets::tar_target_raw("SOZ_elec", 
+        }), deps = "settings"), input_plot_resect_elec = targets::tar_target_raw("plot_resect_elec",
         quote({
-            settings[["SOZ_elec"]]
-        }), deps = "settings"), input_text_size = targets::tar_target_raw("text_size", 
+            settings[["plot_resect_elec"]]
+        }), deps = "settings"), input_analysis_time_frequencies = targets::tar_target_raw("analysis_time_frequencies",
         quote({
-            settings[["text_size"]]
-        }), deps = "settings"), input_organize_top = targets::tar_target_raw("organize_top", 
+            settings[["analysis_time_frequencies"]]
+        }), deps = "settings"), input_condition = targets::tar_target_raw("condition",
         quote({
-            settings[["organize_top"]]
-        }), deps = "settings"), input_label = targets::tar_target_raw("label", 
+            settings[["condition"]]
+        }), deps = "settings"), input_reference = targets::tar_target_raw("reference",
         quote({
-            settings[["label"]]
-        }), deps = "settings"), input_plot_SOZ_elec = targets::tar_target_raw("plot_SOZ_elec", 
+            settings[["reference"]]
+        }), deps = "settings"), input_window_params = targets::tar_target_raw("window_params",
         quote({
-            settings[["plot_SOZ_elec"]]
-        }), deps = "settings"), input_analysis_windows = targets::tar_target_raw("analysis_windows", 
+            settings[["window_params"]]
+        }), deps = "settings"), input_frequency_range = targets::tar_target_raw("frequency_range",
         quote({
-            settings[["analysis_windows"]]
-        }), deps = "settings"), input_time_stat_start = targets::tar_target_raw("time_stat_start", 
+            settings[["frequency_range"]]
+        }), deps = "settings"), input_num_tapers = targets::tar_target_raw("num_tapers",
         quote({
-            settings[["time_stat_start"]]
-        }), deps = "settings"), input_time_stat_end = targets::tar_target_raw("time_stat_end", 
+            settings[["num_tapers"]]
+        }), deps = "settings"), input_min_nfft = targets::tar_target_raw("min_nfft",
+        quote({
+            settings[["min_nfft"]]
+        }), deps = "settings"), input_weighting = targets::tar_target_raw("weighting",
+        quote({
+            settings[["weighting"]]
+        }), deps = "settings"), input_detrend_opt = targets::tar_target_raw("detrend_opt",
+        quote({
+            settings[["detrend_opt"]]
+        }), deps = "settings"), input_parallel = targets::tar_target_raw("parallel",
+        quote({
+            settings[["parallel"]]
+        }), deps = "settings"), input_num_workers = targets::tar_target_raw("num_workers",
+        quote({
+            settings[["num_workers"]]
+        }), deps = "settings"), input_plot_on = targets::tar_target_raw("plot_on",
+        quote({
+            settings[["plot_on"]]
+        }), deps = "settings"), input_verbose = targets::tar_target_raw("verbose",
+        quote({
+            settings[["verbose"]]
+        }), deps = "settings"), input_xyflip = targets::tar_target_raw("xyflip",
+        quote({
+            settings[["xyflip"]]
+        }), deps = "settings"), input_time_bandwidth = targets::tar_target_raw("time_bandwidth",
+        quote({
+            settings[["time_bandwidth"]]
+        }), deps = "settings"), input_time_window = targets::tar_target_raw("time_window",
+        quote({
+            settings[["time_window"]]
+        }), deps = "settings"), input_reference_name = targets::tar_target_raw("reference_name",
+        quote({
+            settings[["reference_name"]]
+        }), deps = "settings"), input_load_electrodes = targets::tar_target_raw("load_electrodes",
+        quote({
+            settings[["load_electrodes"]]
+        }), deps = "settings"), input_selected_electrode = targets::tar_target_raw("selected_electrode",
+        quote({
+            settings[["selected_electrode"]]
+        }), deps = "settings"), input_epoch_file_name = targets::tar_target_raw("epoch_file_name",
+        quote({
+            settings[["epoch_file_name"]]
+        }), deps = "settings"), input_project_name = targets::tar_target_raw("project_name",
+        quote({
+            settings[["project_name"]]
+        }), deps = "settings"), input_soz_electrodes = targets::tar_target_raw("soz_electrodes",
+        quote({
+            settings[["soz_electrodes"]]
+        }), deps = "settings"), input_resect_electrodes = targets::tar_target_raw("resect_electrodes",
+        quote({
+            settings[["resect_electrodes"]]
+        }), deps = "settings"), input_heatmap_name_type = targets::tar_target_raw("heatmap_name_type",
+        quote({
+            settings[["heatmap_name_type"]]
+        }), deps = "settings"), input_ordered = targets::tar_target_raw("ordered",
+        quote({
+            settings[["ordered"]]
+        }), deps = "settings"), input_subject_code = targets::tar_target_raw("subject_code",
+        quote({
+            settings[["subject_code"]]
+        }), deps = "settings"), input_epoch_name = targets::tar_target_raw("epoch_name",
+        quote({
+            settings[["epoch_name"]]
+        }), deps = "settings"), input_electrodes = targets::tar_target_raw("electrodes",
+        quote({
+            settings[["electrodes"]]
+        }), deps = "settings"), input_time_windows = targets::tar_target_raw("time_windows",
+        quote({
+            settings[["time_windows"]]
+        }), deps = "settings"), input_time_stat_end = targets::tar_target_raw("time_stat_end",
         quote({
             settings[["time_stat_end"]]
-        }), deps = "settings"), input_end_time_baseline = targets::tar_target_raw("end_time_baseline", 
+        }), deps = "settings"), input_time_stat_start = targets::tar_target_raw("time_stat_start",
         quote({
-            settings[["end_time_baseline"]]
-        }), deps = "settings"), input_start_time_baseline = targets::tar_target_raw("start_time_baseline", 
+            settings[["time_stat_start"]]
+        }), deps = "settings"), input_analysis_windows = targets::tar_target_raw("analysis_windows",
         quote({
-            settings[["start_time_baseline"]]
-        }), deps = "settings"), input_baselined = targets::tar_target_raw("baselined", 
+            settings[["analysis_windows"]]
+        }), deps = "settings"), input_plot_SOZ_elec = targets::tar_target_raw("plot_SOZ_elec",
         quote({
-            settings[["baselined"]]
-        }), deps = "settings"), input_scale = targets::tar_target_raw("scale", 
+            settings[["plot_SOZ_elec"]]
+        }), deps = "settings"), input_label = targets::tar_target_raw("label",
         quote({
-            settings[["scale"]]
-        }), deps = "settings"), input_baseline = targets::tar_target_raw("baseline", 
+            settings[["label"]]
+        }), deps = "settings"), input_organize_top = targets::tar_target_raw("organize_top",
         quote({
-            settings[["baseline"]]
-        }), deps = "settings"), input_decibal = targets::tar_target_raw("decibal", 
+            settings[["organize_top"]]
+        }), deps = "settings"), input_text_size = targets::tar_target_raw("text_size",
         quote({
-            settings[["decibal"]]
-        }), deps = "settings"), input_ML_time_range = targets::tar_target_raw("ML_time_range", 
-        quote({
-            settings[["ML_time_range"]]
-        }), deps = "settings"), input_show_ML = targets::tar_target_raw("show_ML", 
+            settings[["text_size"]]
+        }), deps = "settings"), input_show_ML = targets::tar_target_raw("show_ML",
         quote({
             settings[["show_ML"]]
-        }), deps = "settings"), input_epoch_choice__trial_ends = targets::tar_target_raw("epoch_choice__trial_ends", 
+        }), deps = "settings"), input_ML_time_range = targets::tar_target_raw("ML_time_range",
         quote({
-            settings[["epoch_choice__trial_ends"]]
-        }), deps = "settings"), input_epoch_choice__trial_starts = targets::tar_target_raw("epoch_choice__trial_starts", 
+            settings[["ML_time_range"]]
+        }), deps = "settings"), input_decibal = targets::tar_target_raw("decibal",
         quote({
-            settings[["epoch_choice__trial_starts"]]
-        }), deps = "settings"), input_save_path = targets::tar_target_raw("save_path", 
+            settings[["decibal"]]
+        }), deps = "settings"), input_baseline = targets::tar_target_raw("baseline",
+        quote({
+            settings[["baseline"]]
+        }), deps = "settings"), input_scale = targets::tar_target_raw("scale",
+        quote({
+            settings[["scale"]]
+        }), deps = "settings"), input_baselined = targets::tar_target_raw("baselined",
+        quote({
+            settings[["baselined"]]
+        }), deps = "settings"), input_start_time_baseline = targets::tar_target_raw("start_time_baseline",
+        quote({
+            settings[["start_time_baseline"]]
+        }), deps = "settings"), input_end_time_baseline = targets::tar_target_raw("end_time_baseline",
+        quote({
+            settings[["end_time_baseline"]]
+        }), deps = "settings"), input_save_path = targets::tar_target_raw("save_path",
         quote({
             settings[["save_path"]]
-        }), deps = "settings"), load_subject = targets::tar_target_raw(name = "subject", 
+        }), deps = "settings"), input_epoch_choice__trial_starts = targets::tar_target_raw("epoch_choice__trial_starts",
+        quote({
+            settings[["epoch_choice__trial_starts"]]
+        }), deps = "settings"), input_epoch_choice__trial_ends = targets::tar_target_raw("epoch_choice__trial_ends",
+        quote({
+            settings[["epoch_choice__trial_ends"]]
+        }), deps = "settings"), load_subject = targets::tar_target_raw(name = "subject",
         command = quote({
             .__target_expr__. <- quote({
-                subject <- raveio::RAVESubject$new(project_name = project_name, 
+                subject <- raveio::RAVESubject$new(project_name = project_name,
                   subject_code = subject_code)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(subject)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "subject", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "subject",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = "rave-subject", 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = "rave-subject",
             target_export = "subject", target_expr = quote({
                 {
-                  subject <- raveio::RAVESubject$new(project_name = project_name, 
+                  subject <- raveio::RAVESubject$new(project_name = project_name,
                     subject_code = subject_code)
                 }
                 subject
             }), target_depends = c("project_name", "subject_code"
-            )), deps = c("project_name", "subject_code"), cue = targets::tar_cue("always"), 
-        pattern = NULL, iteration = "list"), load_voltage = targets::tar_target_raw(name = "repository", 
+            )), deps = c("project_name", "subject_code"), cue = targets::tar_cue("always"),
+        pattern = NULL, iteration = "list"), load_voltage = targets::tar_target_raw(name = "repository",
         command = quote({
             .__target_expr__. <- quote({
-                repository <- raveio::prepare_subject_voltage_with_epoch(subject = subject, 
-                  epoch_name = epoch_file_name, electrodes = load_electrodes, 
+                repository <- raveio::prepare_subject_voltage_with_epoch(subject = subject,
+                  epoch_name = epoch_file_name, electrodes = load_electrodes,
                   time_windows = time_window, reference = reference_name)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(repository)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "repository", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "repository",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = "rave_prepare_subject_voltage_with_epoch", 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = "rave_prepare_subject_voltage_with_epoch",
             target_export = "repository", target_expr = quote({
                 {
-                  repository <- raveio::prepare_subject_voltage_with_epoch(subject = subject, 
-                    epoch_name = epoch_file_name, electrodes = load_electrodes, 
+                  repository <- raveio::prepare_subject_voltage_with_epoch(subject = subject,
+                    epoch_name = epoch_file_name, electrodes = load_electrodes,
                     time_windows = time_window, reference = reference_name)
                 }
                 repository
-            }), target_depends = c("subject", "epoch_file_name", 
+            }), target_depends = c("subject", "epoch_file_name",
             "load_electrodes", "time_window", "reference_name"
-            )), deps = c("subject", "epoch_file_name", "load_electrodes", 
-        "time_window", "reference_name"), cue = targets::tar_cue("always"), 
-        pattern = NULL, iteration = "list"), find_multitaper = targets::tar_target_raw(name = "multitaper_result", 
+            )), deps = c("subject", "epoch_file_name", "load_electrodes",
+        "time_window", "reference_name"), cue = targets::tar_cue("always"),
+        pattern = NULL, iteration = "list"), find_multitaper = targets::tar_target_raw(name = "multitaper_result",
         command = quote({
             .__target_expr__. <- quote({
-                multitaper_result <- generate_multitaper(repository, 
-                  load_electrodes, frequency_range, time_bandwidth, 
-                  num_tapers, window_params, min_nfft, weighting, 
+                multitaper_result <- generate_multitaper(repository,
+                  load_electrodes, frequency_range, time_bandwidth,
+                  num_tapers, window_params, min_nfft, weighting,
                   detrend_opt, parallel)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(multitaper_result)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "multitaper_result", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "multitaper_result",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = "filearray",
             target_export = "multitaper_result", target_expr = quote({
                 {
-                  multitaper_result <- generate_multitaper(repository, 
-                    load_electrodes, frequency_range, time_bandwidth, 
-                    num_tapers, window_params, min_nfft, weighting, 
+                  multitaper_result <- generate_multitaper(repository,
+                    load_electrodes, frequency_range, time_bandwidth,
+                    num_tapers, window_params, min_nfft, weighting,
                     detrend_opt, parallel)
                 }
                 multitaper_result
-            }), target_depends = c("repository", "load_electrodes", 
-            "frequency_range", "time_bandwidth", "num_tapers", 
-            "window_params", "min_nfft", "weighting", "detrend_opt", 
-            "parallel")), deps = c("repository", "load_electrodes", 
-        "frequency_range", "time_bandwidth", "num_tapers", "window_params", 
-        "min_nfft", "weighting", "detrend_opt", "parallel"), 
-        cue = targets::tar_cue("thorough"), pattern = NULL, iteration = "list"), 
-    find_heatmap = targets::tar_target_raw(name = "heatmap_result", 
+            }), target_depends = c("repository", "load_electrodes",
+            "frequency_range", "time_bandwidth", "num_tapers",
+            "window_params", "min_nfft", "weighting", "detrend_opt",
+            "parallel")), deps = c("repository", "load_electrodes",
+        "frequency_range", "time_bandwidth", "num_tapers", "window_params",
+        "min_nfft", "weighting", "detrend_opt", "parallel"),
+        cue = targets::tar_cue("thorough"), pattern = NULL, iteration = "list"),
+    find_heatmap = targets::tar_target_raw(name = "heatmap_result",
         command = quote({
             .__target_expr__. <- quote({
-                heatmap_result <- generate_power_over_time_data(multitaper_result, 
-                  analysis_time_frequencies, baselined = baselined, 
-                  baseline = baseline, end_time_baseline = end_time_baseline, 
+                heatmap_result <- generate_power_over_time_data(multitaper_result,
+                  analysis_time_frequencies, baselined = baselined,
+                  baseline = baseline, end_time_baseline = end_time_baseline,
                   decibal = decibal)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(heatmap_result)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "heatmap_result", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "heatmap_result",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL,
             target_export = "heatmap_result", target_expr = quote({
                 {
-                  heatmap_result <- generate_power_over_time_data(multitaper_result, 
-                    analysis_time_frequencies, baselined = baselined, 
-                    baseline = baseline, end_time_baseline = end_time_baseline, 
+                  heatmap_result <- generate_power_over_time_data(multitaper_result,
+                    analysis_time_frequencies, baselined = baselined,
+                    baseline = baseline, end_time_baseline = end_time_baseline,
                     decibal = decibal)
                 }
                 heatmap_result
-            }), target_depends = c("multitaper_result", "analysis_time_frequencies", 
+            }), target_depends = c("multitaper_result", "analysis_time_frequencies",
             "baselined", "baseline", "end_time_baseline", "decibal"
-            )), deps = c("multitaper_result", "analysis_time_frequencies", 
+            )), deps = c("multitaper_result", "analysis_time_frequencies",
         "baselined", "baseline", "end_time_baseline", "decibal"
-        ), cue = targets::tar_cue("thorough"), pattern = NULL, 
-        iteration = "list"), find_heatmap_EF = targets::tar_target_raw(name = "heatmap_EF_result", 
+        ), cue = targets::tar_cue("thorough"), pattern = NULL,
+        iteration = "list"), find_heatmap_EF = targets::tar_target_raw(name = "heatmap_EF_result",
         command = quote({
             .__target_expr__. <- quote({
-                heatmap_EF_result <- generate_power_over_frequency_data(multitaper_result, 
-                  analysis_time_frequencies, baselined = baselined, 
-                  baseline = baseline, end_time_baseline = end_time_baseline, 
+                heatmap_EF_result <- generate_power_over_frequency_data(multitaper_result,
+                  analysis_time_frequencies, baselined = baselined,
+                  baseline = baseline, end_time_baseline = end_time_baseline,
                   decibal = decibal)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(heatmap_EF_result)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "heatmap_EF_result", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "heatmap_EF_result",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL,
             target_export = "heatmap_EF_result", target_expr = quote({
                 {
-                  heatmap_EF_result <- generate_power_over_frequency_data(multitaper_result, 
-                    analysis_time_frequencies, baselined = baselined, 
-                    baseline = baseline, end_time_baseline = end_time_baseline, 
+                  heatmap_EF_result <- generate_power_over_frequency_data(multitaper_result,
+                    analysis_time_frequencies, baselined = baselined,
+                    baseline = baseline, end_time_baseline = end_time_baseline,
                     decibal = decibal)
                 }
                 heatmap_EF_result
-            }), target_depends = c("multitaper_result", "analysis_time_frequencies", 
+            }), target_depends = c("multitaper_result", "analysis_time_frequencies",
             "baselined", "baseline", "end_time_baseline", "decibal"
-            )), deps = c("multitaper_result", "analysis_time_frequencies", 
+            )), deps = c("multitaper_result", "analysis_time_frequencies",
         "baselined", "baseline", "end_time_baseline", "decibal"
-        ), cue = targets::tar_cue("thorough"), pattern = NULL, 
-        iteration = "list"), generate_ML_predictions = targets::tar_target_raw(name = "ML_prediction_electrode", 
+        ), cue = targets::tar_cue("thorough"), pattern = NULL,
+        iteration = "list"), generate_ML_predictions = targets::tar_target_raw(name = "ML_prediction_electrode",
         command = quote({
             .__target_expr__. <- quote({
-                ML_prediction_electrode <- electrode_outcome_prediction(load_electrodes = load_electrodes, 
-                  epoch_file_name = epoch_file_name, reference_name = reference_name, 
-                  subject = subject, baseline = baseline, name_type = heatmap_name_type, 
-                  condition = condition, start_time_baseline = 0, 
-                  end_time_baseline = 20)
+              ML_prediction_electrode <- electrode_outcome_prediction(load_electrodes = load_electrodes,
+                                                                      epoch_file_name = epoch_file_name, reference_name = reference_name,
+                                                                      subject = subject, baseline = baseline, name_type = heatmap_name_type,
+                                                                      condition = condition, start_time_baseline = 0,
+                                                                      end_time_baseline = 20)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(ML_prediction_electrode)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "ML_prediction_electrode", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "ML_prediction_electrode",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL,
             target_export = "ML_prediction_electrode", target_expr = quote({
                 {
-                  ML_prediction_electrode <- electrode_outcome_prediction(load_electrodes = load_electrodes, 
-                    epoch_file_name = epoch_file_name, reference_name = reference_name, 
-                    subject = subject, baseline = baseline, name_type = heatmap_name_type, 
-                    condition = condition, start_time_baseline = 0, 
-                    end_time_baseline = 20)
+                  ML_prediction_electrode <- electrode_outcome_prediction(load_electrodes = load_electrodes,
+                                                                          epoch_file_name = epoch_file_name, reference_name = reference_name,
+                                                                          subject = subject, baseline = baseline, name_type = heatmap_name_type,
+                                                                          condition = condition, start_time_baseline = 0,
+                                                                          end_time_baseline = 20)
                 }
                 ML_prediction_electrode
-            }), target_depends = c("load_electrodes", "epoch_file_name", 
-            "reference_name", "subject", "baseline", "heatmap_name_type", 
-            "condition")), deps = c("load_electrodes", "epoch_file_name", 
-        "reference_name", "subject", "baseline", "heatmap_name_type", 
-        "condition"), cue = targets::tar_cue("thorough"), pattern = NULL, 
-        iteration = "list"), generate_signal_plot = targets::tar_target_raw(name = "plot_signal", 
+            }), target_depends = c("load_electrodes", "epoch_file_name",
+            "reference_name", "subject", "baseline", "heatmap_name_type",
+            "condition")), deps = c("load_electrodes", "epoch_file_name",
+        "reference_name", "subject", "baseline", "heatmap_name_type",
+        "condition"), cue = targets::tar_cue("thorough"), pattern = NULL,
+        iteration = "list"), generate_signal_plot = targets::tar_target_raw(name = "plot_signal",
         command = quote({
             .__target_expr__. <- quote({
-                plot_signal <- plot_signal_data(repository, load_electrodes = load_electrodes, 
-                  subject = subject, condition = condition, time_windows = time_window, 
-                  reference = reference_name, analysis_time_frequencies = analysis_time_frequencies, 
-                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
-                  ordered = ordered, name_type = heatmap_name_type, 
-                  ML_prediction_electrode = ML_prediction_electrode, 
+                plot_signal <- plot_signal_data(repository, load_electrodes = load_electrodes,
+                  subject = subject, condition = condition, time_windows = time_window,
+                  reference = reference_name, analysis_time_frequencies = analysis_time_frequencies,
+                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes,
+                  ordered = ordered, name_type = heatmap_name_type,
+                  ML_prediction_electrode = ML_prediction_electrode,
                   show_ML = show_ML)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(plot_signal)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "plot_signal", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "plot_signal",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL,
             target_export = "plot_signal", target_expr = quote({
                 {
-                  plot_signal <- plot_signal_data(repository, 
-                    load_electrodes = load_electrodes, subject = subject, 
-                    condition = condition, time_windows = time_window, 
-                    reference = reference_name, analysis_time_frequencies = analysis_time_frequencies, 
-                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
-                    ordered = ordered, name_type = heatmap_name_type, 
-                    ML_prediction_electrode = ML_prediction_electrode, 
+                  plot_signal <- plot_signal_data(repository,
+                    load_electrodes = load_electrodes, subject = subject,
+                    condition = condition, time_windows = time_window,
+                    reference = reference_name, analysis_time_frequencies = analysis_time_frequencies,
+                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes,
+                    ordered = ordered, name_type = heatmap_name_type,
+                    ML_prediction_electrode = ML_prediction_electrode,
                     show_ML = show_ML)
                 }
                 plot_signal
-            }), target_depends = c("repository", "load_electrodes", 
-            "subject", "condition", "time_window", "reference_name", 
-            "analysis_time_frequencies", "soz_electrodes", "resect_electrodes", 
-            "ordered", "heatmap_name_type", "ML_prediction_electrode", 
-            "show_ML")), deps = c("repository", "load_electrodes", 
-        "subject", "condition", "time_window", "reference_name", 
-        "analysis_time_frequencies", "soz_electrodes", "resect_electrodes", 
-        "ordered", "heatmap_name_type", "ML_prediction_electrode", 
-        "show_ML"), cue = targets::tar_cue("always"), pattern = NULL, 
-        iteration = "list"), generate_data_for_heatmap = targets::tar_target_raw(name = "plot_heatmap", 
+            }), target_depends = c("repository", "load_electrodes",
+            "subject", "condition", "time_window", "reference_name",
+            "analysis_time_frequencies", "soz_electrodes", "resect_electrodes",
+            "ordered", "heatmap_name_type", "ML_prediction_electrode",
+            "show_ML")), deps = c("repository", "load_electrodes",
+        "subject", "condition", "time_window", "reference_name",
+        "analysis_time_frequencies", "soz_electrodes", "resect_electrodes",
+        "ordered", "heatmap_name_type", "ML_prediction_electrode",
+        "show_ML"), cue = targets::tar_cue("always"), pattern = NULL,
+        iteration = "list"), generate_data_for_heatmap = targets::tar_target_raw(name = "plot_heatmap",
         command = quote({
             .__target_expr__. <- quote({
-                plot_heatmap <- plot_power_over_time_data(heatmap_result, 
-                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
-                  name_type = heatmap_name_type, trial = condition, 
-                  ordered = ordered, ML_prediction_electrode = ML_prediction_electrode, 
+                plot_heatmap <- plot_power_over_time_data(heatmap_result,
+                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes,
+                  name_type = heatmap_name_type, trial = condition,
+                  ordered = ordered, ML_prediction_electrode = ML_prediction_electrode,
                   show_ML = show_ML)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(plot_heatmap)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "plot_heatmap", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "plot_heatmap",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL,
             target_export = "plot_heatmap", target_expr = quote({
                 {
-                  plot_heatmap <- plot_power_over_time_data(heatmap_result, 
-                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
-                    name_type = heatmap_name_type, trial = condition, 
-                    ordered = ordered, ML_prediction_electrode = ML_prediction_electrode, 
+                  plot_heatmap <- plot_power_over_time_data(heatmap_result,
+                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes,
+                    name_type = heatmap_name_type, trial = condition,
+                    ordered = ordered, ML_prediction_electrode = ML_prediction_electrode,
                     show_ML = show_ML)
                 }
                 plot_heatmap
-            }), target_depends = c("heatmap_result", "soz_electrodes", 
-            "resect_electrodes", "heatmap_name_type", "condition", 
-            "ordered", "ML_prediction_electrode", "show_ML")), 
-        deps = c("heatmap_result", "soz_electrodes", "resect_electrodes", 
-        "heatmap_name_type", "condition", "ordered", "ML_prediction_electrode", 
-        "show_ML"), cue = targets::tar_cue("always"), pattern = NULL, 
-        iteration = "list"), generate_data_for_lineplot = targets::tar_target_raw(name = "plot_lineplot", 
+            }), target_depends = c("heatmap_result", "soz_electrodes",
+            "resect_electrodes", "heatmap_name_type", "condition",
+            "ordered", "ML_prediction_electrode", "show_ML")),
+        deps = c("heatmap_result", "soz_electrodes", "resect_electrodes",
+        "heatmap_name_type", "condition", "ordered", "ML_prediction_electrode",
+        "show_ML"), cue = targets::tar_cue("always"), pattern = NULL,
+        iteration = "list"), generate_data_for_lineplot = targets::tar_target_raw(name = "plot_lineplot",
         command = quote({
             .__target_expr__. <- quote({
-                plot_lineplot <- plot_power_over_time_data_line(heatmap_result, 
-                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                plot_lineplot <- plot_power_over_time_data_line(heatmap_result,
+                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes,
                   name_type = heatmap_name_type, trial = condition)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(plot_lineplot)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "plot_lineplot", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "plot_lineplot",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL,
             target_export = "plot_lineplot", target_expr = quote({
                 {
-                  plot_lineplot <- plot_power_over_time_data_line(heatmap_result, 
-                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                  plot_lineplot <- plot_power_over_time_data_line(heatmap_result,
+                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes,
                     name_type = heatmap_name_type, trial = condition)
                 }
                 plot_lineplot
-            }), target_depends = c("heatmap_result", "soz_electrodes", 
+            }), target_depends = c("heatmap_result", "soz_electrodes",
             "resect_electrodes", "heatmap_name_type", "condition"
-            )), deps = c("heatmap_result", "soz_electrodes", 
+            )), deps = c("heatmap_result", "soz_electrodes",
         "resect_electrodes", "heatmap_name_type", "condition"
-        ), cue = targets::tar_cue("always"), pattern = NULL, 
-        iteration = "list"), generate_data_for_lineplot_EF = targets::tar_target_raw(name = "plot_lineplot_EF", 
+        ), cue = targets::tar_cue("always"), pattern = NULL,
+        iteration = "list"), generate_data_for_lineplot_EF = targets::tar_target_raw(name = "plot_lineplot_EF",
         command = quote({
             .__target_expr__. <- quote({
-                plot_lineplot_EF <- plot_power_over_frequency_data_line(heatmap_EF_result, 
-                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                plot_lineplot_EF <- plot_power_over_frequency_data_line(heatmap_EF_result,
+                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes,
                   name_type = heatmap_name_type, trial = condition)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(plot_lineplot_EF)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "plot_lineplot_EF", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "plot_lineplot_EF",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL,
             target_export = "plot_lineplot_EF", target_expr = quote({
                 {
-                  plot_lineplot_EF <- plot_power_over_frequency_data_line(heatmap_EF_result, 
-                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                  plot_lineplot_EF <- plot_power_over_frequency_data_line(heatmap_EF_result,
+                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes,
                     name_type = heatmap_name_type, trial = condition)
                 }
                 plot_lineplot_EF
-            }), target_depends = c("heatmap_EF_result", "soz_electrodes", 
+            }), target_depends = c("heatmap_EF_result", "soz_electrodes",
             "resect_electrodes", "heatmap_name_type", "condition"
-            )), deps = c("heatmap_EF_result", "soz_electrodes", 
+            )), deps = c("heatmap_EF_result", "soz_electrodes",
         "resect_electrodes", "heatmap_name_type", "condition"
-        ), cue = targets::tar_cue("always"), pattern = NULL, 
-        iteration = "list"), generate_data_for_quantile = targets::tar_target_raw(name = "plot_quantile", 
+        ), cue = targets::tar_cue("always"), pattern = NULL,
+        iteration = "list"), generate_data_for_quantile = targets::tar_target_raw(name = "plot_quantile",
         command = quote({
             .__target_expr__. <- quote({
-                plot_quantile <- plot_quantile_plot(heatmap_result, 
-                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                plot_quantile <- plot_quantile_plot(heatmap_result,
+                  soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes,
                   name_type = heatmap_name_type, trial = condition)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(plot_quantile)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "plot_quantile", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "plot_quantile",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL,
             target_export = "plot_quantile", target_expr = quote({
                 {
-                  plot_quantile <- plot_quantile_plot(heatmap_result, 
-                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes, 
+                  plot_quantile <- plot_quantile_plot(heatmap_result,
+                    soz_electrodes = soz_electrodes, resect_electrodes = resect_electrodes,
                     name_type = heatmap_name_type, trial = condition)
                 }
                 plot_quantile
-            }), target_depends = c("heatmap_result", "soz_electrodes", 
+            }), target_depends = c("heatmap_result", "soz_electrodes",
             "resect_electrodes", "heatmap_name_type", "condition"
-            )), deps = c("heatmap_result", "soz_electrodes", 
+            )), deps = c("heatmap_result", "soz_electrodes",
         "resect_electrodes", "heatmap_name_type", "condition"
-        ), cue = targets::tar_cue("always"), pattern = NULL, 
-        iteration = "list"), generate_data_for_3d_viewer = targets::tar_target_raw(name = "viewer3d_data", 
+        ), cue = targets::tar_cue("always"), pattern = NULL,
+        iteration = "list"), generate_data_for_3d_viewer = targets::tar_target_raw(name = "viewer3d_data",
         command = quote({
             .__target_expr__. <- quote({
-                viewer3d_data <- generate_3dviewer_data(heatmap_result, 
+                viewer3d_data <- generate_3dviewer_data(heatmap_result,
                   trial = condition)
             })
             tryCatch({
                 eval(.__target_expr__.)
                 return(viewer3d_data)
             }, error = function(e) {
-                asNamespace("raveio")$resolve_pipeline_error(name = "viewer3d_data", 
+                asNamespace("raveio")$resolve_pipeline_error(name = "viewer3d_data",
                   condition = e, expr = .__target_expr__.)
             })
-        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL, 
+        }), format = asNamespace("raveio")$target_format_dynamic(name = NULL,
             target_export = "viewer3d_data", target_expr = quote({
                 {
-                  viewer3d_data <- generate_3dviewer_data(heatmap_result, 
+                  viewer3d_data <- generate_3dviewer_data(heatmap_result,
                     trial = condition)
                 }
                 viewer3d_data
             }), target_depends = c("heatmap_result", "condition"
-            )), deps = c("heatmap_result", "condition"), cue = targets::tar_cue("thorough"), 
+            )), deps = c("heatmap_result", "condition"), cue = targets::tar_cue("thorough"),
         pattern = NULL, iteration = "list"))

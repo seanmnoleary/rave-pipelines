@@ -20,17 +20,21 @@ debug <- TRUE
 #' @returns Logical variable of length one.
 check_data_loaded <- function(first_time = FALSE){
   # Always use loading screen for the first time
-  if(first_time) {
-    ravedash::fire_rave_event('loader_message', NULL)
-    return(FALSE)
+  # if(first_time) {
+  #   ravedash::fire_rave_event('loader_message', NULL)
+  #   return(FALSE)
+  # }
+
+  repo_cache_path <- file.path(pipeline$pipeline_path, "shared", "objects", "repository")
+  if(file.exists(repo_cache_path)) {
+    repo_cache <- raveio::load_yaml(repo_cache_path)
+    if( "rave_prepare_subject_voltage_with_epoch" %in% repo_cache$instance_class ) {
+      ravedash::fire_rave_event('loader_message', repo_cache$subject)
+      return(TRUE)
+    }
   }
-  repository <- pipeline$read("repository")
-  if(!inherits(repository, "rave_repository")) {
-    ravedash::fire_rave_event('loader_message', NULL)
-    return(FALSE)
-  }
-  subject <- repository$subject
-  ravedash::fire_rave_event('loader_message', subject$subject_id)
+
+  ravedash::fire_rave_event('loader_message', NULL)
   return(TRUE)
 }
 
