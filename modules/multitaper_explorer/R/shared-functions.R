@@ -14,21 +14,40 @@ COLOR_PALETTES <- list(
   "Turbo" = c("#30123BFF", "#3E9BFEFF", "#46F884FF", "#E1DD37FF", "#F05B12FF", "#7A0403FF")
 )
 
-plot_preferences <- pipeline$load_preferences(
-  name = "graphics",
-  # default options
-  # heatmap_palette = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f"),
-  heatmap_palette = COLOR_PALETTES$Turbo,
-  # heatmap_palette_name = "BlueGrayRed",
-  .overwrite = FALSE
-)
+get_preference <- function(key, missing_default = NULL) {
+  pipeline$get_preferences(key, simplify = TRUE, ifnotfound = missing_default)
+}
+set_preference <- function(key, value) {
+  pipeline$set_preferences(.list = structure(list(value), names = key))
+}
 
-use_color_map <- function(name) {
-  if(!name %in% names(COLOR_PALETTES)) {
-    name <- "Default"
+ensure_preference <- function(key, missing_default) {
+  if(!pipeline$has_preferences(key)) {
+    pipeline$set_preferences(.list = structure(list(missing_default), names = key))
   }
-  plot_preferences$set("heatmap_palette_name", name)
-  plot_preferences$set("heatmap_palette", COLOR_PALETTES[[name]])
+}
+
+DEFAULT_PALETTE_NAME <- "WhiteRed"
+ensure_preference("multitaper_explorer.graphics.heatmap_palette_name", DEFAULT_PALETTE_NAME)
+ensure_preference("multitaper_explorer.graphics.heatmap_palette", COLOR_PALETTES[[DEFAULT_PALETTE_NAME]])
+
+# plot_preferences <- pipeline$get_preferences(
+#   name = "graphics",
+#   # default options
+#   # heatmap_palette = c("#ffffff", "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f"),
+#   heatmap_palette = COLOR_PALETTES$Turbo,
+#   # heatmap_palette_name = "BlueGrayRed",
+#   .overwrite = FALSE
+# )
+
+use_color_map <- function(name = DEFAULT_PALETTE_NAME) {
+  if(!name %in% names(COLOR_PALETTES)) {
+    name <- DEFAULT_PALETTE_NAME
+  }
+  # plot_preferences$set("heatmap_palette_name", name)
+  # plot_preferences$set("heatmap_palette", COLOR_PALETTES[[name]])
+  set_preference("multitaper_explorer.graphics.heatmap_palette_name", name)
+  set_preference("multitaper_explorer.graphics.heatmap_palette", COLOR_PALETTES[[name]])
   invisible()
 }
 
@@ -635,9 +654,8 @@ plot_signal_data <- function(repository,
   # Set up ticks for the x-axis
   # axis(side = 1, at = tick_positions, labels = elect[tick_positions])
   num_ticks <- 5
-  elect_plot <- round(elect)
   tick_positions <- seq(1, nrow(plotData), length.out = num_ticks)
-  graphics::axis(side = 1, at = tick_positions, labels = elect_plot[tick_positions])
+  graphics::axis(side = 1, at = tick_positions, labels = elect[tick_positions])
 
   # tick_positions <- pretty(elect)
   # graphics::axis(side = 1, at = tick_positions, labels = format(tick_positions))
@@ -694,7 +712,7 @@ plot_power_over_time_data <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
     scale = c("None", "Min_Max_Normalized_Time_Window"),
-    palette = plot_preferences$get('heatmap_palette'), ordered = FALSE, save_path = NULL,
+    palette = get_preference('multitaper_explorer.graphics.heatmap_palette'), ordered = FALSE, save_path = NULL,
     ML_prediction_electrode,
     show_ML) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
@@ -1026,7 +1044,7 @@ plot_power_over_frequency_data_line <- function(
     power_over_frequency_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
     scale = c("None", "Min_Max_Normalized_Time_Window"),
-    palette = plot_preferences$get('heatmap_palette'), save_path = NULL) {
+    palette = get_preference('multitaper_explorer.graphics.heatmap_palette'), save_path = NULL) {
 
   name_type <- match.arg(name_type)
   scale <- match.arg(scale)
@@ -1504,7 +1522,7 @@ plot_power_over_time_data_line <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
     scale = c("None", "Min_Max_Normalized_Time_Window"),
-    palette = plot_preferences$get('heatmap_palette'), save_path = NULL) {
+    palette = get_preference('multitaper_explorer.graphics.heatmap_palette'), save_path = NULL) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
   scale <- match.arg(scale)

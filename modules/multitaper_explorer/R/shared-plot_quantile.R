@@ -2,7 +2,7 @@
 #     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
 #     name_type = c("name", "number"), value_range = NULL,
 #     scale = c("None", "Min_Max_Normalized_Time_Window"),
-#     palette = plot_preferences$get('heatmap_palette'), save_path = NULL) {
+#     palette = get_preference('multitaper_explorer.graphics.heatmap_palette'), save_path = NULL) {
 #   # users can and only can select from given choices, i.e. one of c("name", "number")
 #   name_type <- match.arg(name_type)
 #   scale <- match.arg(scale)
@@ -583,7 +583,7 @@ plot_quantile_plot <- function(
     power_over_time_data, trial = NULL, soz_electrodes = NULL, resect_electrodes = NULL,
     name_type = c("name", "number"), value_range = NULL,
     scale = c("None", "Min_Max_Normalized_Time_Window"),
-    palette = plot_preferences$get('heatmap_palette'), save_path = NULL) {
+    palette = get_preference('multitaper_explorer.graphics.heatmap_palette'), save_path = NULL) {
   # users can and only can select from given choices, i.e. one of c("name", "number")
   name_type <- match.arg(name_type)
   scale <- match.arg(scale)

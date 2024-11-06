@@ -232,7 +232,8 @@ module_server <- function(input, output, session, ...){
     ignoreNULL = TRUE, ignoreInit = TRUE
   )
 
-  # check whether the loaded data is valid
+  # IMPORTANT: check whether the loaded data is valid
+  # set UI initialization here
   shiny::bindEvent(
     ravedash::safe_observe({
       loaded_flag <- ravedash::watch_data_loaded()
@@ -311,11 +312,22 @@ module_server <- function(input, output, session, ...){
         selected = default_condition
       )
 
+      # baseline
       shiny::updateSelectInput(
         session = session,
         inputId = "baseline_condition",
         choices = epoch_table$Condition2,
         selected = input$condition %OF% epoch_table$Condition2
+      )
+      shiny::updateCheckboxInput(
+        session = session,
+        inputId = "hm_baselined",
+        value = isTRUE(pipeline$get_settings("baselined"))
+      )
+      shiny::updateNumericInput(
+        session = session,
+        inputId = "baseline_end",
+        value = pipeline$get_settings("end_time_baseline")
       )
 
       # "analysis_settings"
@@ -350,7 +362,11 @@ module_server <- function(input, output, session, ...){
         soz_electrodes <- dipsaus::deparse_svec(soz_electrodes)
       }
       shiny::updateTextInput(session = session, inputId = "input_SOZ_electrodes", value = soz_electrodes)
-
+      if(nzchar(soz_electrodes)) {
+        shiny::updateCheckboxInput(session = session, inputId = "hm_showSOZ", value = TRUE)
+      } else {
+        shiny::updateCheckboxInput(session = session, inputId = "hm_showSOZ", value = FALSE)
+      }
 
       # Reset outputs
       local_reactives$update_outputs <- FALSE
@@ -603,13 +619,14 @@ module_server <- function(input, output, session, ...){
         session = session
       )
 
+      on.exit({
+        Sys.sleep(0.5)
+        dipsaus::close_alert2()
+      })
+
       local_data$results$ML_result <- pipeline$run("ML_prediction_electrode")
 
       run_analysis()
-
-      Sys.sleep(0.5)
-      dipsaus::close_alert2()
-
     }),
     input$ML_analysis,
     ignoreNULL = TRUE,
@@ -1094,7 +1111,7 @@ module_server <- function(input, output, session, ...){
         })
       }
 
-      cols <- plot_preferences$get('heatmap_palette')
+      cols <- get_preference("multitaper_explorer.graphics.heatmap_palette")
       palettes <- list()
       val_ranges <- list()
 

@@ -33,45 +33,46 @@ module_html <- function(){
               ravedash::flex_group_box(
                 title = "Basic",
 
-                shidashi::flex_container(
-                  shidashi::flex_item(
-                    shiny::numericInput(
-                      inputId = ns("mt_frequency_lower_bound"),
-                      label = "Frequency from",
-                      min = 0.1, step = 0.1, value = frequency_range[[1]], width = "100%"
-                    )
-                  ),
-                  shidashi::flex_item(
-                    shiny::numericInput(
-                      inputId = ns("mt_frequency_upper_bound"),
-                      label = "to (Hz)",
-                      min = 0.1, step = 0.1, value = frequency_range[[2]], width = "100%"
-                    )
+                shidashi::flex_item(
+                  shiny::numericInput(
+                    inputId = ns("mt_frequency_lower_bound"),
+                    label = "Frequency from",
+                    min = 0.1, step = 0.1, value = frequency_range[[1]], width = "100%"
+                  )
+                ),
+                shidashi::flex_item(
+                  shiny::numericInput(
+                    inputId = ns("mt_frequency_upper_bound"),
+                    label = "to (Hz)",
+                    min = 0.1, step = 0.1, value = frequency_range[[2]], width = "100%"
+                  )
+                ),
+                shidashi::flex_break(),
+
+                shidashi::flex_item(
+                  shiny::numericInput(
+                    inputId = ns("mt_window_size"),
+                    label = "Window size (s)",
+                    min = 0.1, step = 0.1, value = window_params[[1]], width = "100%"
+                  )
+                ),
+                shidashi::flex_item(
+                  shiny::numericInput(
+                    inputId = ns("mt_step_size"),
+                    label = "Step size (s)",
+                    min = 0.1, step = 0.1, value = window_params[[2]], width = "100%"
                   )
                 ),
 
-                shidashi::flex_container(
-                  shidashi::flex_item(
-                    shiny::numericInput(
-                      inputId = ns("mt_window_size"),
-                      label = "Window size (s)",
-                      min = 0.1, step = 0.1, value = window_params[[1]], width = "100%"
-                    )
-                  ),
-                  shidashi::flex_item(
-                    shiny::numericInput(
-                      inputId = ns("mt_step_size"),
-                      label = "Step size (s)",
-                      min = 0.1, step = 0.1, value = window_params[[2]], width = "100%"
-                    )
-                  )
-                ),
+                shidashi::flex_break(),
 
-                shiny::numericInput(
-                  inputId = ns("mt_time_bandwidth"),
-                  label = "Time-half bandwidth product (window duration x half bandwidth of main lobe)",
-                  value = time_bandwidth,
-                  min = 0.1, width = "100%"
+                shidashi::flex_item(
+                  shiny::numericInput(
+                    inputId = ns("mt_time_bandwidth"),
+                    label = "Time-half bandwidth product (window duration x half bandwidth of main lobe)",
+                    value = time_bandwidth,
+                    min = 0.1, width = "100%"
+                  )
                 )
               ),
 
@@ -319,7 +320,7 @@ module_html <- function(){
                       inputId = ns("color_palette"),
                       label = "Color map",
                       choices = names(COLOR_PALETTES),
-                      selected = plot_preferences$get("heatmap_palette_name", missing_default = "Default")
+                      selected = get_preference("multitaper_explorer.graphics.heatmap_palette_name", missing_default = DEFAULT_PALETTE_NAME)
                     ),
                     shiny::checkboxInput(
                       inputId = ns("hm_decibal"),
@@ -367,7 +368,7 @@ module_html <- function(){
                     shiny::checkboxInput(
                       inputId = ns("hm_ordered"),
                       label = "Group SOZ/Resect",
-                      value = TRUE
+                      value = FALSE
                     ),
                     shiny::checkboxInput(
                       inputId = ns("hm_label"),
