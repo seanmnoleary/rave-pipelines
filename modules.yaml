@@ -1,10 +1,10 @@
-groups:
-  Import Signals:
-    order: 1
-    open: no
-  Images & Electrodes:
-    order: 7
-    open: no
+divider:
+  Preprocess:
+    order: 0
+  Built-ins:
+    order: 10
+  Settings:
+    order: 10000
 modules:
   import_lfp_native:
     label: Native Structure
@@ -68,10 +68,12 @@ modules:
     label: Epileptogenic Index
   DC_HFO:
     label: DC HFO
-divider:
-  Preprocess:
-    order: 0
-  Built-ins:
-    order: 10
-  Settings:
-    order: 10000
+  ica_source_localization:
+    label: ICA Source Localization
+groups:
+  Import Signals:
+    order: 1
+    open: no
+  Images & Electrodes:
+    order: 7
+    open: no

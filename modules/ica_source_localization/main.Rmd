@@ -1,0 +1,82 @@
+---
+title: "RAVE Pipeline Markdown Template"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include = FALSE}
+# This code block sets up the engine environment
+# Please do not remove me
+raveio::pipeline_setup_rmd("ica_source_localization")
+```
+
+## Introduction
+
+A RAVE pipeline markdown is an interactive notebook that can keep your notes, code blocks, and corresponding results together, generating reports in various formats such as `PDF`, `html`, `Word`, `PowerPoint`. 
+
+The note parts are simply `markdown`s - the same as `jupyter notebook`, or github documentations. The code blocks support `R`, `python`, `c++`. When you hit the `Knit` button in this code editor panel, the r-markdown file will be compiled, generating reproducible documentation.
+
+With carefully designed structures, this r-markdown file will automatically generate `RAVE` pipeline scripts during the compilation. The pipeline script can be used by `RAVE` to convert your pipeline into interactive dashboard application. (This feature is currently under development)
+
+## "RAVE" Pipeline Code Block
+
+A `RAVE` pipeline markdown code block starts with ` ```{rave ... `. The block label following `rave` informative description of the target. After the target, the following RAVE-specific parameters configures how the block should be treated:
+
+* `language`: specifies the programming language used; choices are: `R`, `python`
+* `export`: variable name to be exported that will be available to the rest chunks
+* `depends`: indicates current block depends on variables generated from other blocks; this helps `RAVE` to build non-interactive pipeline scripts internally. For blocks written in `R`, the dependence can be automatically determined.
+
+Other parameters are available at [this `rmarkdown` book](https://bookdown.org/yihui/rmarkdown/)
+
+## ICA Source Localization
+
+#### Step 1: Create `RAVE` subject's instances
+
+Noting that all the items in the `settings.yaml` are available as variables.
+
+```{rave load_subject, language = "R", export = "subject", cue = "always", format = "rave-subject"}
+# Load subject instance
+subject <- raveio::RAVESubject$new(project_name = project_name, subject_code = subject_code)
+```
+
+#### Step 2: Initialize and load voltage data
+
+```{rave load_voltage, language = "R", cue = "always", export = "repository", format = "rave_prepare_subject_voltage_with_epoch"}
+repository <- raveio::prepare_subject_voltage_with_epoch(
+  subject = subject,
+  epoch_name = epoch_file_name,
+  electrodes = load_electrodes,
+  time_windows = time_window,
+  reference = reference_name
+)
+```
+
+### Step 3: Compute ICA with H2 and EI
+```{rave find_ICA, language = "R", export = "ica_matrix", format = "filearray"}
+ica_matrix <- compute_ICA(load_electrodes, repository, time_window, condition)
+```
+
+  
+  
+## Build, Visualize, & Run
+
+Please make sure the following code block is at the end of your pipeline file. This block will build the pipeline and generate a `make-ica_source_localization.R` script with your pipeline markdown file. `RAVE` will use the generated pipeline script to execute the pipeline in the dashboard application, or in massive production mode.
+
+```{r build, echo=FALSE, results='hide'}
+build_pipeline(make_file = "make-ica_source_localization.R")
+```
+
+
+Once the pipeline script `make-ica_source_localization.R` is built, you can visualize and execute the pipeline without the need of re-knit this document. Notice we use `r` block instead of `rave`. (This is because the code blocks are not part of pipeline targets.)
+
+```{r visualize, echo=FALSE}
+# Fixed usage, show pipeline graph
+try({
+  asNamespace("raveio")$pipeline_dependency_graph(
+    pipeline_path = ".", glimpse = TRUE)
+}, silent = TRUE)
+```
+
+
+

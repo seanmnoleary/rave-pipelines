@@ -1,0 +1,9 @@
+project_name: Retrostudy
+subject_code: subHUP163
+epoch_file_name: seizure_onset
+load_electrodes: 3,7-38,40-106,109-164
+time_window:
+- 0.0
+- 20.0
+reference_name: car
+condition: sz3
