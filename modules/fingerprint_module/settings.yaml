@@ -1,3 +1,6 @@
+'n': 100
+pch: 16
+col: steelblue
 condition: sz5
 reference_name: car
 time_window:

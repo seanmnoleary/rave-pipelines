@@ -5,6 +5,13 @@ divider:
     order: 10
   Settings:
     order: 10000
+groups:
+  Import Signals:
+    order: 1
+    open: no
+  Images & Electrodes:
+    order: 7
+    open: no
 modules:
   import_lfp_native:
     label: Native Structure
@@ -70,10 +77,5 @@ modules:
     label: DC HFO
   ica_source_localization:
     label: ICA Source Localization
-groups:
-  Import Signals:
-    order: 1
-    open: no
-  Images & Electrodes:
-    order: 7
-    open: no
+  Fingerprint_module:
+    label: Fingerprint

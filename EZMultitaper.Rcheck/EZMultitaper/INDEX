@@ -1,0 +1,23 @@
+$,MeanPowBand-method    Getters and Setters for S4 object
+[,MeanPowBand,ANY,ANY,ANY-method
+                        Subset a MeanPowBand object
+checkIndex              Check and keep valid index only
+estimateSOZ             Find Seizure Onset Zone
+meanPowBaselineBand     compute the mean power analysis over the
+                        frequency band using the multitaper method
+multitaperSpectrogramR
+                        Multitaper Spectrogram functions
+nrow,MeanPowBand-method
+                        Get the number of rows or columns of a
+                        MeanPowBand object
+plot,MeanPowBand,missing-method
+                        Visualization functions (raw signal, mean power
+                        band matrix)
+powStat                 Compute quantiles, mean and standard deviation
+                        for two electrodes groups
+process_spectrogram_params
+                        Process spectrogram inputs. Helper function to
+                        create frequency vector and window indices
+show,MeanPowBand-method
+                        Print the MeanPowBand object
+show,PowStat-method     Print the PowStat object

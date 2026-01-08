@@ -2586,7 +2586,7 @@ calc_mts_segment <- function(data_segment, dpss_tapers, nfft, freq_inds, weighti
 
   # Optionally detrend data to remove low freq DC component
   if(detrend_opt != 'off'){
-    data_segment <- detrend(data_segment, tt=detrend_opt)
+    data_segment <- pracma::detrend(data_segment, tt=detrend_opt)
   }
 
   # Multiply data by dpss tapers (STEP 2)

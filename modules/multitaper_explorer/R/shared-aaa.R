@@ -15,7 +15,8 @@ library(dplyr)
 library(tidyr)
 library(randomForest)
 library(caret)
-
+library(EZMultitaper)
+library(Epoch)
 
 turbo <- viridis::turbo
 `%OF%` <- dipsaus::`%OF%`

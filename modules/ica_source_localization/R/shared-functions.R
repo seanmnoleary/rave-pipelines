@@ -1,4 +1,10 @@
 
+
+# plot components function
+plot_component <- function() {
+
+}
+
 # Process Data
 compute_ICA <- function(load_electrodes, repository, time_window, condition) {
   electrodes<- dipsaus::parse_svec(load_electrodes)

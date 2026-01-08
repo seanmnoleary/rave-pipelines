@@ -1,0 +1,70 @@
+---
+title: "RAVE Fingerpting Markdown"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include = FALSE}
+# This code block sets up the engine environment
+# Please do not remove me
+ravepipeline::pipeline_setup_rmd("fingerprint_module")
+rpymat::ensure_rpymat()
+```
+
+<!-- Begin: pipeline code -->
+
+
+<!-- End: pipeline code -->
+
+## Build, Visualize, & Run
+
+Please make sure the following code block is at the end of your pipeline file. This block will build the pipeline and generate a `make-fingerprint_module.R` script with your pipeline markdown file. `RAVE` will use the generated pipeline script to execute the pipeline in the dashboard application, or in massive production mode.
+
+```{r build, echo=FALSE, results='hide'}
+build_pipeline(make_file = "make-fingerprint_module.R")
+```
+
+#### Step 1: Create `RAVE` subject's instances
+
+Noting that all the items in the `settings.yaml` are available as variables.
+
+```{rave load_subject, language = "R", export = "subject", cue = "always", format = "rave-subject"}
+# Load subject instance
+subject <- raveio::RAVESubject$new(project_name = project_name, subject_code = subject_code)
+```
+
+#### Step 2: Initialize and load voltage data
+
+```{rave load_voltage, language = "R", cue = "always", export = "repository", format = "rave_prepare_subject_voltage_with_epoch"}
+repository <- raveio::prepare_subject_voltage_with_epoch(
+  subject = subject,
+  epoch_name = epoch_file_name,
+  electrodes = load_electrodes,
+  time_windows = time_window,
+  reference = reference_name
+)
+```
+
+```{python calculate_correlation, use_rave = TRUE, deps = c("input_data"), export = "correlation", cue = "thorough"}
+# Load numpy
+import numpy as np
+
+# Calculate correlation
+correlation = np.corrcoef(input_data['x'], input_data['y'])
+print(correlation)
+```
+
+
+Once the pipeline script `make-fingerprint_module.R` is built, you can visualize and execute the pipeline without the need of re-knit this document. Notice we use `r` block instead of `rave`. (This is because the code blocks are not part of pipeline targets.)
+
+```{r visualize, echo=FALSE}
+# Fixed usage, show pipeline graph
+try({
+  asNamespace("ravepipeline")$pipeline_dependency_graph(
+    pipeline_path = ".", glimpse = TRUE)
+}, silent = TRUE)
+```
+
+
+

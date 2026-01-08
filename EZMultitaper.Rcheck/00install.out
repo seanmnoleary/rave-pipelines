@@ -1,0 +1,15 @@
+* installing *source* package ‘EZMultitaper’ ...
+** this is package ‘EZMultitaper’ version ‘0.99.0’
+** using staged installation
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+Warning: /Volumes/bigbrain/scripts/sean/rave-pipeline-sean/EZMultitaper.Rcheck/00_pkg_src/EZMultitaper/man/multitaperSpectrogramR.Rd:36: unexpected TEXT 'as floor(2*time_bandwidth - 1)', expecting ']'
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded from temporary location
+** testing if installed package can be loaded from final location
+** testing if installed package keeps a record of temporary installation path
+* DONE (EZMultitaper)
